@@ -4,7 +4,6 @@ from setuptools import setup, find_namespace_packages
 with open('ignition/pkg_info.json') as fp:
     _pkg_info = json.load(fp)
 
-
 with open("DESCRIPTION.md", "r") as description_file:
     long_description = description_file.read()
 

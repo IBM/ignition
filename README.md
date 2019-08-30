@@ -8,7 +8,21 @@ Ignition is a framework which aims to ease the process of building those VIM and
 
 # Installing Ignition
 
-To use Ignition, you must install it to your local python environment with pip. Currently Ignition has no release, so you must clone the source code and install it from the root directory:
+Install the latest release from pypi:
+
+```
+pip3 install ignition-framework
+```
+
+Named release:
+
+```
+pip3 install ignition-framework==0.1.0a1
+```
+
+## Install from source
+
+Clone the source code and install it from the root directory:
 
 ```
 pip3 install .
