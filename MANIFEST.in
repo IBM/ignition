@@ -1,0 +1,2 @@
+include ignition/pkg_info.json
+include ignition/openapi/*.yaml

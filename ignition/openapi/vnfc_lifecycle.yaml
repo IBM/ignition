@@ -1,0 +1,92 @@
+openapi: 3.0.0
+info:
+  description: "RPC API to execute Lifecycle Transitions and Operations"
+  version: "1.0.0-oas3"
+  title: Lifecycle
+servers:
+  - url: /api/lifecycle
+tags:
+  - name: lifecycle
+    description: Lifecycle Transitions and Operations
+paths:
+  /execute:
+    post:
+      tags:
+        - lifecycle
+      summary: Execute Lifecycle Transition/Operation
+      description: >-
+        Execute Lifecycle Transition/Operation
+      operationId: .execute
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExecutionRequest"
+      responses:
+        "202":
+          description: Request accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExecutionAcceptedResponse"
+        "400":
+          description: Bad request
+components:
+  schemas:
+    ExecutionRequest:
+      type: object
+      properties:
+        lifecycleName:
+          type: string
+        lifecycleScripts:
+          type: string
+          format: byte
+        systemProperties:
+          type: object
+          additionalProperties:
+            type: string
+        properties:
+          type: object
+          additionalProperties:
+            type: string
+        deploymentLocation:
+          $ref: "#/components/schemas/DeploymentLocation"
+      required:
+        - lifecycleName
+        - systemProperties
+        - deploymentLocation
+        - lifecycleScripts
+    ExecutionAcceptedResponse:
+      type: object
+      properties:
+        requestId:
+          type: string
+      required:
+        - requestId
+    ExecutionAsyncResponse:
+      type: object
+      properties:
+        requestId:
+          type: string
+        status:
+          type: string
+        failureDetails:
+          type: object
+          properties:
+            failureCode:
+              type: string
+            description:
+              type: string
+        outputs:
+          type: object
+    DeploymentLocation:
+      type: object
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+        properties:
+          type: object
+      required:
+        - name

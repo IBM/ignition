@@ -1,0 +1,4 @@
+application:
+  database:
+    host: 'myhost'
+    port: 7777

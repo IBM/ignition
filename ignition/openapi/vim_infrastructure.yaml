@@ -1,0 +1,210 @@
+openapi: 3.0.0
+info:
+  description: "RPC API to Create, Query and Destroy Infrastructure"
+  version: "1.0.0-oas3"
+  title: Infrastructure
+servers:
+  - url: /api/infrastructure
+tags:
+  - name: infrastructure
+    description: infrastructure including components and networks
+paths:
+  /create:
+    post:
+      tags:
+        - infrastructure
+      summary: Create infrastructure
+      description: >-
+        Create infrastructure
+      operationId: .create
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateInfrastructureRequest"
+      responses:
+        "202":
+          description: Request accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateInfrastructureResponse"
+        "400":
+          description: Bad request
+  /query:
+    post:
+      tags:
+        - infrastructure
+      summary: Query infrastructure create/delete status by ID and deployment location
+      description: Query infrastructure create/delete status by ID and deployment location
+      operationId: .query
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InfrastructureTaskQuery"
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InfrastructureTask"
+        "400":
+          description: Invalid ID supplied
+        "404":
+          description: Infrastructure not found
+  /delete:
+    post:
+      tags:
+        - infrastructure
+      summary: Deletes infrastructure
+      description: Deletes infrastructure
+      operationId: .delete
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeleteInfrastructureRequest"
+      responses:
+        "202":
+          description: Request accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteInfrastructureResponse"
+        "400":
+          description: Invalid ID supplied
+        "404":
+          description: Infrastructure not found
+  /find:
+    post:
+      tags:
+        - infrastructure
+      summary: Discover infrastructure
+      description: Discover infrastructure already present in the VIM
+      operationId: .find
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FindInfrastructureRequest"
+      responses:
+        "200":
+          description: Infrastructure found
+          content:
+            application/json:
+              schema: 
+                $ref: "#/components/schemas/FindInfrastructureResponse"
+        "400":
+          description: Bad request
+        "404":
+          description: Infrastructure not found
+
+components:
+  schemas:
+    CreateInfrastructureRequest:
+      type: object
+      properties:
+        inputs:
+          type: object
+        deploymentLocation:
+          $ref: "#/components/schemas/DeploymentLocation"
+        template:
+          type: string
+      required:
+        - deploymentLocation
+        - template
+    CreateInfrastructureResponse:
+      type: object
+      properties:
+        infrastructureId:
+          type: string
+        requestId:
+          type: string
+      required:
+        - infrastructureId
+        - requestId
+    DeleteInfrastructureRequest:
+      type: object
+      properties:
+        infrastructureId:
+          type: string
+        requestId:
+          type: string
+        deploymentLocation:
+          $ref: "#/components/schemas/DeploymentLocation"
+      required:
+        - infrastructureId
+        - deploymentLocation
+    DeleteInfrastructureResponse:
+      type: object
+      properties:
+        infrastructureId:
+          type: string
+        requestId:
+          type: string
+      required:
+        - infrastructureId
+        - requestId
+    FindInfrastructureRequest:
+      type: object
+      properties:
+        instanceName:
+          type: string
+        deploymentLocation:
+          $ref: "#/components/schemas/DeploymentLocation"
+        template:
+          type: string
+      required:
+        - deploymentLocation
+        - template
+    FindInfrastructureResponse:
+      type: object
+      properties:
+        infrastructureId:
+          type: string
+        outputs:
+          type: object
+    DeploymentLocation:
+      type: object
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+        properties:
+          type: object
+      required:
+        - name
+    InfrastructureTaskQuery:
+      type: object
+      properties:
+        infrastructureId:
+          type: string
+        requestId:
+          type: string
+        deploymentLocation:
+          $ref: "#/components/schemas/DeploymentLocation"
+      required:
+        - infrastructureId
+        - deploymentLocation
+        - requestId
+    InfrastructureTask:
+      type: object
+      properties:
+        infrastructureId:
+          type: string
+        requestId:
+          type: string
+        status:
+          type: string
+        failureDetails:
+          type: object
+          properties:
+            failureCode:
+              type: string
+            description:
+              type: string
+        outputs:
+          type: object
