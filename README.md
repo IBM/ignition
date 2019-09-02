@@ -40,4 +40,4 @@ For instructions on how to setup a Lifecycle Driver application using Ignition s
 
 For guides related to development of Ignition, see:
 
-- [Testing](docs/developers/testing.md)
+- [Testing](developer_docs/testing.md)

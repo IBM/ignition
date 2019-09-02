@@ -1,12 +1,12 @@
-# Creating a VNFC Driver application
+# Creating a Lifecycle Driver application
 
-## Project Setup 
+## Project Setup
 
 Create the following directory structure:
 
 ```
-myfirst-vnfc-driver/
-  myfirstvnfcd/
+myfirst-lifecycle-driver/
+  myfirstlifecycled/
     __init__.py
     service/
       __init__.py
@@ -19,7 +19,7 @@ myfirst-vnfc-driver/
 Create a `run.py` file for you application with the following contents:
 
 ```
-from myfirstvnfcd.app import init_app
+from myfirstlifecycled.app import init_app
 
 if __name__ == '__main__':
     init_app()
@@ -27,7 +27,7 @@ if __name__ == '__main__':
 
 ## Writing the Application
 
-In the `lifecycle.py` file add the following contents: 
+In the `lifecycle.py` file add the following contents:
 
 ```
 import ignition.model.lifecycle as lifecycle_model
@@ -47,14 +47,14 @@ class MyLifecycleDriver(Service, LifecycleDriverCapability):
         return lifecycle_model.LifecycleExecution(request_id, lifecycle_model.STATUS_IN_PROGRESS)
 ```
 
-In the `app.py` file add the following contents: 
+In the `app.py` file add the following contents:
 
 ```
 import ignition.boot.api as ignition
-from myfirstvnfcd.service.infrastructure import MyLifecycleDriver
+from myfirstlifecycled.service.infrastructure import MyLifecycleDriver
 
 if __name__ == '__main__':
-    app_builder = ignition.build_vnfc_driver('MyFirstVnfcDriver')
+    app_builder = ignition.build_lifecycle_driver('MyFirstLifecycleDriver')
     app_builder.include_file_config_properties('./config.yml', required=True)
     app_builder.add_service(MyLifecycleDriver)
     app_builder.run()
@@ -72,7 +72,7 @@ messaging:
 
 ```
 
-The above code uses `build_vnfc_driver` method from the `boot.api` Ignition module to create the basic `BootstrapApplicationConfiguration` required for a VNFC driver. This configuration is set to load properties from the `config.yml` file located in the same directory as `run.py`.
+The above code uses `build_lifecycle_driver` method from the `boot.api` Ignition module to create the basic `BootstrapApplicationConfiguration` required for a Lifecycle driver. This configuration is set to load properties from the `config.yml` file located in the same directory as `run.py`.
 
 Set the `application.port` value to the port your application should run on and set the `messaging.connection_address` to a valid Kafka instance.
 
