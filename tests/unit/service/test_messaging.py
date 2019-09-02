@@ -131,6 +131,6 @@ class TestKafkaInboxService(unittest.TestCase):
             mock_read_inbox_func.assert_called_with(mock_record_2.value.decode.return_value)
         finally:
             infinite_iter_stop = True
-        time.sleep(0.005)
+        time.sleep(1)
         mock_kafka_consumer.close.assert_called_once()
         self.assertEqual(len(inbox_service.active_threads), 0)
