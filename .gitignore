@@ -102,3 +102,7 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+
+# Test directories
+MyTest_boot
+BootstrapApplication_boot
