@@ -12,8 +12,10 @@ script:
 - python3 -m unittest discover
 notifications:
   email:
-    on_success: change 
-    on_failure: always 
+    on_success: change
+    on_failure: always
   slack:
     on_success: change
     on_failure: always
+    rooms:
+      secure: QQlc3faRCf8QvD8UfRxiBjN58iVGlpA5HKK6+j/NZ/K/6L9FzQ39d275enLeKLC5fQTn4zPTmrkptlCLNqD2cRquRyp8RodyldXk0ezIcGqKGbFaFM5V2mXzPOjVw+R9SMi9YhtwHbSiGtq+vWBS1POMCg4/Rw6FwhvYTPguqUpoSe4/uIcXH7CLVHYQAeekNUP3VOz4J1G1aotXFHgZ4XWucPJpHEXovAFg07xoVUsJzyGWlYhpKovTVGPy3NarHuDbuXokpVpcPU99CjJsjyRCnieC8YMCCl9dwfy95X7bYF9U2InEdkWFGJI94xr70VetGFSdkzSB/0peitQXXVMDep6YVj0deddmNJ+tlV/pfrGzuSEdssj3Yp7hECQ/GSwIePpMceXT6TgwHIpBMUcfSEeae8UJXuNnYz2bik/Cor4fU/XRUaX8rnOMeI6ZOpMTWVolwvzAbP1VZcVqegASwvCkmoqBs8kALc3FGVLaAjOt3Zgv5B6j0NPj+0x4176/9CZRNSVpRe45YAb7pEYzsu0XsExKBD7O133GtypErjEq6H1f1p5LVY7ruppvTKB9dGDLRQD94C17/JFaJPBnWL82qZ9UhAICNUXGBD0QsioU2bBAk/w1Od1mmzxuv+OWtkxdKf+KM5eklfZMktQdSYt/I+fgwx0sQVd3bGw=
