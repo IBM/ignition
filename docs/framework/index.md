@@ -160,9 +160,9 @@ class MonitoringService(Service, MonitoringCapability):
       health_service = kwargs.get('health')
 ```
 
-### Rules of Depdendencies
+### Rules of Dependencies
 
-The following rules must be adhered to when registering a Services with dependencies.
+The following rules must be adhered to when registering Services with dependencies.
 
 **Services cannot have cyclic dependencies**
 
