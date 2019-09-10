@@ -122,7 +122,10 @@ class PostalService(Service, PostalCapability):
         if envelope is None:
             raise ValueError('An envelope must be passed to post a message')
         logger.debug('Posting envelope to {0} with message: {1}'.format(envelope.address, envelope.message))
-        self.delivery_service.deliver(envelope)
+        #self.delivery_service.deliver(envelope)
+        thread = KafkaSenderThread(self.delivery_service.bootstrap_servers, envelope)
+        thread.start()
+
 
 
 class KafkaDeliveryService(Service, DeliveryCapability):
@@ -136,12 +139,51 @@ class KafkaDeliveryService(Service, DeliveryCapability):
             raise ValueError('connection_address not set on messaging_config')
         self.producer = KafkaProducer(bootstrap_servers=self.bootstrap_servers)
 
+    def on_send_success(self, record_metadata):
+        logger.info('Envelope successfully posted to {0} on partition {1} and offset {2}'.format(record_metadata.topic, record_metadata.partition, record_metadata.offset))
+
+    def on_send_error(self, excp):
+        logger.error('Error sending envelope', exc_info=excp)
+        # handle exception
+
     def deliver(self, envelope):
         if envelope is None:
             raise ValueError('An envelope must be passed to deliver a message')
         content = envelope.message.content
-        logger.debug('Delivering envelope to {0} with message content: {1}'.format(envelope.address, content))
-        return self.producer.send(envelope.address, content)
+        logger.info('Delivering envelope to {0} with message content: {1}'.format(envelope.address, content))
+        future = self.producer.send(envelope.address, content).add_callback(self.on_send_success).add_errback(self.on_send_error)
+        # Block for 'synchronous' sends
+        try:
+            record_metadata = future.get(timeout=120)
+        except:
+            logger.exception("Exception raised sending message to Kafka")
+
+
+class KafkaSenderThread(threading.Thread):
+
+    def __init__(self, bootstrap_servers, envelope):
+        self.bootstrap_servers = bootstrap_servers
+        self.envelope = envelope
+        super().__init__()
+
+    def on_send_success(self, record_metadata):
+        logger.info('Envelope successfully posted to {0} on partition {1} and offset {2}'.format(record_metadata.topic, record_metadata.partition, record_metadata.offset))
+
+    def on_send_error(self, excp):
+        logger.error('Error sending envelope', exc_info=excp)
+
+    def run(self):
+        if self.envelope is None:
+            raise ValueError('An envelope must be passed to deliver a message')
+        producer = KafkaProducer(bootstrap_servers=self.bootstrap_servers)
+        content = self.envelope.message.content
+        logger.info('Delivering envelope to {0} with message content: {1}'.format(self.envelope.address, content))
+        # Block for 'synchronous' sends
+        try:
+            future = producer.send(self.envelope.address, content).add_callback(self.on_send_success).add_errback(self.on_send_error)
+            record_metadata = future.get(timeout=120)
+        except:
+            logger.exception("Exception raised sending message to Kafka")
 
 
 class KafkaInboxService(Service, InboxCapability):
