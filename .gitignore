@@ -106,3 +106,6 @@ venv.bak/
 # Test directories
 MyTest_boot
 BootstrapApplication_boot
+
+#IDEs
+.vscode
