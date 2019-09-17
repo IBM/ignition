@@ -16,7 +16,7 @@ openapi_path = str(pathlib.Path(openapi.__file__).parent.resolve())
 
 
 class InfrastructureNotFoundError(ApiException):
-    status_code = 404
+    status_code = 400
 
 
 class InvalidInfrastructureTemplateError(ApiException):
