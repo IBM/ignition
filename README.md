@@ -1,3 +1,7 @@
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![Build Status](https://travis-ci.com/accanto-systems/ignition.svg?branch=master)](https://travis-ci.com/accanto-systems/ignition)
+[![PyPI version](https://badge.fury.io/py/ignition-framework.svg)](https://badge.fury.io/py/ignition-framework)
+
 # Ignition
 
 ## What is it?
