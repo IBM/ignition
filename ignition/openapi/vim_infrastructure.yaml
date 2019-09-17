@@ -87,13 +87,13 @@ paths:
               $ref: "#/components/schemas/FindInfrastructureRequest"
       responses:
         "200":
-          description: Infrastructure found
+          description: Request handled. Check for body to see if matching infrastructure has been found
           content:
             application/json:
               schema: 
                 $ref: "#/components/schemas/FindInfrastructureResponse"
         "400":
-          description: Bad request or infrastructure not found
+          description: Bad request
 
 components:
   schemas:
@@ -156,10 +156,13 @@ components:
     FindInfrastructureResponse:
       type: object
       properties:
-        infrastructureId:
-          type: string
-        outputs:
+        result:
           type: object
+          properties:
+            infrastructureId:
+              type: string
+            outputs:
+              type: object
     DeploymentLocation:
       type: object
       properties:
