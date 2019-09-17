@@ -122,10 +122,7 @@ class PostalService(Service, PostalCapability):
         if envelope is None:
             raise ValueError('An envelope must be passed to post a message')
         logger.debug('Posting envelope to {0} with message: {1}'.format(envelope.address, envelope.message))
-        #self.delivery_service.deliver(envelope)
-        thread = KafkaSenderThread(self.delivery_service.bootstrap_servers, envelope)
-        thread.start()
-
+        self.delivery_service.deliver(envelope)
 
 
 class KafkaDeliveryService(Service, DeliveryCapability):
@@ -137,53 +134,25 @@ class KafkaDeliveryService(Service, DeliveryCapability):
         self.bootstrap_servers = messaging_config.connection_address
         if self.bootstrap_servers is None:
             raise ValueError('connection_address not set on messaging_config')
-        self.producer = KafkaProducer(bootstrap_servers=self.bootstrap_servers)
+        self.producer = None
 
-    def on_send_success(self, record_metadata):
+    def __lazy_init_producer(self):
+        if self.producer is None:
+            self.producer = KafkaProducer(bootstrap_servers=self.bootstrap_servers)
+
+    def __on_send_success(self, record_metadata):
         logger.info('Envelope successfully posted to {0} on partition {1} and offset {2}'.format(record_metadata.topic, record_metadata.partition, record_metadata.offset))
 
-    def on_send_error(self, excp):
+    def __on_send_error(self, excp):
         logger.error('Error sending envelope', exc_info=excp)
-        # handle exception
 
     def deliver(self, envelope):
         if envelope is None:
             raise ValueError('An envelope must be passed to deliver a message')
+        self.__lazy_init_producer()
         content = envelope.message.content
         logger.info('Delivering envelope to {0} with message content: {1}'.format(envelope.address, content))
-        future = self.producer.send(envelope.address, content).add_callback(self.on_send_success).add_errback(self.on_send_error)
-        # Block for 'synchronous' sends
-        try:
-            record_metadata = future.get(timeout=120)
-        except:
-            logger.exception("Exception raised sending message to Kafka")
-
-
-class KafkaSenderThread(threading.Thread):
-
-    def __init__(self, bootstrap_servers, envelope):
-        self.bootstrap_servers = bootstrap_servers
-        self.envelope = envelope
-        super().__init__()
-
-    def on_send_success(self, record_metadata):
-        logger.info('Envelope successfully posted to {0} on partition {1} and offset {2}'.format(record_metadata.topic, record_metadata.partition, record_metadata.offset))
-
-    def on_send_error(self, excp):
-        logger.error('Error sending envelope', exc_info=excp)
-
-    def run(self):
-        if self.envelope is None:
-            raise ValueError('An envelope must be passed to deliver a message')
-        producer = KafkaProducer(bootstrap_servers=self.bootstrap_servers)
-        content = self.envelope.message.content
-        logger.info('Delivering envelope to {0} with message content: {1}'.format(self.envelope.address, content))
-        # Block for 'synchronous' sends
-        try:
-            future = producer.send(self.envelope.address, content).add_callback(self.on_send_success).add_errback(self.on_send_error)
-            record_metadata = future.get(timeout=120)
-        except:
-            logger.exception("Exception raised sending message to Kafka")
+        self.producer.send(envelope.address, content).add_callback(self.__on_send_success).add_errback(self.__on_send_error)
 
 
 class KafkaInboxService(Service, InboxCapability):
@@ -222,10 +191,7 @@ class KafkaInboxThread(threading.Thread):
         consumer = KafkaConsumer(self.topic, bootstrap_servers=self.bootstrap_servers)
         try:
             for record in consumer:
-                # try:
                 self.consumer_func(record.value.decode('utf-8'))
-                # except:
-                #     logger.error('Consumer function raised an Exception', exc_info=True)
         finally:
             try:
                 consumer.close()
