@@ -87,7 +87,7 @@ paths:
               $ref: "#/components/schemas/FindInfrastructureRequest"
       responses:
         "200":
-          description: Request handled. Check for body to see if matching infrastructure has been found
+          description: Request handled. Check body to see if matching infrastructure has been found
           content:
             application/json:
               schema: 
