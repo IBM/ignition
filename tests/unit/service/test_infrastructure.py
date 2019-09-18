@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import MagicMock
 from ignition.api.exceptions import BadRequest
-from ignition.model.infrastructure import InfrastructureTask, CreateInfrastructureResponse, DeleteInfrastructureResponse, FindInfrastructureResponse
+from ignition.model.infrastructure import InfrastructureTask, CreateInfrastructureResponse, DeleteInfrastructureResponse, FindInfrastructureResponse, FindInfrastructureResult
 from ignition.model.failure import FailureDetails, FAILURE_CODE_INFRASTRUCTURE_ERROR
 from ignition.service.infrastructure import InfrastructureService, InfrastructureApiService, InfrastructureTaskMonitoringService, InfrastructureMessagingService
 from ignition.service.messaging import Envelope, Message
@@ -118,11 +118,20 @@ class TestInfrastructureApiService(unittest.TestCase):
 
     def test_find(self):
         mock_service = MagicMock()
-        mock_service.find_infrastructure.return_value = FindInfrastructureResponse('123', {'b': 2})
+        mock_service.find_infrastructure.return_value = FindInfrastructureResponse(FindInfrastructureResult('123', {'b': 2}))
         controller = InfrastructureApiService(service=mock_service)
         response, code = controller.find(**{ 'body': { 'template': 'template', 'instanceName': 'test', 'deploymentLocation': {'name': 'test'} } })
         mock_service.find_infrastructure.assert_called_once_with('template', 'test', {'name': 'test'})
-        self.assertEqual(response, {'infrastructureId': '123', 'outputs': {'b': 2}})
+        self.assertEqual(response, {'result': {'infrastructureId': '123', 'outputs': {'b': 2} } })
+        self.assertEqual(code, 200)
+
+    def test_find_not_found(self):
+        mock_service = MagicMock()
+        mock_service.find_infrastructure.return_value = FindInfrastructureResponse(None)
+        controller = InfrastructureApiService(service=mock_service)
+        response, code = controller.find(**{ 'body': { 'template': 'template', 'instanceName': 'test', 'deploymentLocation': {'name': 'test'} } })
+        mock_service.find_infrastructure.assert_called_once_with('template', 'test', {'name': 'test'})
+        self.assertEqual(response, {'result': None})
         self.assertEqual(code, 200)
 
     def test_find_missing_template(self):
@@ -238,7 +247,7 @@ class TestInfrastructureService(unittest.TestCase):
 
     def test_find_infrastructure_uses_driver(self):
         mock_service_driver = MagicMock()
-        find_response = FindInfrastructureResponse({'outputA': 1})
+        find_response = FindInfrastructureResponse(FindInfrastructureResult('123', {'outputA': 1}))
         mock_service_driver.find_infrastructure.return_value = find_response
         mock_infrastructure_config = MagicMock()
         mock_infrastructure_config.async_messaging_enabled = False

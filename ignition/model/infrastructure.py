@@ -49,6 +49,15 @@ def infrastructure_task_dict(infrastructure_task):
 
 class FindInfrastructureResponse():
 
+    def __init__(self, result=None):
+        self.result = result
+
+    def __str__(self):
+        return 'result: {0.result}'.format(self)
+
+
+class FindInfrastructureResult():
+
     def __init__(self, infrastructure_id, outputs=None):
         self.infrastructure_id = infrastructure_id
         self.outputs = outputs
@@ -58,8 +67,11 @@ class FindInfrastructureResponse():
 
 
 def infrastructure_find_response_dict(find_infrastructure_response):
-    message = {
-        'infrastructureId': find_infrastructure_response.infrastructure_id,
-        'outputs': find_infrastructure_response.outputs
-    }
+    result = None
+    if find_infrastructure_response.result is not None:
+        result = {
+            'infrastructureId': find_infrastructure_response.result.infrastructure_id,
+            'outputs': find_infrastructure_response.result.outputs
+        }
+    message = {'result': result}
     return message
