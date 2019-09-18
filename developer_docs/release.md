@@ -4,13 +4,15 @@ The following steps detail how an Ignition release is produced. This may only be
 
 ## 1. Setting the Version
 
-Start by setting the version of the release in `ignition/pkg_info.json` (push this change to Github):
+1.1 Start by setting the version of the release in `ignition/pkg_info.json` (push this change to Github and let the CI build execute):
 
 ```
 {
   "version": "<release version number>"
 }
 ```
+
+1.2 Tag the commit with the new version in Git
 
 ## 2. Build Python Wheel
 
@@ -42,11 +44,27 @@ tar -cvzf ignition-framework-<release version number>-docs.tgz docs/ --transform
 
 5.1 Navigate to Releases on the Github repository for this project and create a new release.
 
-5.2 Ensure the version tag and title correspond with the version number set in the pkg_info file earlier. Include release notes in the description of the release.
+5.2 Ensure the version tag and title correspond with the version number set in the pkg_info file earlier
 
 5.3 Attach the docs archive to the release
 
-## 6. Set next development version
+## 6. Generate Release Notes
+
+Release notes are produced by updating the CHANGELOG.md, then copying the section for this version to the description field in the created Github release.
+
+The CHANGELOG is updated using [github-changelog-generator](https://github.com/github-changelog-generator/github-changelog-generator#why-should-i-care)
+
+6.1 Update CHANGELOG.md
+
+```
+github_changelog_generator accanto-systems/ignition
+```
+
+6.2 Commit the updated CHANGELOG.md
+
+6.3 Copy the section for the newly released version from CHANGELOG.md into the description of the release created on Github
+
+## 7. Set next development version
 
 Set the version of the next development version in `ignition/pkg_info.json` (push this change to Github).
 
