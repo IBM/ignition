@@ -1,6 +1,6 @@
 # Creating a VIM Driver application
 
-## Project Setup 
+## Project Setup
 
 Create the following directory structure:
 
@@ -27,7 +27,7 @@ if __name__ == '__main__':
 
 ## Writing the Application
 
-In the `infrastructure.py` file add the following contents: 
+In the `infrastructure.py` file add the following contents:
 
 ```
 import ignition.model.infrastructure as infrastructure_model
@@ -50,6 +50,10 @@ class MyInfrastructureDriver(Service, InfrastructureDriverCapability):
         print("Deleting some Infrastructure")
         request_id = '2'
         return infrastructure_model.DeleteInfrastructureResponse(infrastructure_id, request_id)
+
+    def find_infrastructure(self, template, instance_name, deployment_location):
+        print("Finding some Infrastructure")
+        return infrastructure_model.FindInfrastructureResponse()
 ```
 
 In the `app.py` file add the following contents:
