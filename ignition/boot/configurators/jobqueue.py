@@ -28,6 +28,6 @@ class JobQueueConfigurator():
                 job_queue_config.name = '{0}_job_queue'.format(configuration.app_name.replace(" ", "_"))
                 messaging_config.topics.job_queue = job_queue_config
 
-            service_register.add_service(ServiceRegistration(MessagingJobQueueService, messaging_config.connection_address, postal_service=PostalCapability, inbox_service=InboxCapability, topics_config=TopicsProperties))
+            service_register.add_service(ServiceRegistration(MessagingJobQueueService, postal_service=PostalCapability, inbox_service=InboxCapability, topics_config=TopicsProperties, messaging_config=MessagingProperties))
         else:
             logger.debug('Disabled: bootstrapped Job Queue API')

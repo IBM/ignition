@@ -51,7 +51,8 @@ class JobQueueProperties(ConfigurationPropertiesGroup):
 
     def __init__(self):
         super().__init__('jobqueue')
-        self.name = None
+        self.name = "job_queue"
+        self.create_topic = True
         self.replication_factor = 1
         self.num_partitions = 1
         self.config = JobQueueConfigProperties()
@@ -70,7 +71,7 @@ class MessagingJobQueueService(Service, JobQueueCapability):
 
     JOB_TYPE_KEY = 'job_type'
 
-    def __init__(self, kafka_connection_address, **kwargs):
+    def __init__(self, **kwargs):
         if 'postal_service' not in kwargs:
             raise ValueError('postal_service argument not provided')
         self.postal_service = kwargs.get('postal_service')
@@ -79,33 +80,39 @@ class MessagingJobQueueService(Service, JobQueueCapability):
         self.inbox_service = kwargs.get('inbox_service')
         if 'topics_config' not in kwargs:
             raise ValueError('topics_config argument not provided')
-        self.job_queue_topic = kwargs.get('topics_config').job_queue
-        if self.job_queue_topic is None:
-            raise ValueError('job_queue topic must be set')
-        self.kafka_connection_address = kafka_connection_address
-        if self.kafka_connection_address is None:
-            raise ValueError('kafka_connection_address must be set')
+        topics_config = kwargs.get('topics_config')
+        if topics_config is None:
+            raise ValueError('topics_config must be set')
+        if topics_config.job_queue is None:
+            raise ValueError('topics_config.job_queue must be set')
+        self.job_queue = topics_config.job_queue
+        self.messaging_config = kwargs.get('messaging_config')
+        if self.messaging_config is None:
+            raise ValueError('messaging_config argument not provided')
 
-        self.__init_jobqueue_topic()
+        if self.job_queue.create_topic:
+            self.__init_jobqueue_topic()
+        else:
+            logger.info("Not creating job queue topic {0}".format(self.job_queue.name))
         self.job_handlers = {}
         self.__init_watch_for_jobs()
 
     def __init_jobqueue_topic(self):
-        admin_client = KafkaAdminClient(bootstrap_servers=self.kafka_connection_address, client_id='ignition')
+        admin_client = KafkaAdminClient(bootstrap_servers=self.messaging_config.connection_address, client_id='ignition')
 
         try:
-            logger.info("Creating topic {0} with replication factor {1} and partitions {2}".format(self.job_queue_topic.name, self.job_queue_topic.replication_factor, self.job_queue_topic.num_partitions))
+            logger.info("Creating topic {0} with replication factor {1} and partitions {2}".format(self.job_queue.name, self.job_queue.replication_factor, self.job_queue.num_partitions))
             topic_config = {
-                "retention.ms": self.job_queue_topic.config.retention_ms,
-                "message.timestamp.difference.max.ms": self.job_queue_topic.config.timestamp_difference_max_ms,
-                "file.delete.delay.ms": self.job_queue_topic.config.file_delete_delay_ms
+                "retention.ms": self.job_queue.config.retention_ms,
+                "message.timestamp.difference.max.ms": self.job_queue.config.timestamp_difference_max_ms,
+                "file.delete.delay.ms": self.job_queue.config.file_delete_delay_ms
             }
-            topic_list = [NewTopic(name=self.job_queue_topic.name, num_partitions=self.job_queue_topic.num_partitions, replication_factor=self.job_queue_topic.replication_factor, topic_configs=topic_config)]
+            topic_list = [NewTopic(name=self.job_queue.name, num_partitions=self.job_queue.num_partitions, replication_factor=self.job_queue.replication_factor, topic_configs=topic_config)]
             admin_client.create_topics(new_topics=topic_list, validate_only=False)
         except TopicAlreadyExistsError as _:
-            logger.info("Topic {0} already exists, not creating".format(self.job_queue_topic.name))
+            logger.info("Topic {0} already exists, not creating".format(self.job_queue.name))
         except BrokerResponseError as _:
-            logger.exception("Unexpected exception creating topic {0}".format(self.job_queue_topic.name))
+            logger.exception("Unexpected exception creating topic {0}".format(self.job_queue.name))
         finally:
             try:
                 admin_client.close()
@@ -113,7 +120,7 @@ class MessagingJobQueueService(Service, JobQueueCapability):
                 logger.debug("Exception closing Kafka admin client {0}".format(str(e)))
 
     def __init_watch_for_jobs(self):
-        self.inbox_service.watch_inbox(self.job_queue_topic, self.__received_next_job_handler)
+        self.inbox_service.watch_inbox(self.job_queue.name, self.__received_next_job_handler)
         pass
 
     def __received_next_job_handler(self, job_definition_str):
@@ -139,7 +146,7 @@ class MessagingJobQueueService(Service, JobQueueCapability):
             raise ValueError('job_definition must have a job_type value (not None)')
         msg_content = JsonContent(job_definition).get()
         msg = Message(msg_content)
-        self.postal_service.post(Envelope(self.job_queue_topic, msg))
+        self.postal_service.post(Envelope(self.job_queue.name, msg))
     
     def register_job_handler(self, job_type, handler_func):
         if job_type in self.job_handlers:

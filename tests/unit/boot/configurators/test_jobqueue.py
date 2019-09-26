@@ -1,11 +1,13 @@
+import logging
 from .utils import ConfiguratorTestCase
 from unittest.mock import MagicMock
 from ignition.boot.config import BootstrapApplicationConfiguration, BootProperties
 from ignition.boot.configurators.jobqueue import JobQueueConfigurator
-from ignition.service.queue import JobQueueCapability, MessagingJobQueueService
+from ignition.service.queue import JobQueueCapability, MessagingJobQueueService, JobQueueProperties
 from ignition.service.messaging import MessagingProperties, TopicsProperties, PostalCapability, InboxCapability
 from ignition.service.framework import ServiceRegistration
 
+logger = logging.getLogger(__name__)
 
 class TestJobQueueConfigurator(ConfiguratorTestCase):
 
@@ -15,6 +17,8 @@ class TestJobQueueConfigurator(ConfiguratorTestCase):
         configuration.property_groups.add_property_group(boot_config)
         messaging_conf = MessagingProperties()
         configuration.property_groups.add_property_group(messaging_conf)
+        job_queue_conf = JobQueueProperties()
+        configuration.property_groups.add_property_group(job_queue_conf)
         return configuration
 
     def test_configure_nothing_when_disabled(self):
@@ -32,7 +36,7 @@ class TestJobQueueConfigurator(ConfiguratorTestCase):
         JobQueueConfigurator().configure(configuration, self.mock_service_register)
         registered_service = self.assert_single_service_registered()
         self.assert_service_registration_equal(registered_service, ServiceRegistration(
-            MessagingJobQueueService, postal_service=PostalCapability, inbox_service=InboxCapability, topics_config=TopicsProperties))
+            MessagingJobQueueService, postal_service=PostalCapability, inbox_service=InboxCapability, topics_config=TopicsProperties, messaging_config=MessagingProperties))
 
     def test_configure_service_fails_when_already_registered(self):
         configuration = self.__bootstrap_config()
@@ -62,4 +66,8 @@ class TestJobQueueConfigurator(ConfiguratorTestCase):
         configuration.property_groups.get_property_group(MessagingProperties).topics.job_queue = None
         self.mock_service_register.get_service_offering_capability.return_value = None
         JobQueueConfigurator().configure(configuration, self.mock_service_register)
-        self.assertEqual(configuration.property_groups.get_property_group(MessagingProperties).topics.job_queue, 'TestApp_job_queue')
+        job_queue_properties = JobQueueProperties()
+        job_queue_properties.name = 'TestApp_job_queue'
+        logger.info('poo:'+str(configuration.property_groups.get_property_group(MessagingProperties).topics.job_queue))
+        self.assertEqual(configuration.property_groups.get_property_group(MessagingProperties).topics.job_queue.name, job_queue_properties.name)
+

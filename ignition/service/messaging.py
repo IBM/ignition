@@ -187,7 +187,7 @@ class KafkaInboxThread(threading.Thread):
         super().__init__()
 
     def run(self):
-        consumer = KafkaConsumer(self.topic.name, bootstrap_servers=self.bootstrap_servers)
+        consumer = KafkaConsumer(self.topic, bootstrap_servers=self.bootstrap_servers)
         try:
             for record in consumer:
                 self.consumer_func(record.value.decode('utf-8'))
