@@ -9,12 +9,13 @@ from ignition.boot.configurators.jobqueue import JobQueueConfigurator
 from ignition.service.infrastructure import InfrastructureProperties
 from ignition.service.lifecycle import LifecycleProperties
 from ignition.service.messaging import MessagingProperties
+from ignition.service.queue import JobQueueProperties
 from jsonschema import ValidationError
 
 SERVICE_CONFIGURATORS = [InfrastructureServicesConfigurator(), LifecycleServicesConfigurator(), MessagingConfigurator(), JobQueueConfigurator()]
 API_CONFIGURATORS = [InfrastructureApiConfigurator(), LifecycleApiConfigurator()]
 MANDATORY_PROPERTY_GROUPS = [ApplicationProperties, ApiProperties]
-ADDITIONAL_PROPERTY_GROUPS = [BootProperties, InfrastructureProperties, LifecycleProperties, MessagingProperties]
+ADDITIONAL_PROPERTY_GROUPS = [BootProperties, InfrastructureProperties, LifecycleProperties, MessagingProperties, JobQueueProperties]
 
 
 def build_vim_driver(app_name):
