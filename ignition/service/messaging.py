@@ -36,8 +36,7 @@ class TopicsProperties(ConfigurationProperties, Service, Capability):
     def __init__(self):
         self.infrastructure_task_events = 'lm_vim_infrastructure_task_events'
         self.lifecycle_execution_events = 'lm_vnfc_lifecycle_execution_events'
-        self.job_queue = None  # no default set as this needs to be unique per VIM/VNFC driver cluster
-
+        self.job_queue = None  # no default set as this needs to be unique per VIM/Lifecycle driver cluster
 
 ############################
 # Core Classes
@@ -141,7 +140,7 @@ class KafkaDeliveryService(Service, DeliveryCapability):
             self.producer = KafkaProducer(bootstrap_servers=self.bootstrap_servers)
 
     def __on_send_success(self, record_metadata):
-        logger.info('Envelope successfully posted to {0} on partition {1} and offset {2}'.format(record_metadata.topic, record_metadata.partition, record_metadata.offset))
+        logger.debug('Envelope successfully posted to {0} on partition {1} and offset {2}'.format(record_metadata.topic, record_metadata.partition, record_metadata.offset))
 
     def __on_send_error(self, excp):
         logger.error('Error sending envelope', exc_info=excp)
@@ -151,7 +150,7 @@ class KafkaDeliveryService(Service, DeliveryCapability):
             raise ValueError('An envelope must be passed to deliver a message')
         self.__lazy_init_producer()
         content = envelope.message.content
-        logger.info('Delivering envelope to {0} with message content: {1}'.format(envelope.address, content))
+        logger.debug('Delivering envelope to {0} with message content: {1}'.format(envelope.address, content))
         self.producer.send(envelope.address, content).add_callback(self.__on_send_success).add_errback(self.__on_send_error)
 
 
@@ -174,7 +173,7 @@ class KafkaInboxService(Service, InboxCapability):
         self.active_threads.append(thread)
         try:
             thread.start()
-        except Exception as e:
+        except Exception as _:
             self.active_threads.remove(thread)
 
 
