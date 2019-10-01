@@ -106,9 +106,12 @@ components:
           $ref: "#/components/schemas/DeploymentLocation"
         template:
           type: string
+        templateType:
+          type: string
       required:
         - deploymentLocation
         - template
+        - templateType
     CreateInfrastructureResponse:
       type: object
       properties:
@@ -150,9 +153,12 @@ components:
           $ref: "#/components/schemas/DeploymentLocation"
         template:
           type: string
+        templateType:
+          type: string
       required:
         - deploymentLocation
         - template
+        - templateType
     FindInfrastructureResponse:
       type: object
       properties:
