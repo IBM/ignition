@@ -17,8 +17,8 @@ class TestInfrastructureApiService(unittest.TestCase):
         mock_service = MagicMock()
         mock_service.create_infrastructure.return_value = CreateInfrastructureResponse('123', '456')
         controller = InfrastructureApiService(service=mock_service)
-        response, code = controller.create(**{ 'body': { 'template': 'template', 'inputs': {'a': 1}, 'deploymentLocation': {'name': 'test'} } })
-        mock_service.create_infrastructure.assert_called_once_with('template', {'a': 1}, {'name': 'test'})
+        response, code = controller.create(**{ 'body': { 'template': 'template', 'templateType': 'TOSCA', 'inputs': {'a': 1}, 'deploymentLocation': {'name': 'test'} } })
+        mock_service.create_infrastructure.assert_called_once_with('template', 'TOSCA', {'a': 1}, {'name': 'test'})
         self.assertEqual(response, {'infrastructureId': '123', 'requestId': '456'})
         self.assertEqual(code, 202)
 
@@ -26,22 +26,29 @@ class TestInfrastructureApiService(unittest.TestCase):
         mock_service = MagicMock()
         controller = InfrastructureApiService(service=mock_service)
         with self.assertRaises(BadRequest) as context:
-            controller.create(**{ 'body': { 'inputs': {'a': 1}, 'deploymentLocation': {'name': 'test' } } })
+            controller.create(**{ 'body': { 'templateType': 'TOSCA', 'inputs': {'a': 1}, 'deploymentLocation': {'name': 'test' } } })
         self.assertEqual(str(context.exception), '\'template\' is a required field but was not found in the request data body')
+
+    def test_create_missing_template_type(self):
+        mock_service = MagicMock()
+        controller = InfrastructureApiService(service=mock_service)
+        with self.assertRaises(BadRequest) as context:
+            controller.create(**{ 'body': { 'template': 'template', 'inputs': {'a': 1}, 'deploymentLocation': {'name': 'test' } } })
+        self.assertEqual(str(context.exception), '\'templateType\' is a required field but was not found in the request data body')
 
     def test_create_missing_deployment_location(self):
         mock_service = MagicMock()
         controller = InfrastructureApiService(service=mock_service)
         with self.assertRaises(BadRequest) as context:
-            controller.create(**{ 'body': { 'inputs': {'a': 1}, 'template': 'template' } })
+            controller.create(**{ 'body': { 'inputs': {'a': 1}, 'template': 'template', 'templateType': 'TOSCA' } })
         self.assertEqual(str(context.exception), '\'deploymentLocation\' is a required field but was not found in the request data body')
 
     def test_create_missing_inputs_uses_default(self):
         mock_service = MagicMock()
         mock_service.create_infrastructure.return_value = CreateInfrastructureResponse('123', '456')
         controller = InfrastructureApiService(service=mock_service)
-        response, code = controller.create(**{ 'body': { 'template': 'template', 'deploymentLocation': {'name': 'test'} } })
-        mock_service.create_infrastructure.assert_called_once_with('template', {}, {'name': 'test'})
+        response, code = controller.create(**{ 'body': { 'template': 'template', 'templateType': 'TOSCA', 'deploymentLocation': {'name': 'test'} } })
+        mock_service.create_infrastructure.assert_called_once_with('template', 'TOSCA', {}, {'name': 'test'})
         self.assertEqual(response, {'infrastructureId': '123', 'requestId': '456'})
         self.assertEqual(code, 202)
 
@@ -120,8 +127,8 @@ class TestInfrastructureApiService(unittest.TestCase):
         mock_service = MagicMock()
         mock_service.find_infrastructure.return_value = FindInfrastructureResponse(FindInfrastructureResult('123', {'b': 2}))
         controller = InfrastructureApiService(service=mock_service)
-        response, code = controller.find(**{ 'body': { 'template': 'template', 'instanceName': 'test', 'deploymentLocation': {'name': 'test'} } })
-        mock_service.find_infrastructure.assert_called_once_with('template', 'test', {'name': 'test'})
+        response, code = controller.find(**{ 'body': { 'template': 'template', 'templateType': 'TOSCA', 'instanceName': 'test', 'deploymentLocation': {'name': 'test'} } })
+        mock_service.find_infrastructure.assert_called_once_with('template', 'TOSCA', 'test', {'name': 'test'})
         self.assertEqual(response, {'result': {'infrastructureId': '123', 'outputs': {'b': 2} } })
         self.assertEqual(code, 200)
 
@@ -129,8 +136,8 @@ class TestInfrastructureApiService(unittest.TestCase):
         mock_service = MagicMock()
         mock_service.find_infrastructure.return_value = FindInfrastructureResponse(None)
         controller = InfrastructureApiService(service=mock_service)
-        response, code = controller.find(**{ 'body': { 'template': 'template', 'instanceName': 'test', 'deploymentLocation': {'name': 'test'} } })
-        mock_service.find_infrastructure.assert_called_once_with('template', 'test', {'name': 'test'})
+        response, code = controller.find(**{ 'body': { 'template': 'template', 'templateType': 'TOSCA', 'instanceName': 'test', 'deploymentLocation': {'name': 'test'} } })
+        mock_service.find_infrastructure.assert_called_once_with('template', 'TOSCA', 'test', {'name': 'test'})
         self.assertEqual(response, {'result': None})
         self.assertEqual(code, 200)
 
@@ -138,21 +145,28 @@ class TestInfrastructureApiService(unittest.TestCase):
         mock_service = MagicMock()
         controller = InfrastructureApiService(service=mock_service)
         with self.assertRaises(BadRequest) as context:
-            controller.find(**{ 'body': { 'inputs': {'a': 1}, 'deploymentLocation': {'name': 'test' } } })
+            controller.find(**{ 'body': { 'templateType': 'TOSCA', 'inputs': {'a': 1}, 'deploymentLocation': {'name': 'test' } } })
         self.assertEqual(str(context.exception), '\'template\' is a required field but was not found in the request data body')
+
+    def test_find_missing_template_type(self):
+        mock_service = MagicMock()
+        controller = InfrastructureApiService(service=mock_service)
+        with self.assertRaises(BadRequest) as context:
+            controller.find(**{ 'body': { 'template': 'template', 'inputs': {'a': 1}, 'deploymentLocation': {'name': 'test' } } })
+        self.assertEqual(str(context.exception), '\'templateType\' is a required field but was not found in the request data body')
 
     def test_find_missing_deployment_location(self):
         mock_service = MagicMock()
         controller = InfrastructureApiService(service=mock_service)
         with self.assertRaises(BadRequest) as context:
-            controller.find(**{ 'body': { 'instanceName': 'test', 'template': 'template' } })
+            controller.find(**{ 'body': { 'instanceName': 'test', 'template': 'template', 'templateType': 'TOSCA' } })
         self.assertEqual(str(context.exception), '\'deploymentLocation\' is a required field but was not found in the request data body')
 
     def test_find_missing_instance_name(self):
         mock_service = MagicMock()
         controller = InfrastructureApiService(service=mock_service)
         with self.assertRaises(BadRequest) as context:
-            controller.find(**{ 'body': { 'deploymentLocation': {'name': 'test' }, 'template': 'template' } })
+            controller.find(**{ 'body': { 'deploymentLocation': {'name': 'test' }, 'template': 'template', 'templateType': 'TOSCA' } })
         self.assertEqual(str(context.exception), '\'instanceName\' is a required field but was not found in the request data body')
 
 class TestInfrastructureService(unittest.TestCase):
@@ -185,10 +199,11 @@ class TestInfrastructureService(unittest.TestCase):
         mock_infrastructure_config.async_messaging_enabled = False
         service = InfrastructureService(driver=mock_service_driver, infrastructure_config=mock_infrastructure_config)
         template = 'template'
+        template_type = 'TOSCA'
         inputs = {'inputA': 'valueA'}
         deployment_location = {'name': 'TestDl'}
-        result = service.create_infrastructure(template, inputs, deployment_location)
-        mock_service_driver.create_infrastructure.assert_called_once_with(template, inputs, deployment_location)
+        result = service.create_infrastructure(template, template_type, inputs, deployment_location)
+        mock_service_driver.create_infrastructure.assert_called_once_with(template, template_type, inputs, deployment_location)
         self.assertEqual(result, create_response)
 
     def test_create_infrastructure_uses_monitor_when_async_enabled(self):
@@ -200,9 +215,10 @@ class TestInfrastructureService(unittest.TestCase):
         mock_inf_monitor_service = MagicMock()
         service = InfrastructureService(driver=mock_service_driver, infrastructure_config=mock_infrastructure_config, inf_monitor_service=mock_inf_monitor_service)
         template = 'template'
+        template_type = 'TOSCA'
         inputs = {'inputA': 'valueA'}
         deployment_location = {'name': 'TestDl'}
-        result = service.create_infrastructure(template, inputs, deployment_location)
+        result = service.create_infrastructure(template, template_type, inputs, deployment_location)
         mock_inf_monitor_service.monitor_task.assert_called_once_with('test', 'test_req', deployment_location)
 
     def test_get_infrastructure_task_uses_driver(self):
@@ -253,10 +269,11 @@ class TestInfrastructureService(unittest.TestCase):
         mock_infrastructure_config.async_messaging_enabled = False
         service = InfrastructureService(driver=mock_service_driver, infrastructure_config=mock_infrastructure_config)
         template = 'template'
+        template_type = 'TOSCA'
         instance_name = 'valueA'
         deployment_location = {'name': 'TestDl'}
-        result = service.find_infrastructure(template, instance_name, deployment_location)
-        mock_service_driver.find_infrastructure.assert_called_once_with(template, instance_name, deployment_location)
+        result = service.find_infrastructure(template, template_type, instance_name, deployment_location)
+        mock_service_driver.find_infrastructure.assert_called_once_with(template, template_type, instance_name, deployment_location)
         self.assertEqual(result, find_response)
 
 

@@ -36,13 +36,14 @@ class InfrastructureDriverCapability(Capability):
     The InfrastructureDriver is the expected integration point for VIM Drivers to implement communication with the VIM on an Infrastructure request
     """
     @interface
-    def create_infrastructure(self, template, inputs, deployment_location):
+    def create_infrastructure(self, template, template_type, inputs, deployment_location):
         """
         Initiates a request to create infrastructure based on a TOSCA template.
         This method should return immediate response of the request being accepted,
         it is expected that the InfrastructureService will poll get_infrastructure_task on this driver to determine when the request has complete.
 
-        :param str template: tosca template of infrastructure to be created
+        :param str template: template of infrastructure to be created
+        :param str template_type: type of template used i.e. TOSCA or Heat
         :param str inputs: values for the inputs defined on the tosca template
         :param dict deployment_location: the valid Openstack location to deploy to
         :return: an ignition.model.infrastructure.CreateInfrastructureResponse
@@ -75,11 +76,12 @@ class InfrastructureDriverCapability(Capability):
         pass
 
     @interface
-    def find_infrastructure(self, template, inputs, deployment_location):
+    def find_infrastructure(self, template, template_type, inputs, deployment_location):
         """
         Finds infrastructure instances that meet the requirements set out in the given TOSCA template, returning the desired output values from those instances
 
         :param str template: tosca template of infrastructure to be found
+        :param str template_type: type of template used i.e. TOSCA or Heat
         :param str inputs: values for the inputs defined on the tosca template
         :param dict deployment_location: the valid Openstack location to deploy to
         :return: an ignition.model.infrastructure.FindInfrastructureResponse
@@ -109,7 +111,7 @@ class InfrastructureApiCapability(Capability):
 class InfrastructureServiceCapability(Capability):
 
     @interface
-    def create_infrastructure(self, template, inputs, deployment_location):
+    def create_infrastructure(self, template, template_type, inputs, deployment_location):
         pass
 
     @interface
@@ -121,7 +123,7 @@ class InfrastructureServiceCapability(Capability):
         pass
 
     @interface
-    def find_infrastructure(self, template, instance_name, deployment_location):
+    def find_infrastructure(self, template, template_type, instance_name, deployment_location):
         pass
 
 
@@ -156,9 +158,10 @@ class InfrastructureApiService(Service, InfrastructureApiCapability, BaseControl
             body = self.get_body(kwarg)
             logger.debug('Create infrastructure with body %s', body)
             template = self.get_body_required_field(body, 'template')
+            template_type = self.get_body_required_field(body, 'templateType')
             deployment_location = self.get_body_required_field(body, 'deploymentLocation')
             inputs = self.get_body_field(body, 'inputs', {})
-            create_response = self.service.create_infrastructure(template, inputs, deployment_location)
+            create_response = self.service.create_infrastructure(template, template_type, inputs, deployment_location)
             response = {'infrastructureId': create_response.infrastructure_id, 'requestId': create_response.request_id}
             return (response, 202)
         finally:
@@ -200,9 +203,10 @@ class InfrastructureApiService(Service, InfrastructureApiCapability, BaseControl
             body = self.get_body(kwarg)
             logger.debug('Find infrastructure with body %s', body)
             template = self.get_body_required_field(body, 'template')
+            template_type = self.get_body_required_field(body, 'templateType')
             deployment_location = self.get_body_required_field(body, 'deploymentLocation')
             instance_name = self.get_body_required_field(body, 'instanceName')
-            service_find_response = self.service.find_infrastructure(template, instance_name, deployment_location)
+            service_find_response = self.service.find_infrastructure(template, template_type, instance_name, deployment_location)
             response = infrastructure_find_response_dict(service_find_response)
             return (response, 200)
         finally:
@@ -226,8 +230,8 @@ class InfrastructureService(Service, InfrastructureServiceCapability):
                 raise ValueError('inf_monitor_service argument not provided (required when async_messaging_enabled is True)')
             self.inf_monitor_service = kwargs.get('inf_monitor_service')
 
-    def create_infrastructure(self, template, inputs, deployment_location):
-        create_response = self.driver.create_infrastructure(template, inputs, deployment_location)
+    def create_infrastructure(self, template, template_type, inputs, deployment_location):
+        create_response = self.driver.create_infrastructure(template, template_type, inputs, deployment_location)
         if self.async_enabled is True:
             self.__async_infrastructure_task_completion(create_response.infrastructure_id, create_response.request_id, deployment_location)
         return create_response
@@ -241,8 +245,8 @@ class InfrastructureService(Service, InfrastructureServiceCapability):
             self.__async_infrastructure_task_completion(delete_response.infrastructure_id, delete_response.request_id, deployment_location)
         return delete_response
 
-    def find_infrastructure(self, template, instance_name, deployment_location):
-        find_response = self.driver.find_infrastructure(template, instance_name, deployment_location)
+    def find_infrastructure(self, template, template_type, instance_name, deployment_location):
+        find_response = self.driver.find_infrastructure(template, template_type, instance_name, deployment_location)
         return find_response
 
     def __async_infrastructure_task_completion(self, infrastructure_id, request_id, deployment_location):

@@ -1,5 +1,13 @@
 # Change Log
 
+## [0.3.0](https://github.com/accanto-systems/ignition/tree/0.3.0) (2019-10-01)
+[Full Changelog](https://github.com/accanto-systems/ignition/compare/0.2.0...0.3.0)
+
+**Implemented enhancements:**
+
+- Auto-create Kafka topics for Job queue [\#8](https://github.com/accanto-systems/ignition/issues/8)
+- Add templateType to infrastructure API [\#13](https://github.com/accanto-systems/ignition/issues/13)
+
 ## [0.2.0](https://github.com/accanto-systems/ignition/tree/0.2.0) (2019-09-18)
 [Full Changelog](https://github.com/accanto-systems/ignition/compare/0.1.0...0.2.0)
 

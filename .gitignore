@@ -109,3 +109,4 @@ BootstrapApplication_boot
 
 #IDEs
 .vscode
+/.project
