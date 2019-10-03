@@ -4,6 +4,7 @@ from ignition.service.api import BaseController
 from ignition.model.infrastructure import InfrastructureTask, infrastructure_task_dict, infrastructure_find_response_dict, STATUS_COMPLETE, STATUS_FAILED
 from ignition.service.messaging import Message, Envelope, JsonContent
 from ignition.api.exceptions import ApiException
+from ignition.service.logging import threadLocal
 import logging
 import pathlib
 import os
@@ -149,44 +150,63 @@ class InfrastructureApiService(Service, InfrastructureApiCapability, BaseControl
         self.service = kwargs.get('service')
 
     def create(self, **kwarg):
-        body = self.get_body(kwarg)
-        logger.debug('Create infrastructure with body %s', body)
-        template = self.get_body_required_field(body, 'template')
-        deployment_location = self.get_body_required_field(body, 'deploymentLocation')
-        inputs = self.get_body_field(body, 'inputs', {})
-        create_response = self.service.create_infrastructure(template, inputs, deployment_location)
-        response = {'infrastructureId': create_response.infrastructure_id, 'requestId': create_response.request_id}
-        return (response, 202)
+        try:
+            threadLocal.set_from_headers()
+
+            body = self.get_body(kwarg)
+            logger.debug('Create infrastructure with body %s', body)
+            template = self.get_body_required_field(body, 'template')
+            deployment_location = self.get_body_required_field(body, 'deploymentLocation')
+            inputs = self.get_body_field(body, 'inputs', {})
+            create_response = self.service.create_infrastructure(template, inputs, deployment_location)
+            response = {'infrastructureId': create_response.infrastructure_id, 'requestId': create_response.request_id}
+            return (response, 202)
+        finally:
+            threadLocal.clear()
 
     def delete(self, **kwarg):
-        body = self.get_body(kwarg)
-        logger.debug('Delete infrastructure with body %s', body)
-        deployment_location = self.get_body_required_field(body, 'deploymentLocation')
-        infrastructure_id = self.get_body_required_field(body, 'infrastructureId')
-        delete_response = self.service.delete_infrastructure(infrastructure_id, deployment_location)
-        response = {'infrastructureId': delete_response.infrastructure_id, 'requestId': delete_response.request_id}
-        return (response, 202)
+        try:
+            threadLocal.set_from_headers()
+
+            body = self.get_body(kwarg)
+            logger.debug('Delete infrastructure with body %s', body)
+            deployment_location = self.get_body_required_field(body, 'deploymentLocation')
+            infrastructure_id = self.get_body_required_field(body, 'infrastructureId')
+            delete_response = self.service.delete_infrastructure(infrastructure_id, deployment_location)
+            response = {'infrastructureId': delete_response.infrastructure_id, 'requestId': delete_response.request_id}
+            return (response, 202)
+        finally:
+            threadLocal.clear()
 
     def query(self, **kwarg):
-        body = self.get_body(kwarg)
-        logger.debug('Query infrastructure with body %s', body)
-        deployment_location = self.get_body_required_field(body, 'deploymentLocation')
-        infrastructure_id = self.get_body_required_field(body, 'infrastructureId')
-        request_id = self.get_body_required_field(body, 'requestId')
-        infrastructure_task = self.service.get_infrastructure_task(infrastructure_id, request_id, deployment_location)
-        response = infrastructure_task_dict(infrastructure_task)
-        return (response, 200)
+        try:
+            threadLocal.set_from_headers()
+
+            body = self.get_body(kwarg)
+            logger.debug('Query infrastructure with body %s', body)
+            deployment_location = self.get_body_required_field(body, 'deploymentLocation')
+            infrastructure_id = self.get_body_required_field(body, 'infrastructureId')
+            request_id = self.get_body_required_field(body, 'requestId')
+            infrastructure_task = self.service.get_infrastructure_task(infrastructure_id, request_id, deployment_location)
+            response = infrastructure_task_dict(infrastructure_task)
+            return (response, 200)
+        finally:
+            threadLocal.clear()
 
     def find(self, **kwarg):
-        body = self.get_body(kwarg)
-        logger.debug('Find infrastructure with body %s', body)
-        template = self.get_body_required_field(body, 'template')
-        deployment_location = self.get_body_required_field(body, 'deploymentLocation')
-        instance_name = self.get_body_required_field(body, 'instanceName')
-        service_find_response = self.service.find_infrastructure(template, instance_name, deployment_location)
-        response = infrastructure_find_response_dict(service_find_response)
-        return (response, 200)
+        try:
+            threadLocal.set_from_headers()
 
+            body = self.get_body(kwarg)
+            logger.debug('Find infrastructure with body %s', body)
+            template = self.get_body_required_field(body, 'template')
+            deployment_location = self.get_body_required_field(body, 'deploymentLocation')
+            instance_name = self.get_body_required_field(body, 'instanceName')
+            service_find_response = self.service.find_infrastructure(template, instance_name, deployment_location)
+            response = infrastructure_find_response_dict(service_find_response)
+            return (response, 200)
+        finally:
+            threadLocal.clear()
 
 class InfrastructureService(Service, InfrastructureServiceCapability):
     """
