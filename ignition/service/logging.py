@@ -56,9 +56,6 @@ class LogstashFormatter(logging.Formatter):
             'msecs', 'msecs', 'message', 'msg', 'name', 'pathname', 'process',
             'processName', 'relativeCreated', 'thread', 'threadName', 'extra')
 
-#        if sys.version_info < (3, 0):
-#            easy_types = (basestring, bool, dict, float, int, long, list, type(None))
-#        else:
         easy_types = (str, bool, dict, float, int, list, type(None))
 
         fields = {}
@@ -77,7 +74,6 @@ class LogstashFormatter(logging.Formatter):
             'stack_trace': self.format_exception(record.exc_info),
             'lineno': record.lineno,
             'process': record.process,
-            'thread_name': record.threadName,
         }
 
         # funcName was added in 2.5
@@ -105,9 +101,6 @@ class LogstashFormatter(logging.Formatter):
 
     @classmethod
     def serialize(cls, message):
-#        if sys.version_info < (3, 0):
-#            return json.dumps(message)
-#        else:
         return json.dumps(message)
 
     def format(self, record):
@@ -127,7 +120,7 @@ class LogstashFormatter(logging.Formatter):
             'logger_name': record.name
         }
 
-        #             'tracectx.transactionid': threadLocal.get('X-Tracectx-Transactionid')
+        # add LM transactional context to log message
         message.update(threadLocal.get_all())
 
         # Add extra fields
