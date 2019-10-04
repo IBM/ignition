@@ -4,7 +4,7 @@ from ignition.service.api import BaseController
 from ignition.model.lifecycle import LifecycleExecution, lifecycle_execution_dict, STATUS_COMPLETE, STATUS_FAILED
 from ignition.service.messaging import Message, Envelope, JsonContent
 from ignition.utils.file import DirectoryTree
-from ignition.service.logging import threadLocal
+from ignition.service.logging import logging_context
 import uuid
 import logging
 import os
@@ -87,7 +87,7 @@ class LifecycleApiService(Service, LifecycleApiCapability, BaseController):
 
     def execute(self, **kwarg):
         try:
-            threadLocal.set_from_headers()
+            logging_context.set_from_headers()
 
             body = self.get_body(kwarg)
             logger.debug('Handling lifecycle execution request with body %s', body)
@@ -100,7 +100,7 @@ class LifecycleApiService(Service, LifecycleApiCapability, BaseController):
             response = {'requestId': execute_response.request_id}
             return (response, 202)
         finally:
-            threadLocal.clear()
+            logging_context.clear()
 
 class LifecycleService(Service, LifecycleServiceCapability):
     """

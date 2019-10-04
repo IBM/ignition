@@ -16,14 +16,12 @@ logger = logging.getLogger(__name__)
 LM_HTTP_HEADER_PREFIX = "X-Tracectx-"
 LOGGING_CONTEXT_KEY_PREFIX = "traceCtx."
 
-class LoggingThreadLocal(threading.local):
+class LoggingContext(threading.local):
 
     def __init__(self):
         self.data = {}
 
     def set_from_headers(self):
-        logger.info('headers: ' + str(connexion.request.headers))
-
         # extract tracing headers such as transactionid, convert their names to logging format and set them in the thread context
         self.data.update(list(map(lambda header: (LOGGING_CONTEXT_KEY_PREFIX + header[0][len(LM_HTTP_HEADER_PREFIX):].lower(), header[1]),
             filter(lambda header: header[0].lower().startswith(LM_HTTP_HEADER_PREFIX.lower()), connexion.request.headers.items()))))
@@ -40,7 +38,7 @@ class LoggingThreadLocal(threading.local):
     def clear(self):
         self.data = {}
 
-threadLocal = LoggingThreadLocal()
+logging_context = LoggingContext()
 
 class LogstashFormatter(logging.Formatter):
 
@@ -56,19 +54,19 @@ class LogstashFormatter(logging.Formatter):
     def get_extra_fields(self, record):
         # The list contains all the attributes listed in
         # http://docs.python.org/library/logging.html#logrecord-attributes
-        skip_list = (
+        ignore_fields = (
             'args', 'asctime', 'created', 'exc_info', 'exc_text', 'filename',
             'funcName', 'id', 'levelname', 'levelno', 'lineno', 'module',
             'msecs', 'msecs', 'message', 'msg', 'name', 'pathname', 'process',
             'processName', 'relativeCreated', 'thread', 'threadName', 'extra')
 
-        easy_types = (str, bool, dict, float, int, list, type(None))
+        python_types = (str, bool, dict, float, int, list, type(None))
 
         fields = {}
 
         for key, value in record.__dict__.items():
-            if key not in skip_list:
-                if isinstance(value, easy_types):
+            if key not in ignore_fields:
+                if isinstance(value, python_types):
                     fields[key] = value
                 else:
                     fields[key] = repr(value)
@@ -124,7 +122,7 @@ class LogstashFormatter(logging.Formatter):
         }
 
         # add LM transactional context to log message
-        message.update(threadLocal.get_all())
+        message.update(logging_context.get_all())
 
         # Add extra fields
         message.update(self.get_extra_fields(record))

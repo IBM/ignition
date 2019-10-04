@@ -4,7 +4,7 @@ from ignition.service.api import BaseController
 from ignition.model.infrastructure import InfrastructureTask, infrastructure_task_dict, infrastructure_find_response_dict, STATUS_COMPLETE, STATUS_FAILED
 from ignition.service.messaging import Message, Envelope, JsonContent
 from ignition.api.exceptions import ApiException
-from ignition.service.logging import threadLocal
+from ignition.service.logging import logging_context
 import logging
 import pathlib
 import os
@@ -153,7 +153,7 @@ class InfrastructureApiService(Service, InfrastructureApiCapability, BaseControl
 
     def create(self, **kwarg):
         try:
-            threadLocal.set_from_headers()
+            logging_context.set_from_headers()
 
             body = self.get_body(kwarg)
             logger.debug('Create infrastructure with body %s', body)
@@ -165,11 +165,11 @@ class InfrastructureApiService(Service, InfrastructureApiCapability, BaseControl
             response = {'infrastructureId': create_response.infrastructure_id, 'requestId': create_response.request_id}
             return (response, 202)
         finally:
-            threadLocal.clear()
+            logging_context.clear()
 
     def delete(self, **kwarg):
         try:
-            threadLocal.set_from_headers()
+            logging_context.set_from_headers()
 
             body = self.get_body(kwarg)
             logger.debug('Delete infrastructure with body %s', body)
@@ -179,11 +179,11 @@ class InfrastructureApiService(Service, InfrastructureApiCapability, BaseControl
             response = {'infrastructureId': delete_response.infrastructure_id, 'requestId': delete_response.request_id}
             return (response, 202)
         finally:
-            threadLocal.clear()
+            threalogging_contextdLocal.clear()
 
     def query(self, **kwarg):
         try:
-            threadLocal.set_from_headers()
+            logging_context.set_from_headers()
 
             body = self.get_body(kwarg)
             logger.debug('Query infrastructure with body %s', body)
@@ -194,11 +194,11 @@ class InfrastructureApiService(Service, InfrastructureApiCapability, BaseControl
             response = infrastructure_task_dict(infrastructure_task)
             return (response, 200)
         finally:
-            threadLocal.clear()
+            logging_context.clear()
 
     def find(self, **kwarg):
         try:
-            threadLocal.set_from_headers()
+            logging_context.set_from_headers()
 
             body = self.get_body(kwarg)
             logger.debug('Find infrastructure with body %s', body)
@@ -210,7 +210,7 @@ class InfrastructureApiService(Service, InfrastructureApiCapability, BaseControl
             response = infrastructure_find_response_dict(service_find_response)
             return (response, 200)
         finally:
-            threadLocal.clear()
+            logging_context.clear()
 
 class InfrastructureService(Service, InfrastructureServiceCapability):
     """
