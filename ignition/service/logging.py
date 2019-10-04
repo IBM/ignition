@@ -12,7 +12,9 @@ except ImportError:
     import simplejson as json
 import threading
 
-LM_HTTP_HEADER_PREFIX = "x-tracectx-"
+logger = logging.getLogger(__name__)
+LM_HTTP_HEADER_PREFIX = "X-Tracectx-"
+LOGGING_CONTEXT_KEY_PREFIX = "traceCtx."
 
 class LoggingThreadLocal(threading.local):
 
@@ -20,7 +22,11 @@ class LoggingThreadLocal(threading.local):
         self.data = {}
 
     def set_from_headers(self):
-        self.data.update(filter(lambda header: header[0].lower().startswith(LM_HTTP_HEADER_PREFIX), connexion.request.headers))
+        logger.info('headers: ' + str(connexion.request.headers))
+
+        # extract tracing headers such as transactionid, convert their names to logging format and set them in the thread context
+        self.data.update(list(map(lambda header: (LOGGING_CONTEXT_KEY_PREFIX + header[0][len(LM_HTTP_HEADER_PREFIX):].lower(), header[1]),
+            filter(lambda header: header[0].lower().startswith(LM_HTTP_HEADER_PREFIX.lower()), connexion.request.headers.items()))))
 
     def set(self, name, val):
         self.data[name] = val
@@ -104,7 +110,6 @@ class LogstashFormatter(logging.Formatter):
         return json.dumps(message)
 
     def format(self, record):
-        # Create message dict
         message = {
             '@timestamp': self.format_timestamp(record.created),
             '@version': '1',
@@ -113,8 +118,6 @@ class LogstashFormatter(logging.Formatter):
             'path': record.pathname,
             'tags': self.tags,
             'type': self.message_type,
-
-            # Extra Fields
             'thread_name': record.threadName,
             'level': record.levelname,
             'logger_name': record.name
