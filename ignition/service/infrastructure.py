@@ -179,7 +179,7 @@ class InfrastructureApiService(Service, InfrastructureApiCapability, BaseControl
             response = {'infrastructureId': delete_response.infrastructure_id, 'requestId': delete_response.request_id}
             return (response, 202)
         finally:
-            threalogging_contextdLocal.clear()
+            logging_context.clear()
 
     def query(self, **kwarg):
         try:

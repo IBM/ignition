@@ -1,5 +1,5 @@
 import unittest
-from unittest.mock import MagicMock
+from unittest.mock import patch, MagicMock
 from ignition.api.exceptions import BadRequest
 from ignition.model.infrastructure import InfrastructureTask, CreateInfrastructureResponse, DeleteInfrastructureResponse, FindInfrastructureResponse, FindInfrastructureResult
 from ignition.model.failure import FailureDetails, FAILURE_CODE_INFRASTRUCTURE_ERROR
@@ -8,12 +8,15 @@ from ignition.service.messaging import Envelope, Message
 
 class TestInfrastructureApiService(unittest.TestCase):
 
-    def test_init_without_service_throws_error(self):
+    @patch('ignition.service.infrastructure.logging_context')
+    def test_init_without_service_throws_error(self, logging_context):
         with self.assertRaises(ValueError) as context:
             InfrastructureApiService()
         self.assertEqual(str(context.exception), 'No service instance provided')
 
-    def test_create(self):
+    @patch('ignition.service.infrastructure.logging_context')
+    def test_create(self, logging_context):
+        log_context = MagicMock()
         mock_service = MagicMock()
         mock_service.create_infrastructure.return_value = CreateInfrastructureResponse('123', '456')
         controller = InfrastructureApiService(service=mock_service)
@@ -22,28 +25,32 @@ class TestInfrastructureApiService(unittest.TestCase):
         self.assertEqual(response, {'infrastructureId': '123', 'requestId': '456'})
         self.assertEqual(code, 202)
 
-    def test_create_missing_template(self):
+    @patch('ignition.service.infrastructure.logging_context')
+    def test_create_missing_template(self, logging_context):
         mock_service = MagicMock()
         controller = InfrastructureApiService(service=mock_service)
         with self.assertRaises(BadRequest) as context:
             controller.create(**{ 'body': { 'templateType': 'TOSCA', 'inputs': {'a': 1}, 'deploymentLocation': {'name': 'test' } } })
         self.assertEqual(str(context.exception), '\'template\' is a required field but was not found in the request data body')
 
-    def test_create_missing_template_type(self):
+    @patch('ignition.service.infrastructure.logging_context')
+    def test_create_missing_template_type(self, logging_context):
         mock_service = MagicMock()
         controller = InfrastructureApiService(service=mock_service)
         with self.assertRaises(BadRequest) as context:
             controller.create(**{ 'body': { 'template': 'template', 'inputs': {'a': 1}, 'deploymentLocation': {'name': 'test' } } })
         self.assertEqual(str(context.exception), '\'templateType\' is a required field but was not found in the request data body')
 
-    def test_create_missing_deployment_location(self):
+    @patch('ignition.service.infrastructure.logging_context')
+    def test_create_missing_deployment_location(self, logging_context):
         mock_service = MagicMock()
         controller = InfrastructureApiService(service=mock_service)
         with self.assertRaises(BadRequest) as context:
             controller.create(**{ 'body': { 'inputs': {'a': 1}, 'template': 'template', 'templateType': 'TOSCA' } })
         self.assertEqual(str(context.exception), '\'deploymentLocation\' is a required field but was not found in the request data body')
 
-    def test_create_missing_inputs_uses_default(self):
+    @patch('ignition.service.infrastructure.logging_context')
+    def test_create_missing_inputs_uses_default(self, logging_context):
         mock_service = MagicMock()
         mock_service.create_infrastructure.return_value = CreateInfrastructureResponse('123', '456')
         controller = InfrastructureApiService(service=mock_service)
@@ -52,7 +59,8 @@ class TestInfrastructureApiService(unittest.TestCase):
         self.assertEqual(response, {'infrastructureId': '123', 'requestId': '456'})
         self.assertEqual(code, 202)
 
-    def test_delete(self):
+    @patch('ignition.service.infrastructure.logging_context')
+    def test_delete(self, logging_context):
         mock_service = MagicMock()
         mock_service.delete_infrastructure.return_value = DeleteInfrastructureResponse('123', '456')
         controller = InfrastructureApiService(service=mock_service)
@@ -61,21 +69,24 @@ class TestInfrastructureApiService(unittest.TestCase):
         self.assertEqual(response, {'infrastructureId': '123', 'requestId': '456'})
         self.assertEqual(code, 202)
 
-    def test_delete_missing_deployment_location(self):
+    @patch('ignition.service.infrastructure.logging_context')
+    def test_delete_missing_deployment_location(self, logging_context):
         mock_service = MagicMock()
         controller = InfrastructureApiService(service=mock_service)
         with self.assertRaises(BadRequest) as context:
             controller.delete(**{ 'body': { 'infrastructureId': '123' } })
         self.assertEqual(str(context.exception), '\'deploymentLocation\' is a required field but was not found in the request data body')
 
-    def test_delete_missing_infrastructure_id(self):
+    @patch('ignition.service.infrastructure.logging_context')
+    def test_delete_missing_infrastructure_id(self, logging_context):
         mock_service = MagicMock()
         controller = InfrastructureApiService(service=mock_service)
         with self.assertRaises(BadRequest) as context:
             controller.delete(**{ 'body': { 'deploymentLocation': {'name': 'test'} } })
         self.assertEqual(str(context.exception), '\'infrastructureId\' is a required field but was not found in the request data body')
 
-    def test_query(self):
+    @patch('ignition.service.infrastructure.logging_context')
+    def test_query(self, logging_context):
         mock_service = MagicMock()
         mock_service.get_infrastructure_task.return_value = InfrastructureTask('123', '456', 'IN_PROGRESS')
         controller = InfrastructureApiService(service=mock_service)
@@ -84,7 +95,8 @@ class TestInfrastructureApiService(unittest.TestCase):
         self.assertEqual(response, {'infrastructureId': '123', 'requestId': '456', 'status': 'IN_PROGRESS'})
         self.assertEqual(code, 200)
 
-    def test_query_with_outputs(self):
+    @patch('ignition.service.infrastructure.logging_context')
+    def test_query_with_outputs(self, logging_context):
         mock_service = MagicMock()
         mock_service.get_infrastructure_task.return_value = InfrastructureTask('123', '456', 'COMPLETE', None, {'a': '1'})
         controller = InfrastructureApiService(service=mock_service)
@@ -93,7 +105,8 @@ class TestInfrastructureApiService(unittest.TestCase):
         self.assertEqual(response, {'infrastructureId': '123', 'requestId': '456', 'status': 'COMPLETE', 'outputs': {'a': '1'}})
         self.assertEqual(code, 200)
 
-    def test_query_failed_task(self):
+    @patch('ignition.service.infrastructure.logging_context')
+    def test_query_failed_task(self, logging_context):
         mock_service = MagicMock()
         mock_service.get_infrastructure_task.return_value = InfrastructureTask('123', '456', 'FAILED', FailureDetails(FAILURE_CODE_INFRASTRUCTURE_ERROR, 'because it was meant to fail'))
         controller = InfrastructureApiService(service=mock_service)
@@ -102,28 +115,32 @@ class TestInfrastructureApiService(unittest.TestCase):
         self.assertEqual(response, {'infrastructureId': '123', 'requestId': '456', 'status': 'FAILED', 'failureDetails': { 'failureCode': FAILURE_CODE_INFRASTRUCTURE_ERROR, 'description': 'because it was meant to fail'}})
         self.assertEqual(code, 200)
 
-    def test_query_missing_deployment_location(self):
+    @patch('ignition.service.infrastructure.logging_context')
+    def test_query_missing_deployment_location(self, logging_context):
         mock_service = MagicMock()
         controller = InfrastructureApiService(service=mock_service)
         with self.assertRaises(BadRequest) as context:
             controller.query(**{ 'body': { 'infrastructureId': '123', 'requestId': '456' } })
         self.assertEqual(str(context.exception), '\'deploymentLocation\' is a required field but was not found in the request data body')
 
-    def test_query_missing_infrastructure_id(self):
+    @patch('ignition.service.infrastructure.logging_context')
+    def test_query_missing_infrastructure_id(self, logging_context):
         mock_service = MagicMock()
         controller = InfrastructureApiService(service=mock_service)
         with self.assertRaises(BadRequest) as context:
             controller.query(**{ 'body': { 'requestId': '456', 'deploymentLocation': {'name': 'test'} } })
         self.assertEqual(str(context.exception), '\'infrastructureId\' is a required field but was not found in the request data body')
 
-    def test_query_missing_request_id(self):
+    @patch('ignition.service.infrastructure.logging_context')
+    def test_query_missing_request_id(self, logging_context):
         mock_service = MagicMock()
         controller = InfrastructureApiService(service=mock_service)
         with self.assertRaises(BadRequest) as context:
             controller.query(**{ 'body': { 'infrastructureId': '123', 'deploymentLocation': {'name': 'test'} } })
         self.assertEqual(str(context.exception), '\'requestId\' is a required field but was not found in the request data body')
 
-    def test_find(self):
+    @patch('ignition.service.infrastructure.logging_context')
+    def test_find(self, logging_context):
         mock_service = MagicMock()
         mock_service.find_infrastructure.return_value = FindInfrastructureResponse(FindInfrastructureResult('123', {'b': 2}))
         controller = InfrastructureApiService(service=mock_service)
@@ -132,7 +149,8 @@ class TestInfrastructureApiService(unittest.TestCase):
         self.assertEqual(response, {'result': {'infrastructureId': '123', 'outputs': {'b': 2} } })
         self.assertEqual(code, 200)
 
-    def test_find_not_found(self):
+    @patch('ignition.service.infrastructure.logging_context')
+    def test_find_not_found(self, logging_context):
         mock_service = MagicMock()
         mock_service.find_infrastructure.return_value = FindInfrastructureResponse(None)
         controller = InfrastructureApiService(service=mock_service)
@@ -141,28 +159,32 @@ class TestInfrastructureApiService(unittest.TestCase):
         self.assertEqual(response, {'result': None})
         self.assertEqual(code, 200)
 
-    def test_find_missing_template(self):
+    @patch('ignition.service.infrastructure.logging_context')
+    def test_find_missing_template(self, logging_context):
         mock_service = MagicMock()
         controller = InfrastructureApiService(service=mock_service)
         with self.assertRaises(BadRequest) as context:
             controller.find(**{ 'body': { 'templateType': 'TOSCA', 'inputs': {'a': 1}, 'deploymentLocation': {'name': 'test' } } })
         self.assertEqual(str(context.exception), '\'template\' is a required field but was not found in the request data body')
 
-    def test_find_missing_template_type(self):
+    @patch('ignition.service.infrastructure.logging_context')
+    def test_find_missing_template_type(self, logging_context):
         mock_service = MagicMock()
         controller = InfrastructureApiService(service=mock_service)
         with self.assertRaises(BadRequest) as context:
             controller.find(**{ 'body': { 'template': 'template', 'inputs': {'a': 1}, 'deploymentLocation': {'name': 'test' } } })
         self.assertEqual(str(context.exception), '\'templateType\' is a required field but was not found in the request data body')
 
-    def test_find_missing_deployment_location(self):
+    @patch('ignition.service.infrastructure.logging_context')
+    def test_find_missing_deployment_location(self, logging_context):
         mock_service = MagicMock()
         controller = InfrastructureApiService(service=mock_service)
         with self.assertRaises(BadRequest) as context:
             controller.find(**{ 'body': { 'instanceName': 'test', 'template': 'template', 'templateType': 'TOSCA' } })
         self.assertEqual(str(context.exception), '\'deploymentLocation\' is a required field but was not found in the request data body')
 
-    def test_find_missing_instance_name(self):
+    @patch('ignition.service.infrastructure.logging_context')
+    def test_find_missing_instance_name(self, logging_context):
         mock_service = MagicMock()
         controller = InfrastructureApiService(service=mock_service)
         with self.assertRaises(BadRequest) as context:
