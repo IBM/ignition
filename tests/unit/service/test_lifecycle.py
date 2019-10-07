@@ -28,6 +28,7 @@ class TestLifecycleApiService(unittest.TestCase):
         mock_service.execute_lifecycle.assert_called_once_with('start', b'123', {'resourceId': 1}, {'a': 2}, {'name': 'test'})
         self.assertEqual(response, {'requestId': '123'})
         self.assertEqual(code, 202)
+        logging_context.set_from_headers.assert_called_once()
 
     @patch('ignition.service.lifecycle.logging_context')
     def test_execute_missing_lifecycle_name(self, logging_context):

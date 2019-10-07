@@ -1,3 +1,4 @@
+import connexion
 import unittest
 from unittest.mock import patch, MagicMock
 from ignition.api.exceptions import BadRequest
@@ -5,6 +6,7 @@ from ignition.model.infrastructure import InfrastructureTask, CreateInfrastructu
 from ignition.model.failure import FailureDetails, FAILURE_CODE_INFRASTRUCTURE_ERROR
 from ignition.service.infrastructure import InfrastructureService, InfrastructureApiService, InfrastructureTaskMonitoringService, InfrastructureMessagingService
 from ignition.service.messaging import Envelope, Message
+from ignition.service.logging import LM_HTTP_HEADER_PREFIX, LM_HTTP_HEADER_TXNID
 
 class TestInfrastructureApiService(unittest.TestCase):
 
@@ -16,7 +18,6 @@ class TestInfrastructureApiService(unittest.TestCase):
 
     @patch('ignition.service.infrastructure.logging_context')
     def test_create(self, logging_context):
-        log_context = MagicMock()
         mock_service = MagicMock()
         mock_service.create_infrastructure.return_value = CreateInfrastructureResponse('123', '456')
         controller = InfrastructureApiService(service=mock_service)
@@ -24,6 +25,7 @@ class TestInfrastructureApiService(unittest.TestCase):
         mock_service.create_infrastructure.assert_called_once_with('template', 'TOSCA', {'a': 1}, {'name': 'test'})
         self.assertEqual(response, {'infrastructureId': '123', 'requestId': '456'})
         self.assertEqual(code, 202)
+        logging_context.set_from_headers.assert_called_once()
 
     @patch('ignition.service.infrastructure.logging_context')
     def test_create_missing_template(self, logging_context):
