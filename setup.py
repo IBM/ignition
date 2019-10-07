@@ -25,6 +25,7 @@ setup(
     install_requires=[
         'connexion[swagger-ui]>=2.2.0,<3.0',
         'kafka-python>=1.4.6',
-        'networkx>=2.3'
+        'networkx>=2.3',
+        'frozendict>=1.2'
     ]
 )

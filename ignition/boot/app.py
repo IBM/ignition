@@ -7,9 +7,7 @@ from ignition.boot.connexionutils import RequestBodyValidator
 from ignition.service.config import ConfigParserService, ConfigurationProperties
 from ignition.service.framework import ServiceRegister, ServiceInstances, ServiceInitialiser, ServiceRegistration, Service
 from ignition.utils.file import safe_filename
-from ignition.service.logging import LogstashFormatter
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class ApiRegister():
@@ -38,25 +36,6 @@ class BootstrapRunner():
         self.api_register = ApiRegister()
         self.service_register = ServiceRegister()
         self.service_instances = ServiceInstances()
-        self.__init_logging()
-
-    def __init_logging(self):
-        log_level = os.environ.get('LOG_LEVEL')
-        if log_level is None:
-            log_level = 'INFO'
-
-        log_type = os.environ.get('LOG_TYPE')
-        if log_type is None:
-            # "flat" is the default, nothing specific to configure for this
-            log_type = 'flat'
-
-        if log_type.lower() == 'logstash':
-            log_formatter = LogstashFormatter('logstash')
-        else:
-            log_formatter = logging.Formatter()
-
-        root_logger = logging.getLogger()
-        [handler.setFormatter(log_formatter) for handler in root_logger.handlers]
 
     def __process_properties(self):
         parser = ConfigParserService()

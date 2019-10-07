@@ -4,17 +4,20 @@ import traceback
 import logging
 import socket
 import sys
+import os
 import connexion
 from datetime import datetime
+from frozendict import frozendict
 try:
     import json
 except ImportError:
     import simplejson as json
 import threading
 
-logger = logging.getLogger(__name__)
 LM_HTTP_HEADER_PREFIX = "X-Tracectx-"
 LOGGING_CONTEXT_KEY_PREFIX = "traceCtx."
+LM_HTTP_HEADER_TXNID = "TransactionId".lower()
+LM_HTTP_HEADER_PROCESS_ID = "ProcessId".lower()
 
 class LoggingContext(threading.local):
 
@@ -26,19 +29,18 @@ class LoggingContext(threading.local):
         self.data.update(list(map(lambda header: (LOGGING_CONTEXT_KEY_PREFIX + header[0][len(LM_HTTP_HEADER_PREFIX):].lower(), header[1]),
             filter(lambda header: header[0].lower().startswith(LM_HTTP_HEADER_PREFIX.lower()), connexion.request.headers.items()))))
 
-    def set(self, name, val):
-        self.data[name] = val
+    def set_from_dict(self, d):
+        self.data.update(d)
 
     def get(self, name, default=''):
         return self.data.get(name, default)
 
     def get_all(self):
-        return self.data
+        # protect the dictionary from changes - use the setters to do this
+        return frozendict(self.data)
     
     def clear(self):
         self.data = {}
-
-logging_context = LoggingContext()
 
 class LogstashFormatter(logging.Formatter):
 
@@ -132,3 +134,24 @@ class LogstashFormatter(logging.Formatter):
             message.update(self.get_debug_fields(record))
 
         return self.serialize(message)
+
+# configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+log_level = os.environ.get('LOG_LEVEL')
+if log_level is None:
+    log_level = 'INFO'
+
+log_type = os.environ.get('LOG_TYPE')
+if log_type is None:
+    # "flat" is the default, nothing specific to configure for this
+    log_type = 'flat'
+
+if log_type.lower() == 'logstash':
+    log_formatter = LogstashFormatter('logstash')
+else:
+    log_formatter = logging.Formatter()
+
+[handler.setFormatter(log_formatter) for handler in logging.getLogger().handlers]
+
+logging_context = LoggingContext()
