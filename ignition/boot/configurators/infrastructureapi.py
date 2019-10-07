@@ -2,7 +2,7 @@ import logging
 from ignition.boot.connexionutils import build_resolver_to_instance
 from ignition.boot.config import BootProperties
 from ignition.service.framework import ServiceRegistration
-from ignition.service.messaging import PostalCapability, TopicsProperties
+from ignition.service.messaging import PostalCapability, TopicsProperties, MessagingProperties, TopicCreator
 from ignition.service.queue import JobQueueCapability
 from ignition.service.infrastructure import InfrastructureProperties, InfrastructureApiCapability, InfrastructureServiceCapability, InfrastructureDriverCapability, InfrastructureTaskMonitoringCapability, InfrastructureMessagingCapability, InfrastructureApiService, InfrastructureService, InfrastructureTaskMonitoringService, InfrastructureMessagingService
 from ignition.boot.configurators.utils import validate_no_service_with_capability_exists
@@ -88,6 +88,12 @@ class InfrastructureServicesConfigurator():
         if auto_config.infrastructure.messaging_service_enabled is True:
             logger.debug('Bootstrapping Infrastructure Messaging Service')
             validate_no_service_with_capability_exists(service_register, InfrastructureMessagingCapability, 'Infrastructure Messaging Service', 'bootstrap.infrastructure.messaging_service_enabled')
+            messaging_config = configuration.property_groups.get_property_group(MessagingProperties)
+            if messaging_config.connection_address is None:
+                raise ValueError('messaging.connection_address must be set when bootstrap.infrastructure.messaging_service_enabled')
+            if messaging_config.topics.infrastructure_task_events is None:
+                raise ValueError('messaging.topics.infrastructure_task_events must be set when bootstrap.infrastructure.messaging_service_enabled')
+            TopicCreator().create_topic_if_needed(messaging_config.connection_address, messaging_config.topics.infrastructure_task_events)
             service_register.add_service(ServiceRegistration(InfrastructureMessagingService, postal_service=PostalCapability, topics_configuration=TopicsProperties))
         else:
             logger.debug('Disabled: bootstrapped Infrastructure Messaging Service')

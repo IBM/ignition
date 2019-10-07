@@ -2,7 +2,7 @@ import logging
 from ignition.boot.config import BootProperties
 from ignition.boot.connexionutils import build_resolver_to_instance
 from ignition.service.framework import ServiceRegistration
-from ignition.service.messaging import PostalCapability, TopicsProperties
+from ignition.service.messaging import PostalCapability, TopicsProperties, TopicCreator, MessagingProperties
 from ignition.service.queue import JobQueueCapability
 from ignition.service.lifecycle import LifecycleProperties, LifecycleApiCapability, LifecycleServiceCapability, LifecycleDriverCapability, LifecycleExecutionMonitoringCapability, LifecycleMessagingCapability, LifecycleScriptFileManagerCapability, LifecycleApiService, LifecycleService, LifecycleExecutionMonitoringService, LifecycleMessagingService, LifecycleScriptFileManagerService
 from ignition.boot.configurators.utils import validate_no_service_with_capability_exists
@@ -103,6 +103,12 @@ class LifecycleServicesConfigurator():
         if auto_config.lifecycle.messaging_service_enabled is True:
             logger.debug('Bootstrapping Lifecycle Messaging Service')
             validate_no_service_with_capability_exists(service_register, LifecycleMessagingCapability, 'Lifecycle Messaging Service', 'bootstrap.lifecycle.messaging_service_enabled')
+            messaging_config = configuration.property_groups.get_property_group(MessagingProperties)
+            if messaging_config.connection_address is None:
+                raise ValueError('messaging.connection_address must be set when bootstrap.lifecycle.messaging_service_enabled')
+            if messaging_config.topics.lifecycle_execution_events is None:
+                raise ValueError('messaging.topics.lifecycle_execution_events must be set when bootstrap.lifecycle.messaging_service_enabled')
+            TopicCreator().create_topic_if_needed(messaging_config.connection_address, messaging_config.topics.lifecycle_execution_events)
             service_register.add_service(ServiceRegistration(LifecycleMessagingService, postal_service=PostalCapability, topics_configuration=TopicsProperties))
         else:
             logger.debug('Disabled: bootstrapped Lifecycle Messaging Service')

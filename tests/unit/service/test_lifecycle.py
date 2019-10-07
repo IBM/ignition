@@ -4,7 +4,7 @@ from ignition.api.exceptions import BadRequest
 from ignition.service.lifecycle import LifecycleApiService, LifecycleService, LifecycleExecutionMonitoringService, LifecycleMessagingService, LifecycleScriptFileManagerService
 from ignition.model.lifecycle import LifecycleExecuteResponse, LifecycleExecution
 from ignition.model.failure import FailureDetails, FAILURE_CODE_INTERNAL_ERROR
-from ignition.service.messaging import Envelope, Message
+from ignition.service.messaging import Envelope, Message, TopicConfigProperties
 import zipfile
 import os
 import tempfile
@@ -258,7 +258,7 @@ class TestLifecycleMessagingService(unittest.TestCase):
 
     def setUp(self):
         self.mock_postal_service = MagicMock()
-        self.mock_topics_configuration = MagicMock(lifecycle_execution_events = 'lifecycle_execution_events_topic')
+        self.mock_topics_configuration = MagicMock(lifecycle_execution_events = TopicConfigProperties(name='lifecycle_execution_events_topic'))
 
     def test_init_without_postal_service_throws_error(self):
         with self.assertRaises(ValueError) as context:
@@ -276,6 +276,12 @@ class TestLifecycleMessagingService(unittest.TestCase):
             LifecycleMessagingService(postal_service=self.mock_postal_service, topics_configuration=mock_topics_configuration)
         self.assertEqual(str(context.exception), 'lifecycle_execution_events topic must be set')
 
+    def test_init_without_lifecycle_execution_events_topic_name_throws_error(self):
+        mock_topics_configuration = MagicMock(lifecycle_execution_events = TopicConfigProperties())
+        with self.assertRaises(ValueError) as context:
+            LifecycleMessagingService(postal_service=self.mock_postal_service, topics_configuration=mock_topics_configuration)
+        self.assertEqual(str(context.exception), 'lifecycle_execution_events topic name must be set')
+
     def test_send_lifecycle_execution_sends_message(self):
         messaging_service = LifecycleMessagingService(postal_service=self.mock_postal_service, topics_configuration=self.mock_topics_configuration)
         messaging_service.send_lifecycle_execution(LifecycleExecution('req123', 'FAILED', FailureDetails(FAILURE_CODE_INTERNAL_ERROR, 'because it was meant to fail')))
@@ -285,7 +291,7 @@ class TestLifecycleMessagingService(unittest.TestCase):
         self.assertEqual(len(args), 1)
         envelope_arg = args[0]
         self.assertIsInstance(envelope_arg, Envelope)
-        self.assertEqual(envelope_arg.address, self.mock_topics_configuration.lifecycle_execution_events)
+        self.assertEqual(envelope_arg.address, self.mock_topics_configuration.lifecycle_execution_events.name)
         self.assertIsInstance(envelope_arg.message, Message)
         self.assertEqual(envelope_arg.message.content, b'{"requestId": "req123", "status": "FAILED", "failureDetails": {"failureCode": "INTERNAL_ERROR", "description": "because it was meant to fail"}}')
     

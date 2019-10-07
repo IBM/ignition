@@ -2,7 +2,7 @@ from ignition.service.framework import Capability, Service, interface
 from ignition.service.config import ConfigurationPropertiesGroup
 from ignition.service.api import BaseController
 from ignition.model.infrastructure import InfrastructureTask, infrastructure_task_dict, infrastructure_find_response_dict, STATUS_COMPLETE, STATUS_FAILED
-from ignition.service.messaging import Message, Envelope, JsonContent
+from ignition.service.messaging import Message, Envelope, JsonContent, TopicCreator
 from ignition.api.exceptions import ApiException
 import logging
 import pathlib
@@ -297,9 +297,11 @@ class InfrastructureMessagingService(Service, InfrastructureMessagingCapability)
             raise ValueError('topics_configuration argument not provided')
         self.postal_service = kwargs.get('postal_service')
         topics_configuration = kwargs.get('topics_configuration')
-        self.infrastructure_task_events_topic = topics_configuration.infrastructure_task_events
-        if self.infrastructure_task_events_topic is None:
+        if topics_configuration.infrastructure_task_events is None:
             raise ValueError('infrastructure_task_events topic must be set')
+        self.infrastructure_task_events_topic = topics_configuration.infrastructure_task_events.name
+        if self.infrastructure_task_events_topic is None:
+            raise ValueError('infrastructure_task_events topic name must be set')
 
     def send_infrastructure_task(self, infrastructure_task):
         if infrastructure_task is None:
