@@ -4,6 +4,7 @@ from ignition.service.api import BaseController
 from ignition.model.lifecycle import LifecycleExecution, lifecycle_execution_dict, STATUS_COMPLETE, STATUS_FAILED
 from ignition.service.messaging import Message, Envelope, JsonContent
 from ignition.utils.file import DirectoryTree
+from ignition.service.logging import logging_context
 import uuid
 import logging
 import os
@@ -14,6 +15,7 @@ import pathlib
 import ignition.openapi as openapi
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 # Grabs the __init__.py from the openapi package then takes it's parent, the openapi directory itself
 openapi_path = str(pathlib.Path(openapi.__file__).parent.resolve())
 
@@ -84,17 +86,21 @@ class LifecycleApiService(Service, LifecycleApiCapability, BaseController):
         self.service = kwargs.get('service')
 
     def execute(self, **kwarg):
-        body = self.get_body(kwarg)
-        logger.debug('Handling lifecycle execution request with body %s', body)
-        lifecycle_name = self.get_body_required_field(body, 'lifecycleName')
-        lifecycle_scripts = self.get_body_required_field(body, 'lifecycleScripts')
-        system_properties = self.get_body_required_field(body, 'systemProperties')
-        properties = self.get_body_field(body, 'properties', {})
-        deployment_location = self.get_body_required_field(body, 'deploymentLocation')
-        execute_response = self.service.execute_lifecycle(lifecycle_name, lifecycle_scripts, system_properties, properties, deployment_location)
-        response = {'requestId': execute_response.request_id}
-        return (response, 202)
+        try:
+            logging_context.set_from_headers()
 
+            body = self.get_body(kwarg)
+            logger.debug('Handling lifecycle execution request with body %s', body)
+            lifecycle_name = self.get_body_required_field(body, 'lifecycleName')
+            lifecycle_scripts = self.get_body_required_field(body, 'lifecycleScripts')
+            system_properties = self.get_body_required_field(body, 'systemProperties')
+            properties = self.get_body_field(body, 'properties', {})
+            deployment_location = self.get_body_required_field(body, 'deploymentLocation')
+            execute_response = self.service.execute_lifecycle(lifecycle_name, lifecycle_scripts, system_properties, properties, deployment_location)
+            response = {'requestId': execute_response.request_id}
+            return (response, 202)
+        finally:
+            logging_context.clear()
 
 class LifecycleService(Service, LifecycleServiceCapability):
     """

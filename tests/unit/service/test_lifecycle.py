@@ -1,5 +1,5 @@
 import unittest
-from unittest.mock import MagicMock, ANY
+from unittest.mock import patch, MagicMock, ANY
 from ignition.api.exceptions import BadRequest
 from ignition.service.lifecycle import LifecycleApiService, LifecycleService, LifecycleExecutionMonitoringService, LifecycleMessagingService, LifecycleScriptFileManagerService
 from ignition.model.lifecycle import LifecycleExecuteResponse, LifecycleExecution
@@ -13,12 +13,14 @@ import base64
 
 class TestLifecycleApiService(unittest.TestCase):
 
-    def test_init_without_service_throws_error(self):
+    @patch('ignition.service.lifecycle.logging_context')
+    def test_init_without_service_throws_error(self, logging_context):
         with self.assertRaises(ValueError) as context:
             LifecycleApiService()
         self.assertEqual(str(context.exception), 'No service instance provided')
 
-    def test_execute(self):
+    @patch('ignition.service.lifecycle.logging_context')
+    def test_execute(self, logging_context):
         mock_service = MagicMock()
         mock_service.execute_lifecycle.return_value = LifecycleExecuteResponse('123')
         controller = LifecycleApiService(service=mock_service)
@@ -26,36 +28,42 @@ class TestLifecycleApiService(unittest.TestCase):
         mock_service.execute_lifecycle.assert_called_once_with('start', b'123', {'resourceId': 1}, {'a': 2}, {'name': 'test'})
         self.assertEqual(response, {'requestId': '123'})
         self.assertEqual(code, 202)
+        logging_context.set_from_headers.assert_called_once()
 
-    def test_execute_missing_lifecycle_name(self):
+    @patch('ignition.service.lifecycle.logging_context')
+    def test_execute_missing_lifecycle_name(self, logging_context):
         mock_service = MagicMock()
         controller = LifecycleApiService(service=mock_service)
         with self.assertRaises(BadRequest) as context:
             controller.execute(**{ 'body': { 'systemProperties': {'resourceId': 1}, 'properties': {'a': 2}, 'lifecycleScripts': b'123', 'deploymentLocation': {'name': 'test'} } })
         self.assertEqual(str(context.exception), '\'lifecycleName\' is a required field but was not found in the request data body')
 
-    def test_execute_missing_lifecycle_scripts(self):
+    @patch('ignition.service.lifecycle.logging_context')
+    def test_execute_missing_lifecycle_scripts(self, logging_context):
         mock_service = MagicMock()
         controller = LifecycleApiService(service=mock_service)
         with self.assertRaises(BadRequest) as context:
             controller.execute(**{ 'body': { 'lifecycleName': 'start', 'systemProperties': {'resourceId': 1}, 'properties': {'a': 2}, 'deploymentLocation': {'name': 'test'} } })
         self.assertEqual(str(context.exception), '\'lifecycleScripts\' is a required field but was not found in the request data body')
 
-    def test_execute_missing_deployment_location(self):
+    @patch('ignition.service.lifecycle.logging_context')
+    def test_execute_missing_deployment_location(self, logging_context):
         mock_service = MagicMock()
         controller = LifecycleApiService(service=mock_service)
         with self.assertRaises(BadRequest) as context:
             controller.execute(**{ 'body': { 'lifecycleName': 'start', 'systemProperties': {'resourceId': 1}, 'properties': {'a': 2}, 'lifecycleScripts': b'123' } })
         self.assertEqual(str(context.exception), '\'deploymentLocation\' is a required field but was not found in the request data body')
 
-    def test_execute_missing_system_properties(self):
+    @patch('ignition.service.lifecycle.logging_context')
+    def test_execute_missing_system_properties(self, logging_context):
         mock_service = MagicMock()
         controller = LifecycleApiService(service=mock_service)
         with self.assertRaises(BadRequest) as context:
             controller.execute(**{ 'body': { 'lifecycleName': 'start', 'properties': {'a': 2}, 'lifecycleScripts': b'123', 'deploymentLocation': {'name': 'test'} } })
         self.assertEqual(str(context.exception), '\'systemProperties\' is a required field but was not found in the request data body')
 
-    def test_execute_missing_properties(self):
+    @patch('ignition.service.lifecycle.logging_context')
+    def test_execute_missing_properties(self, logging_context):
         mock_service = MagicMock()
         mock_service.execute_lifecycle.return_value = LifecycleExecuteResponse('123')
         controller = LifecycleApiService(service=mock_service)
