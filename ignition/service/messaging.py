@@ -4,6 +4,8 @@ import logging
 from ignition.service.framework import Capability, Service, interface
 from ignition.service.config import ConfigurationPropertiesGroup, ConfigurationProperties
 from kafka import KafkaProducer, KafkaConsumer
+from kafka.admin import KafkaAdminClient, NewTopic
+from kafka.errors import BrokerResponseError, TopicAlreadyExistsError
 
 logger = logging.getLogger(__name__)
 
@@ -34,9 +36,42 @@ class MessagingProperties(ConfigurationPropertiesGroup, Service, Capability):
 class TopicsProperties(ConfigurationProperties, Service, Capability):
 
     def __init__(self):
-        self.infrastructure_task_events = 'lm_vim_infrastructure_task_events'
-        self.lifecycle_execution_events = 'lm_vnfc_lifecycle_execution_events'
-        self.job_queue = None  # no default set as this needs to be unique per VIM/Lifecycle driver cluster
+        self.infrastructure_task_events = TopicConfigProperties(name='lm_vim_infrastructure_task_events')
+        self.lifecycle_execution_events = TopicConfigProperties(name='lm_vnfc_lifecycle_execution_events')
+        # No default name set on job_queue topic as this needs to be unique per driver
+        self.job_queue = TopicConfigProperties(auto_create=True, config={'retention.ms': 60000, 'message.timestamp.difference.max.ms': 60000, 'file.delete.delay.ms': 60000})
+
+
+class TopicConfigProperties(ConfigurationProperties):
+
+    def __init__(self, name=None, auto_create=False, replication_factor=1, num_partitions=1, config=None):
+        self.name = name
+        self.auto_create = auto_create
+        self.replication_factor = replication_factor
+        self.num_partitions = num_partitions
+        if config is None:
+            self.config = {}
+        self.config = config
+
+
+class TopicCreator:
+
+    def create_topic_if_needed(self, connection_address, topic_config_properties):
+        if topic_config_properties.auto_create:
+            admin_client = KafkaAdminClient(bootstrap_servers=connection_address, client_id='ignition')
+            try:
+                logger.info("Creating topic {0} with replication factor {1}, partitions {2} and config {3}".format(topic_config_properties.name, topic_config_properties.replication_factor, topic_config_properties.num_partitions, topic_config_properties.config))
+                topic_list = [NewTopic(name=topic_config_properties.name, num_partitions=topic_config_properties.num_partitions, replication_factor=topic_config_properties.replication_factor, topic_configs=topic_config_properties.config)]
+                admin_client.create_topics(new_topics=topic_list, validate_only=False)
+            except TopicAlreadyExistsError as _:
+                logger.info("Topic {0} already exists, not creating".format(topic_config_properties.name))
+            finally:
+                try:
+                    admin_client.close()
+                except Exception as e:
+                    logger.debug("Exception closing Kafka admin client {0}".format(str(e)))
+        else:
+            logger.info("Not creating job queue topic {0}".format(topic_config_properties.name))
 
 ############################
 # Core Classes
@@ -76,7 +111,7 @@ class MessagingCapability(Capability):
 class InboxCapability(Capability):
 
     @interface
-    def watch_inbox(self, address, read_func):
+    def watch_inbox(self, group_id, address, read_func):
         pass
 
 
@@ -168,8 +203,8 @@ class KafkaInboxService(Service, InboxCapability):
     def __thread_exit_func(self, thread):
         self.active_threads.remove(thread)
 
-    def watch_inbox(self, address, read_func):
-        thread = KafkaInboxThread(self.bootstrap_servers, address, read_func, self.__thread_exit_func)
+    def watch_inbox(self, group_id, address, read_func):
+        thread = KafkaInboxThread(self.bootstrap_servers, group_id, address, read_func, self.__thread_exit_func)
         self.active_threads.append(thread)
         try:
             thread.start()
@@ -179,15 +214,16 @@ class KafkaInboxService(Service, InboxCapability):
 
 class KafkaInboxThread(threading.Thread):
 
-    def __init__(self, bootstrap_servers, topic, consumer_func, thread_exit_func):
+    def __init__(self, bootstrap_servers, group_id, topic, consumer_func, thread_exit_func):
         self.bootstrap_servers = bootstrap_servers
+        self.group_id = group_id
         self.topic = topic
         self.consumer_func = consumer_func
         self.thread_exit_func = thread_exit_func
         super().__init__()
 
     def run(self):
-        consumer = KafkaConsumer(self.topic, bootstrap_servers=self.bootstrap_servers)
+        consumer = KafkaConsumer(self.topic, bootstrap_servers=self.bootstrap_servers, group_id=self.group_id)
         try:
             for record in consumer:
                 self.consumer_func(record.value.decode('utf-8'))

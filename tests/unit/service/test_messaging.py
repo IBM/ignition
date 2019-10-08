@@ -81,16 +81,16 @@ class TestKafkaInboxService(unittest.TestCase):
     def test_watch_inbox_starts_thread(self, mock_kafka_inbox_thread_init):
         inbox_service = KafkaInboxService(messaging_config=self.mock_messaging_config)
         mock_read_inbox_func = MagicMock()
-        inbox_service.watch_inbox('test_topic', mock_read_inbox_func)
-        mock_kafka_inbox_thread_init.assert_called_once_with('test:9092', 'test_topic', mock_read_inbox_func, inbox_service._KafkaInboxService__thread_exit_func)
+        inbox_service.watch_inbox('test_group', 'test_topic', mock_read_inbox_func)
+        mock_kafka_inbox_thread_init.assert_called_once_with('test:9092', 'test_group', 'test_topic', mock_read_inbox_func, inbox_service._KafkaInboxService__thread_exit_func)
         mock_kafka_inbox_thread_init.return_value.start.assert_called_once()
 
     @patch('ignition.service.messaging.KafkaConsumer')
     def test_watch_inbox_thread_inits_consumer(self, mock_kafka_consumer_init):
         inbox_service = KafkaInboxService(messaging_config=self.mock_messaging_config)
         mock_read_inbox_func = MagicMock()
-        inbox_service.watch_inbox('test_topic', mock_read_inbox_func)
-        mock_kafka_consumer_init.assert_called_once_with('test_topic', bootstrap_servers='test:9092')
+        inbox_service.watch_inbox('test_group', 'test_topic', mock_read_inbox_func)
+        mock_kafka_consumer_init.assert_called_once_with('test_topic', bootstrap_servers='test:9092', group_id='test_group')
 
     @patch('ignition.service.messaging.KafkaConsumer')
     def test_watch_inbox_thread_inits_consumer(self, mock_kafka_consumer_init):
@@ -117,10 +117,10 @@ class TestKafkaInboxService(unittest.TestCase):
         mock_kafka_consumer.__iter__.side_effect = build_iter()
         inbox_service = KafkaInboxService(messaging_config=self.mock_messaging_config)
         mock_read_inbox_func = MagicMock()
-        inbox_service.watch_inbox('test_topic', mock_read_inbox_func)
+        inbox_service.watch_inbox('test_group', 'test_topic', mock_read_inbox_func)
         try:
             self.assertEqual(len(inbox_service.active_threads), 1)
-            mock_kafka_consumer_init.assert_called_once_with('test_topic', bootstrap_servers='test:9092')
+            mock_kafka_consumer_init.assert_called_once_with('test_topic', bootstrap_servers='test:9092', group_id='test_group')
             mock_kafka_consumer.__iter__.assert_called_once()
             mock_record_1.value.decode.assert_called_once_with('utf-8')
             mock_record_2.value.decode.assert_not_called()

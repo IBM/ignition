@@ -192,9 +192,11 @@ class LifecycleMessagingService(Service, LifecycleMessagingCapability):
             raise ValueError('topics_configuration argument not provided')
         self.postal_service = kwargs.get('postal_service')
         topics_configuration = kwargs.get('topics_configuration')
-        self.lifecycle_execution_events_topic = topics_configuration.lifecycle_execution_events
-        if self.lifecycle_execution_events_topic is None:
+        if topics_configuration.lifecycle_execution_events is None:
             raise ValueError('lifecycle_execution_events topic must be set')
+        self.lifecycle_execution_events_topic = topics_configuration.lifecycle_execution_events.name
+        if self.lifecycle_execution_events_topic is None:
+            raise ValueError('lifecycle_execution_events topic name must be set')
 
     def send_lifecycle_execution(self, lifecycle_execution):
         if lifecycle_execution is None:

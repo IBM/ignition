@@ -3,7 +3,7 @@ from .utils import ConfiguratorTestCase
 from ignition.boot.config import BootstrapApplicationConfiguration, BootProperties
 from ignition.boot.configurators.lifecycleapi import LifecycleApiConfigurator, LifecycleServicesConfigurator
 from ignition.service.lifecycle import LifecycleProperties, LifecycleApiCapability, LifecycleServiceCapability, LifecycleScriptFileManagerCapability, LifecycleDriverCapability, LifecycleExecutionMonitoringCapability, LifecycleMessagingCapability, LifecycleApiService, LifecycleService, LifecycleScriptFileManagerService, LifecycleExecutionMonitoringService, LifecycleMessagingService
-from ignition.service.messaging import TopicsProperties, PostalCapability
+from ignition.service.messaging import TopicsProperties, PostalCapability, MessagingProperties
 from ignition.service.queue import JobQueueCapability
 from ignition.service.framework import Service, ServiceRegistration
 
@@ -16,6 +16,9 @@ class TestLifecycleApiConfigurator(ConfiguratorTestCase):
         configuration.property_groups.add_property_group(boot_config)
         lifecycle_config = LifecycleProperties()
         configuration.property_groups.add_property_group(lifecycle_config)
+        messaging_config = MessagingProperties()
+        messaging_config.connection_address = 'test'
+        configuration.property_groups.add_property_group(messaging_config)
         return configuration
 
     def test_configure_nothing_when_api_enabled_is_false(self):
@@ -75,6 +78,9 @@ class TestLifecycleServicesConfigurator(ConfiguratorTestCase):
         configuration.property_groups.add_property_group(boot_config)
         lifecycle_config = LifecycleProperties()
         configuration.property_groups.add_property_group(lifecycle_config)
+        messaging_config = MessagingProperties()
+        messaging_config.connection_address = 'test'
+        configuration.property_groups.add_property_group(messaging_config)
         return configuration
 
     def test_configure_nothing_when_disabled(self):

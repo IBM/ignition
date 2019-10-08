@@ -7,6 +7,7 @@ from ignition.model.failure import FailureDetails, FAILURE_CODE_INFRASTRUCTURE_E
 from ignition.service.infrastructure import InfrastructureService, InfrastructureApiService, InfrastructureTaskMonitoringService, InfrastructureMessagingService
 from ignition.service.messaging import Envelope, Message
 from ignition.service.logging import LM_HTTP_HEADER_PREFIX, LM_HTTP_HEADER_TXNID
+from ignition.service.messaging import Envelope, Message, TopicConfigProperties
 
 class TestInfrastructureApiService(unittest.TestCase):
 
@@ -430,7 +431,7 @@ class TestInfrastructureMessagingService(unittest.TestCase):
 
     def setUp(self):
         self.mock_postal_service = MagicMock()
-        self.mock_topics_configuration = MagicMock(infrastructure_task_events = 'task_events_topic')
+        self.mock_topics_configuration = MagicMock(infrastructure_task_events = TopicConfigProperties(name='task_events_topic'))
 
     def test_init_without_postal_service_throws_error(self):
         with self.assertRaises(ValueError) as context:
@@ -448,6 +449,12 @@ class TestInfrastructureMessagingService(unittest.TestCase):
             InfrastructureMessagingService(postal_service=self.mock_postal_service, topics_configuration=mock_topics_configuration)
         self.assertEqual(str(context.exception), 'infrastructure_task_events topic must be set')
 
+    def test_init_without_infrastructure_task_events_topic_name_throws_error(self):
+        mock_topics_configuration = MagicMock(infrastructure_task_events = TopicConfigProperties())
+        with self.assertRaises(ValueError) as context:
+            InfrastructureMessagingService(postal_service=self.mock_postal_service, topics_configuration=mock_topics_configuration)
+        self.assertEqual(str(context.exception), 'infrastructure_task_events topic name must be set')
+
     def test_send_infrastructure_task_sends_message(self):
         messaging_service = InfrastructureMessagingService(postal_service=self.mock_postal_service, topics_configuration=self.mock_topics_configuration)
         messaging_service.send_infrastructure_task(InfrastructureTask('inf123', 'req123', 'FAILED', FailureDetails(FAILURE_CODE_INFRASTRUCTURE_ERROR, 'because it was meant to fail')))
@@ -457,7 +464,7 @@ class TestInfrastructureMessagingService(unittest.TestCase):
         self.assertEqual(len(args), 1)
         envelope_arg = args[0]
         self.assertIsInstance(envelope_arg, Envelope)
-        self.assertEqual(envelope_arg.address, self.mock_topics_configuration.infrastructure_task_events)
+        self.assertEqual(envelope_arg.address, self.mock_topics_configuration.infrastructure_task_events.name)
         self.assertIsInstance(envelope_arg.message, Message)
         self.assertEqual(envelope_arg.message.content, b'{"requestId": "req123", "infrastructureId": "inf123", "status": "FAILED", "failureDetails": {"failureCode": "INFRASTRUCTURE_ERROR", "description": "because it was meant to fail"}}')
     

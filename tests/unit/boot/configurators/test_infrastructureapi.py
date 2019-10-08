@@ -3,7 +3,7 @@ from .utils import ConfiguratorTestCase
 from ignition.boot.config import BootstrapApplicationConfiguration, BootProperties
 from ignition.boot.configurators.infrastructureapi import InfrastructureApiConfigurator, InfrastructureServicesConfigurator
 from ignition.service.infrastructure import InfrastructureProperties, InfrastructureApiCapability, InfrastructureServiceCapability, InfrastructureDriverCapability, InfrastructureTaskMonitoringCapability, InfrastructureMessagingCapability, InfrastructureApiService, InfrastructureService, InfrastructureTaskMonitoringService, InfrastructureMessagingService
-from ignition.service.messaging import TopicsProperties, PostalCapability
+from ignition.service.messaging import TopicsProperties, PostalCapability, MessagingProperties
 from ignition.service.queue import JobQueueCapability
 from ignition.service.framework import Service, ServiceRegistration
 
@@ -16,6 +16,9 @@ class TestInfrastructureApiConfigurator(ConfiguratorTestCase):
         configuration.property_groups.add_property_group(boot_config)
         infrastructure_config = InfrastructureProperties()
         configuration.property_groups.add_property_group(infrastructure_config)
+        messaging_config = MessagingProperties()
+        messaging_config.connection_address = 'test'
+        configuration.property_groups.add_property_group(messaging_config)
         return configuration
 
     def test_configure_nothing_when_api_enabled_is_false(self):
@@ -76,6 +79,9 @@ class TestInfrastructureServicesConfigurator(ConfiguratorTestCase):
         configuration.property_groups.add_property_group(boot_config)
         infrastructure_config = InfrastructureProperties()
         configuration.property_groups.add_property_group(infrastructure_config)
+        messaging_config = MessagingProperties()
+        messaging_config.connection_address = 'test'
+        configuration.property_groups.add_property_group(messaging_config)
         return configuration
 
     def test_configure_nothing_when_disabled(self):
