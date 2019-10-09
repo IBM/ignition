@@ -1,5 +1,16 @@
 # Change Log
 
+## [0.4.0](https://github.com/accanto-systems/ignition/tree/0.4.0) (2019-10-09)
+[Full Changelog](https://github.com/accanto-systems/ignition/compare/0.3.0...0.4.0)
+
+**Fixed bugs:**
+
+- Kafka consumer created without group id [\#14](https://github.com/accanto-systems/ignition/issues/14)
+
+**Implemented enhancements:**
+
+- Configure Logstash-style logging that's compatible with LM/Filebeat logs [\#10](https://github.com/accanto-systems/ignition/issues/10)
+
 ## [0.3.0](https://github.com/accanto-systems/ignition/tree/0.3.0) (2019-10-01)
 [Full Changelog](https://github.com/accanto-systems/ignition/compare/0.2.0...0.3.0)
 
