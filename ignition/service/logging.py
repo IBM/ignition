@@ -152,6 +152,7 @@ if log_type.lower() == 'logstash':
 else:
     log_formatter = logging.Formatter()
 
+logging.getLogger().setLevel(log_level)
 [handler.setFormatter(log_formatter) for handler in logging.getLogger().handlers]
 
 logging_context = LoggingContext()
