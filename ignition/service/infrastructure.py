@@ -45,7 +45,7 @@ class InfrastructureDriverCapability(Capability):
         :param str template: template of infrastructure to be created
         :param str template_type: type of template used i.e. TOSCA or Heat
         :param str inputs: values for the inputs defined on the tosca template
-        :param dict deployment_location: the valid Openstack location to deploy to
+        :param dict deployment_location: the deployment location to deploy to
         :return: an ignition.model.infrastructure.CreateInfrastructureResponse
         """
         pass
@@ -55,7 +55,7 @@ class InfrastructureDriverCapability(Capability):
         """
         Get information about the infrastructure (created or deleted)
 
-        :param str infrastructure_id: identifier of the stack to check
+        :param str infrastructure_id: identifier of the infrastructure to check
         :param str request_id: identifier of the request to check
         :param dict deployment_location: the location the infrastructure was deployed to
         :return: an ignition.model.infrastructure.InfrastructureTask instance describing the status
@@ -76,14 +76,14 @@ class InfrastructureDriverCapability(Capability):
         pass
 
     @interface
-    def find_infrastructure(self, template, template_type, inputs, deployment_location):
+    def find_infrastructure(self, template, template_type, instance_name, deployment_location):
         """
         Finds infrastructure instances that meet the requirements set out in the given TOSCA template, returning the desired output values from those instances
 
         :param str template: tosca template of infrastructure to be found
         :param str template_type: type of template used i.e. TOSCA or Heat
-        :param str inputs: values for the inputs defined on the tosca template
-        :param dict deployment_location: the valid Openstack location to deploy to
+        :param str instance_name: name given as search criteria
+        :param dict deployment_location: the deployment location to deploy to
         :return: an ignition.model.infrastructure.FindInfrastructureResponse
         """
         pass

@@ -26,6 +26,12 @@ setup(
         'connexion[swagger-ui]>=2.2.0,<3.0',
         'kafka-python>=1.4.6',
         'networkx>=2.3',
-        'frozendict>=1.2'
-    ]
+        'frozendict>=1.2',
+        'Jinja2>=2.7',
+        'click>=7.0'
+    ],
+    entry_points='''
+        [console_scripts]
+        ignition=ignition.cli.entry:init_cli
+    '''
 )
