@@ -1,8 +1,4 @@
-# Framework
-
-The following chapter details the Ignition framework and how it may be used to configure Services, APIs and Property Groups. 
-
-# Services 
+# Ignition Services 
 
 Ignition is built on 'Services' that each fulfill a 'Capability'.
 

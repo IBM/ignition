@@ -3,7 +3,7 @@ kind: ConfigMap
 metadata:
   name: tdhelm
 data:
-  ovd_config.yml: |
+  tdriver_config.yml: |
 {{- if .Values.app.config.override }}
 {{ toYaml .Values.app.config.override | indent 4 }}
 {{- end }}

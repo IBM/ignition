@@ -3,7 +3,7 @@ kind: ConfigMap
 metadata:
   name: {(helm.name)}
 data:
-  ovd_config.yml: |
+  {(app.module_name)}_config.yml: |
 {{- if .Values.app.config.override }}
 {{ toYaml .Values.app.config.override | indent 4 }}
 {{- end }}

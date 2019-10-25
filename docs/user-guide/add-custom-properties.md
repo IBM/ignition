@@ -29,13 +29,13 @@ class DatabaseProperties(ConfigurationProperties):
         self.port = None
 ```
 
-When registered to the application, the registered instance of the `AppProperties` will be populated with the values from the configuration file, so `self.database.host` would be set to `localhost`.
+When registered to the application, the registered instance of the `AppProperties` will be populated with the values from the configuration file i.e. `self.database.host` would be set to `localhost`.
 
 ## Example
 
-As a more complete example, we are going to add some custom property groups to the `helloworld` API added as part of [Add Custom APIs](./adding_custom_apis.md).
+As a more complete example, we are going to add some custom property groups to the `helloworld` API added as part of [add custom APIs](./add-custom-apis.md).
 
-Start by adding the following to the `helloworld.py` file:
+Start by adding the following to the `service/helloworld.py` file:
 
 ```
 from ignition.service.config import ConfigurationPropertiesGroup
@@ -63,32 +63,50 @@ class HelloWorldApiService(Service, HelloWorldApiCapability):
 Open `app.py` and configure the property group. We will also need to update the registration of `HelloWorldApiService` to specify the dependency on the `HelloWorldProperties`:
 
 ```
+import logging
 import ignition.boot.api as ignition
-import examplevd.api_specs as api_specs
 import pathlib
-from examplevd.service.infrastructure import MyInfrastructureDriver
-from examplevd.service.helloworld import HelloWorldApiService, HelloWorldApiCapability, HelloWorldProperties #ADD
+import os
+import mydriver.config as driverconfig
+from mydriver.service.infrastructure import InfrastructureDriver
+from mydriver.service.lifecycle import LifecycleDriver
+import mydriver.api_specs as api_specs
+## ADD
+from mydriver.service.helloworld import HelloWorldApiService, HelloWorldApiCapability, HelloWorldProperties
+## -------
+
+default_config_dir_path = str(pathlib.Path(driverconfig.__file__).parent.resolve())
+default_config_path = os.path.join(default_config_dir_path, 'default_config.yml')
 
 # Grabs the __init__.py from an api_specs package in your application then takes it's parent, the api_specs directory itself
 api_spec_path = str(pathlib.Path(api_specs.__file__).parent.resolve())
 
+def create_app():
+    app_builder = ignition.build_driver('My Driver', vim=True)
+    app_builder.include_file_config_properties(default_config_path, required=True)
+    app_builder.include_file_config_properties('./mydriver_config.yml', required=False)
+    # custom config file e.g. for K8s populated from Helm chart values
+    app_builder.include_file_config_properties('/var/mydriver/mydriver_config.yml', required=False)
+    app_builder.include_environment_config_properties('MYDRIVER_CONFIG', required=False)
+    app_builder.add_service(InfrastructureDriver)
+    app_builder.add_api(os.path.join(api_spec_path, 'helloworld.yaml'), HelloWorldApiCapability) 
+    ## ADD
+    app_builder.add_property_group(HelloWorldProperties())
+    app_builder.add_service(HelloWorldApiService, helloworld_properties=HelloWorldProperties)
+    # ------
+    return app_builder.configure()
+
+
 def init_app():
-    app_builder = ignition.build_vim_driver('MyFirstVimDriver')
-    app_builder.include_file_config_properties('./config.yml', required=True)
-    app_builder.add_service(MyInfrastructureDriver)
-
-    app_builder.add_api(os.path.join(api_spec_path, 'helloworld.yaml'), HelloWorldApiCapability)
-    app_builder.add_property_group(HelloWorldProperties()) #ADD
-    app_builder.add_service(HelloWorldApiService, helloworld_properties=HelloWorldProperties) #ADD
-
-    app_builder.run()
+    app = create_app()
+    return app.run()
 ```
 
 Finally add the following properties to `config.yml`:
 
 ```
 helloworld:
-  name: Mr Joe Bloggs
+  name: Joe Bloggs
 ```
 
-Now run the application, try the `helloworld` API and note how it responds with `Hello, Mr Joe Bloggs!`. Update the `name` property to a different value, restart the application and note how the response changes.
+Now run the application, try the `helloworld` API and note how it responds with `Hello, Mr Joe Bloggs!`. Update the `name` property to a different value, restart the application and you'll see how the response changes.
