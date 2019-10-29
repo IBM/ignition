@@ -107,9 +107,11 @@ Release the artifacts through your normal release channels. We recommend:
 
 7.1 Set the version of the next development version in `tdriver/pkg_info.json`:
 
+```
 {
   "version": "<next development version number>"
 }
+```
 
 7.2. Update the `docker.version` in `helm/tdhelm/values.yaml` to the next development version number.
 
