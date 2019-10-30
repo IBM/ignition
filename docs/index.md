@@ -7,3 +7,7 @@ Ignition is a framework which aims to ease the process of building those VIM and
 ## Install
 
 Read the [install guide](./install.md) to get started with the Ignition framework
+
+## User Guide
+
+[User Guide](./user-guide/index.md)

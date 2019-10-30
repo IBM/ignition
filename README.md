@@ -10,19 +10,11 @@ The Resource Manager provided with the Stratoss&trade; Lifecycle Manager, known 
 
 Ignition is a framework which aims to ease the process of building those VIM and Lifecycle driver applications with Python.
 
-# Installing Ignition
+## Docs
 
-Install the latest release from pypi:
-
-```
-pip3 install ignition-framework
-```
-
-Named release:
-
-```
-pip3 install ignition-framework==0.1.0a1
-```
+- [Index](./docs/index.md)
+- [Install Ignition](./docs/install.md)
+- [User Guide](./docs/user-guide/index.md)
 
 ## Install from source
 
@@ -31,18 +23,3 @@ Clone the source code and install it from the root directory:
 ```
 pip3 install .
 ```
-
-# Creating a VIM Driver application
-
-For instructions on how to setup a VIM Driver application using Ignition see [VIM Driver User Guide](docs/userguides/vim_driver.md)
-
-# Creating a Lifecycle Driver application
-
-For instructions on how to setup a Lifecycle Driver application using Ignition see [Lifecycle Driver User Guide](docs/userguides/lifecycle_driver.md)
-
-# Developer Guides
-
-For guides related to development of Ignition, see:
-
-- [Release](developer_docs/release.md)
-- [Testing](developer_docs/testing.md)
