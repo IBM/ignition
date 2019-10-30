@@ -1,0 +1,49 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: {(helm.name)}
+spec:
+  replicas: {{ .Values.app.replicas }}
+  template:
+    metadata:
+      labels:
+        app: {(helm.name)}
+        part-of: lm
+    spec:
+      hostAliases:
+      {{- if .Values.app.config.kafka.hostEnabled }}
+        - ip: {{ .Values.app.config.kafka.ip }}
+          hostnames:
+          - {{ .Values.app.config.kafka.host }}
+      {{- end }}
+{{- if .Values.app.affinity }}
+      affinity:
+{{ toYaml .Values.app.affinity | indent 8 }}
+{{- end }}
+{{- if .Values.app.tolerations }}
+      tolerations:
+{{ toYaml .Values.app.tolerations | indent 8 }}
+{{- end }}
+      containers:
+        - name: {(helm.name)}
+          image: {{ .Values.docker.image }}:{{ .Values.docker.version }}
+          imagePullPolicy: {{ .Values.docker.imagePullPolicy }}
+          securityContext:
+            # run as {(app.module_name)} user created in docker image
+            runAsUser: 100
+          ports:
+          - containerPort: {(app.port)}
+            protocol: TCP
+          envFrom:
+          - configMapRef:
+              name: {(helm.name)}-env
+          resources:
+{{ toYaml .Values.app.resources | indent 12 }}   
+          volumeMounts:
+          - name: config
+            mountPath: /var/{(app.module_name)}/{(app.module_name)}_config.yml
+            subPath: {(app.module_name)}_config.yml
+      volumes:
+      - name: config
+        configMap:
+          name: {(helm.name)}

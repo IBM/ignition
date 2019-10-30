@@ -1,0 +1,49 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: tdhelm
+spec:
+  replicas: {{ .Values.app.replicas }}
+  template:
+    metadata:
+      labels:
+        app: tdhelm
+        part-of: lm
+    spec:
+      hostAliases:
+      {{- if .Values.app.config.kafka.hostEnabled }}
+        - ip: {{ .Values.app.config.kafka.ip }}
+          hostnames:
+          - {{ .Values.app.config.kafka.host }}
+      {{- end }}
+{{- if .Values.app.affinity }}
+      affinity:
+{{ toYaml .Values.app.affinity | indent 8 }}
+{{- end }}
+{{- if .Values.app.tolerations }}
+      tolerations:
+{{ toYaml .Values.app.tolerations | indent 8 }}
+{{- end }}
+      containers:
+        - name: tdhelm
+          image: {{ .Values.docker.image }}:{{ .Values.docker.version }}
+          imagePullPolicy: {{ .Values.docker.imagePullPolicy }}
+          securityContext:
+            # run as tdriver user created in docker image
+            runAsUser: 100
+          ports:
+          - containerPort: 7777
+            protocol: TCP
+          envFrom:
+          - configMapRef:
+              name: tdhelm-env
+          resources:
+{{ toYaml .Values.app.resources | indent 12 }}   
+          volumeMounts:
+          - name: config
+            mountPath: /var/tdriver/tdriver_config.yml
+            subPath: tdriver_config.yml
+      volumes:
+      - name: config
+        configMap:
+          name: tdhelm

@@ -1,0 +1,20 @@
+name: {(helm.name)}
+version: {(app.version)}
+appVersion: {(app.version)}
+apiVersion: v1
+description: A Helm chart for {(app.name)}
+keywords:
+- LM
+- Resource Manager
+- Brent
+- Driver
+- {(app.name)}
+- {(helm.name)}
+{%- if app.is_vim == true %}
+- VIM
+- Infrastructure
+{%- endif %}
+{%- if app.is_lifecycle == true %}
+- Lifecycle
+{%- endif %}
+engine: gotpl

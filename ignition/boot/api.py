@@ -18,8 +18,19 @@ MANDATORY_PROPERTY_GROUPS = [ApplicationProperties, ApiProperties]
 ADDITIONAL_PROPERTY_GROUPS = [BootProperties, InfrastructureProperties, LifecycleProperties, MessagingProperties, JobQueueProperties]
 
 
+def build_driver(app_name, vim=False, lifecycle=False):
+    builder = build_app(app_name)
+    if vim == True:
+        builder = configure_vim_driver(builder)
+    if lifecycle == True:
+        builder = configure_lifecycle_driver(builder)
+    return builder
+    
 def build_vim_driver(app_name):
     builder = build_app(app_name)
+    return configure_vim_driver(builder)
+
+def configure_vim_driver(builder):
     boot_config = builder.property_groups.get_property_group(BootProperties)
     boot_config.infrastructure.api_enabled = True
     boot_config.infrastructure.api_service_enabled = True
@@ -34,6 +45,9 @@ def build_vim_driver(app_name):
 
 def build_lifecycle_driver(app_name):
     builder = build_app(app_name)
+    return configure_lifecycle_driver(builder)
+
+def configure_lifecycle_driver(builder):
     boot_config = builder.property_groups.get_property_group(BootProperties)
     boot_config.lifecycle.api_enabled = True
     boot_config.lifecycle.api_service_enabled = True
