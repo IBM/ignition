@@ -1,5 +1,12 @@
 # Change Log
 
+## [0.5.0](https://github.com/accanto-systems/ignition/tree/0.5.0) (2019-11-04)
+[Full Changelog](https://github.com/accanto-systems/ignition/compare/0.4.0...0.5.0)
+
+**Implemented enhancements:**
+
+- Add CLI with command to generate the necessary files to create a driver [\#17](https://github.com/accanto-systems/ignition/issues/17)
+
 ## [0.4.0](https://github.com/accanto-systems/ignition/tree/0.4.0) (2019-10-09)
 [Full Changelog](https://github.com/accanto-systems/ignition/compare/0.3.0...0.4.0)
 
