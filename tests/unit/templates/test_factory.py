@@ -33,6 +33,52 @@ class TestDriverGenRequest(unittest.TestCase):
         self.assertEqual(request.helm_name, 'test-driver')
         self.assertTrue(request.helm_node_port >= 30000 and request.helm_node_port <= 30999)
 
+    def test_default_module_name(self):
+        request = factory.DriverGenRequest([factory.DRIVER_TYPE_VIM], 'Test-_Special !"£$%^&*()+={}[]:;@~#<>?,./¬ Chars', '0.5.0')
+        self.assertEqual(request.module_name, 'testspecialchars')
+
+    def test_default_helm_name(self):
+        request = factory.DriverGenRequest([factory.DRIVER_TYPE_VIM], 'Test-_Special !"£$%^&*()+={}[]:;@~#<>?,./¬ Chars', '0.5.0')
+        self.assertEqual(request.helm_name, 'test-_special-chars')
+
+    def test_default_docker_name(self):
+        request = factory.DriverGenRequest([factory.DRIVER_TYPE_VIM], 'Test-_Special !"£$%^&*()+={}[]:;@~#<>?,./¬ Chars', '0.5.0')
+        self.assertEqual(request.docker_name, 'test-_special-chars')
+
+    def __do_test_module_name_validation(self, invalid_value):
+        module_name = 'invalid{0}driver'.format(invalid_value)
+        with self.assertRaises(ValueError) as context:
+            factory.DriverGenRequest([factory.DRIVER_TYPE_VIM], 'Test Driver', '0.5.0', module_name=module_name)
+        self.assertEqual(str(context.exception), 'module_name must be a string with characters from a-z, A-Z, 0-9 but was: {0}'.format(module_name))
+
+    def test_module_name_validation(self):
+        for char in '!"£$%^&*()-_+={}[]:;@~#<>?,./¬ ':
+            self.__do_test_module_name_validation(char)
+
+    def __do_test_helm_name_validation(self, invalid_value):
+        helm_name = 'invalid{0}driver'.format(invalid_value)
+        with self.assertRaises(ValueError) as context:
+            factory.DriverGenRequest([factory.DRIVER_TYPE_VIM], 'Test Driver', '0.5.0', helm_name=helm_name)
+        self.assertEqual(str(context.exception), 'helm_name must be a string with characters from a-z, A-Z, 0-9, dash (-) or underscore (_) but was: {0}'.format(helm_name))
+
+    def test_helm_name_validation(self):
+        for char in '!"£$%^&*()+={}[]:;@~#<>?,./¬ ':
+            self.__do_test_helm_name_validation(char)
+        factory.DriverGenRequest([factory.DRIVER_TYPE_VIM], 'Test Driver', '0.5.0', helm_name='dashed-driver')
+        factory.DriverGenRequest([factory.DRIVER_TYPE_VIM], 'Test Driver', '0.5.0', helm_name='underscore_driver')
+
+    def __do_test_docker_name_validation(self, invalid_value):
+        docker_name = 'invalid{0}driver'.format(invalid_value)
+        with self.assertRaises(ValueError) as context:
+            factory.DriverGenRequest([factory.DRIVER_TYPE_VIM], 'Test Driver', '0.5.0', docker_name=docker_name)
+        self.assertEqual(str(context.exception), 'docker_name must be a string with characters from a-z, A-Z, 0-9, dash (-) or underscore (_) but was: {0}'.format(docker_name))
+
+    def test_helm_name_validation(self):
+        for char in '!"£$%^&*()+={}[]:;@~#<>?,./¬ ':
+            self.__do_test_docker_name_validation(char)
+        factory.DriverGenRequest([factory.DRIVER_TYPE_VIM], 'Test Driver', '0.5.0', docker_name='dashed-driver')
+        factory.DriverGenRequest([factory.DRIVER_TYPE_VIM], 'Test Driver', '0.5.0', docker_name='underscore_driver')
+
 
 class TestDriverProducer(unittest.TestCase):
 

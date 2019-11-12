@@ -3,6 +3,7 @@ import jinja2 as jinja
 import random
 import os
 import ignition
+import re
 
 DRIVER_TYPE_VIM = 'VIM'
 DRIVER_TYPE_LIFECYCLE = 'LIFECYCLE'
@@ -32,26 +33,47 @@ class DriverGenRequest:
         self.port = port
         if module_name == None:
             module_name = self.generate_module_name(self.app_name)
+        self.__validate_module_name(module_name)
         self.module_name = module_name
         self.description = description
         if docker_name == None:
             docker_name = self.generate_docker_name(self.app_name)
+        self.__validate_docker_name(docker_name)
         self.docker_name = docker_name
         if helm_name == None:
             helm_name = self.generate_helm_name(self.app_name)
+        self.__validate_helm_name(helm_name)
         self.helm_name = helm_name
         if helm_node_port == None:
             helm_node_port = self.generate_node_port()
         self.helm_node_port = helm_node_port
 
+    def __validate_module_name(self, module_name):
+        if not re.match('^[a-zA-Z0-9]*$', module_name):
+            raise ValueError('module_name must be a string with characters from a-z, A-Z, 0-9 but was: {0}'.format(module_name))
+
+    def __validate_helm_name(self, helm_name):
+        if not re.match('^[a-zA-Z0-9-_]*$', helm_name):
+            raise ValueError('helm_name must be a string with characters from a-z, A-Z, 0-9, dash (-) or underscore (_) but was: {0}'.format(helm_name))
+
+    def __validate_docker_name(self, docker_name):
+        if not re.match('^[a-zA-Z0-9-_]*$', docker_name):
+            raise ValueError('docker_name must be a string with characters from a-z, A-Z, 0-9, dash (-) or underscore (_) but was: {0}'.format(docker_name))
+    
     def generate_helm_name(self, app_name):
-        return app_name.lower().replace(" ", "-")
+        filtered_app_name = re.sub('[^A-Za-z0-9-_ ]+', '', app_name)
+        filtered_app_name = " ".join(filtered_app_name.split())
+        return filtered_app_name.lower().replace(" ", "-")
 
     def generate_docker_name(self, app_name):
-        return app_name.lower().replace(" ", "-")
+        filtered_app_name = re.sub('[^A-Za-z0-9-_ ]+', '', app_name)
+        filtered_app_name = " ".join(filtered_app_name.split())
+        return filtered_app_name.lower().replace(" ", "-")
 
     def generate_module_name(self, app_name):
-        return app_name.lower().replace(" ", "").replace("-", "").replace("_", "")
+        filtered_app_name = re.sub('[^A-Za-z0-9 ]+', '', app_name)
+        filtered_app_name = " ".join(filtered_app_name.split())
+        return filtered_app_name.lower().replace(" ", "")
 
     def generate_port(self):
         return random.randint(7000, 7999)
