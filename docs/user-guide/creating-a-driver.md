@@ -68,10 +68,11 @@ messaging:
   connection_address: <insert kafka address>
 ```
 
-Now run a development version of the driver with `<module_name>-dev` (e.g. mydriver-dev):
+Now install your driver module and run a development version of the driver with `<module_name>-dev` (e.g. mydriver-dev):
 
 ```
-mydriver-dev
+pip install --editable .
+mydriver-dev #<module-name>-dev
 ```
 
 If successful you should be able to access your driver at: 
