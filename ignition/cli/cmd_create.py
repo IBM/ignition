@@ -1,6 +1,9 @@
 import click
+import logging
 import os
 import ignition.templates.factory as factory
+
+logger = logging.getLogger(__name__)
 
 @click.command(help='Create a new VIM and/or Lifecycle driver')
 @click.argument('app_name')
@@ -24,8 +27,13 @@ def create(app_name, driver_types, version, port, description, module_name, dock
             exit(1)
         else:
             parsed_driver_types.append(target_driver_type)
-    request = factory.DriverGenRequest(parsed_driver_types, app_name, version, port=port, module_name=module_name, description=description, docker_name=docker_name, \
-        helm_name=helm_name, helm_node_port=helm_node_port)
+    try:
+        request = factory.DriverGenRequest(parsed_driver_types, app_name, version, port=port, module_name=module_name, description=description, docker_name=docker_name, \
+            helm_name=helm_name, helm_node_port=helm_node_port)
+    except ValueError as e:
+        logger.exception(str(e))
+        click.echo('ERROR: {0}'.format(str(e)))
+        exit(1)
     location = os.getcwd()
     producer = factory.DriverProducer(request, location)
     try:
@@ -33,5 +41,6 @@ def create(app_name, driver_types, version, port, description, module_name, dock
         producer.produce()
         click.echo('Complete!')
     except factory.ProducerError as e:
+        logger.exception(str(e))
         click.echo('ERROR: {0}'.format(str(e)))
         exit(1)
