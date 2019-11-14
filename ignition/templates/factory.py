@@ -1,3 +1,4 @@
+import logging
 import jinja2 as jinja
 import random
 import os
@@ -8,6 +9,8 @@ DRIVER_TYPE_LIFECYCLE = 'LIFECYCLE'
 
 JINJA_VARIABLE_START = '{('
 JINJA_VARIABLE_END = ')}'
+
+logger = logging.getLogger(__name__)
 
 class DriverGenRequest:
 
@@ -105,6 +108,9 @@ class DriverProducer:
                 self.__render_file(template_path, template_env, file_name_env, full_item_path, self.target_location, render_props)
 
     def __render_directory(self, template_base_path, template_env, file_name_env, template_dir_path, target_parent_path, render_props):
+        if os.path.basename(template_dir_path) == '__pycache__':
+            return
+        logger.debug('Rendering directory {0}'.format(template_dir_path))
         template_dir_name = os.path.basename(template_dir_path)
         new_dir_name = file_name_env.from_string(template_dir_name).render(render_props)
         new_dir_path = os.path.join(target_parent_path, new_dir_name)
@@ -121,6 +127,10 @@ class DriverProducer:
                 self.__render_file(template_base_path, template_env, file_name_env, full_item_path, new_dir_path, render_props)
 
     def __render_file(self, template_base_path, template_env, file_name_env, template_file_path, target_parent_path, render_props):
+        template_filename, template_ext = os.path.splitext(template_file_path)
+        if template_ext == '.pyc':
+            return
+        logger.debug('Rendering file {0}'.format(template_file_path))
         template_rel_path = os.path.relpath(template_file_path, template_base_path)
         template = template_env.get_template(template_rel_path)
         output = template.render(render_props)
