@@ -61,19 +61,19 @@ class DriverGenRequest:
             raise ValueError('docker_name must be a string with characters from a-z, A-Z, 0-9, dash (-) or underscore (_) but was: {0}'.format(docker_name))
     
     def generate_helm_name(self, app_name):
-        filtered_app_name = re.sub('[^A-Za-z0-9-_ ]+', '', app_name)
-        filtered_app_name = " ".join(filtered_app_name.split())
-        return filtered_app_name.lower().replace(" ", "-")
+        filtered_helm_name = re.sub('[^A-Za-z0-9-_ ]+', '', app_name)
+        filtered_helm_name = " ".join(filtered_helm_name.split())
+        return filtered_helm_name.lower().replace(" ", "-")
 
     def generate_docker_name(self, app_name):
-        filtered_app_name = re.sub('[^A-Za-z0-9-_ ]+', '', app_name)
-        filtered_app_name = " ".join(filtered_app_name.split())
-        return filtered_app_name.lower().replace(" ", "-")
+        filtered_docker_name = re.sub('[^A-Za-z0-9-_ ]+', '', app_name)
+        filtered_docker_name = " ".join(filtered_docker_name.split())
+        return filtered_docker_name.lower().replace(" ", "-")
 
     def generate_module_name(self, app_name):
-        filtered_app_name = re.sub('[^A-Za-z0-9 ]+', '', app_name)
-        filtered_app_name = " ".join(filtered_app_name.split())
-        return filtered_app_name.lower().replace(" ", "")
+        filtered_module_name = re.sub('[^A-Za-z0-9 ]+', '', app_name)
+        filtered_module_name = " ".join(filtered_module_name.split())
+        return filtered_module_name.lower().replace(" ", "")
 
     def generate_port(self):
         return random.randint(7000, 7999)
