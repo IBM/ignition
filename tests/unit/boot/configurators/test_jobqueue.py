@@ -65,6 +65,15 @@ class TestJobQueueConfigurator(ConfiguratorTestCase):
         self.assertEqual(configuration.property_groups.get_property_group(MessagingProperties).topics.job_queue.name, 'TestJobQueueConfigurator_job_queue')
 
     @patch('ignition.boot.configurators.jobqueue.TopicCreator')
+    def test_configure_creates_job_queue_topic_with_special_chars_removed(self, mock_topic_creator_init):
+        configuration = self.__bootstrap_config()
+        configuration.app_name = 'Testing Spaces And Special !"£$%^&*()+={}[]:;@~#<>?,./¬  Chars'
+        configuration.property_groups.get_property_group(BootProperties).job_queue.service_enabled = True
+        self.mock_service_register.get_service_offering_capability.return_value = None
+        JobQueueConfigurator().configure(configuration, self.mock_service_register)
+        self.assertEqual(configuration.property_groups.get_property_group(MessagingProperties).topics.job_queue.name, 'Testing_Spaces_And_Special_Chars_job_queue')
+
+    @patch('ignition.boot.configurators.jobqueue.TopicCreator')
     def test_configure_creates_job_queue_topic_if_needed(self, mock_topic_creator_init):
         configuration = self.__bootstrap_config()
         configuration.property_groups.get_property_group(BootProperties).job_queue.service_enabled = True
