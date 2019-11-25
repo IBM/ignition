@@ -4,7 +4,7 @@ The Ignition framework is usually included as a dependency installed as part of 
 
 However, we recommend installing Ignition to your machine so you may use the CLI tool as it makes creating new drivers much simpler. 
 
-## Pre-requisites
+## Prerequisites
 
 ### Python 3
 
