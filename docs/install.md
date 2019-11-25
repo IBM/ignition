@@ -1,6 +1,6 @@
 # Install Ignition
 
-The main intention of the Ignition framework is for it to be used as dependency installed as part of your Python application. 
+The Ignition framework is usually included as a dependency installed as part of your Python application. 
 
 However, we recommend installing Ignition to your machine so you may use the CLI tool as it makes creating new drivers much simpler. 
 
