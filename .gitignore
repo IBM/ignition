@@ -110,3 +110,6 @@ BootstrapApplication_boot
 #IDEs
 .vscode
 /.project
+
+# Test Workspace
+test_workspace/

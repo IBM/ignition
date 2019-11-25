@@ -1,10 +1,10 @@
 # Releasing the Driver
 
-This section describes a recommended method for building and releasing the driver artifacts. 
+This section describes a recommended process for building and releasing the driver artifacts. 
 
 ## 1. Set Versions
 
-1.1 Start by setting the version of the release in `tdriver/pkg_info.json`:
+1.1 Start by setting the version of the release in `{(app.module_name)}/pkg_info.json`:
 
 ```
 {
@@ -20,16 +20,16 @@ For example:
 }
 ```
 
-1.2 Ensure the `docker.version` in `helm/tdhelm/values.yaml` includes the correct version number
+1.2 Ensure the `docker.version` in `helm/{(helm.name)}/values.yaml` includes the correct version number
 
-1.3 Ensure the `version` and `appVersion` in `helm/tdhelm/Chart.yaml` includes the correct version number
+1.3 Ensure the `version` and `appVersion` in `helm/{(helm.name)}/Chart.yaml` includes the correct version number
 
 1.4 Push all version number changes to Github
 
 ```
-git add tdriver/pkg_info.json
-git add helm/tdhelm/values.yaml
-git add helm/tdhelm/Chart.yaml
+git add {(app.module_name)}/pkg_info.json
+git add helm/{(helm.name)}/values.yaml
+git add helm/{(helm.name)}/Chart.yaml
 git commit -m "Set version numbers for release"
 git push origin
 ```
@@ -60,7 +60,7 @@ python3 setup.py bdist_wheel
 3.1 Create a TAR version of the docs directory:
 
 ```
-tar -cvzf tdriver-<release version number>-docs.tgz docs/ --transform s/docs/tdriver-<release version number>-docs/
+tar -cvzf {(app.module_name)}-<release version number>-docs.tgz docs/ --transform s/docs/{(app.module_name)}-<release version number>-docs/
 ```
 
 The TAR will be created in the root directory of the project
@@ -69,19 +69,19 @@ The TAR will be created in the root directory of the project
 
 This requires `docker` to be installed and running on your local machine.
 
-4.1 Move the whl now in `dist` to the `docker/whl` directory (create the `whl` directory if it does not exist. Ensure no additional whls are in this directory if it does)
+4.1 Move the whl now in `dist` to the `docker/whls` directory (create the `whls` directory if it does not exist. Ensure no additional whls are in this directory if it does)
 
 ```
-rm -rf ./docker/whl
-mkdir ./docker/whl
-cp dist/tdriver-<release version number>-py3-none-any.whl docker/whls/
+rm -rf ./docker/whls
+mkdir ./docker/whls
+cp dist/{(app.module_name)}-<release version number>-py3-none-any.whl docker/whls/
 ```
 
 4.2 Navigate to the Docker directry and build the image. Tag with the release version number. Ensure the name of the image is the default name expected in `helm/values.yaml`
 
 ```
 cd docker
-docker build -t tddock:<release version number>
+docker build -t {(docker.name)}:<release version number>
 ```
 
 ## 5. Build Helm Chart
@@ -91,7 +91,7 @@ This requires the Helm CLI tool to be installed on your machine
 5.1 Package the helm chart
 
 ```
-helm package helm/tdhelm
+helm package helm/{(helm.name)}
 ```
 
 ## 6. Release artifacts
@@ -105,7 +105,7 @@ Release the artifacts through your normal release channels. We recommend:
 
 ## 7. Set next development version
 
-7.1 Set the version of the next development version in `tdriver/pkg_info.json`:
+7.1 Set the version of the next development version in `{(app.module_name)}/pkg_info.json`:
 
 ```
 {
@@ -113,16 +113,16 @@ Release the artifacts through your normal release channels. We recommend:
 }
 ```
 
-7.2. Update the `docker.version` in `helm/tdhelm/values.yaml` to the next development version number.
+7.2. Update the `docker.version` in `helm/{(helm.name)}/values.yaml` to the next development version number.
 
-7.3. Update the `version` and `appVersion` in `helm/tdhelm/Chart.yaml` to the next development version number.
+7.3. Update the `version` and `appVersion` in `helm/{(helm.name)}/Chart.yaml` to the next development version number.
 
 7.4 Push version number changes to Github
 
 ```
-git add tdriver/pkg_info.json
-git add helm/tdhelm/values.yaml
-git add helm/tdhelm/Chart.yaml
+git add {(app.module_name)}/pkg_info.json
+git add helm/{(helm.name)}/values.yaml
+git add helm/{(helm.name)}/Chart.yaml
 git commit -m "Set next development version"
 git push origin
 ```

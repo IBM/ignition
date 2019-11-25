@@ -2,6 +2,14 @@ from ignition.api.exceptions import BadRequest
 
 class BaseController():
 
+    def get_required_param(self, request_data, param_name):
+        if param_name not in request_data:
+            raise BadRequest('\'{0}\' is a required param but was not found in the request data'.format(param_name))
+        return request_data.get(param_name)
+
+    def get_param(self, request_data, param_name, default_value=None):
+        return request_data.get(param_name, default_value)
+
     def get_body(self, request_data):
         if 'body' not in request_data:
             raise BadRequest('No body found in request data')

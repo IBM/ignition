@@ -8,7 +8,7 @@ class LifecycleDriver(Service, LifecycleDriverCapability):
         """
         Execute a lifecycle transition/operation for a Resource.
         This method should return immediate response of the request being accepted,
-        it is expected that the LifecycleService will poll get_lifecycle_execution on this driver to determine when the request has complete (or devise your own method).
+        the LifecycleService will poll get_lifecycle_execution on this driver to determine when the request has complete (or devise your own method).
 
         :param str lifecycle_name: name of the lifecycle transition/operation to execute
         :param ignition.utils.file.DirectoryTree lifecycle_scripts_tree: object for navigating the directory of the lifecycle scripts for the Resource
