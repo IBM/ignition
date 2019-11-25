@@ -10,12 +10,6 @@ spec:
         app: tdhelm
         part-of: lm
     spec:
-      hostAliases:
-      {{- if .Values.app.config.kafka.hostEnabled }}
-        - ip: {{ .Values.app.config.kafka.ip }}
-          hostnames:
-          - {{ .Values.app.config.kafka.host }}
-      {{- end }}
 {{- if .Values.app.affinity }}
       affinity:
 {{ toYaml .Values.app.affinity | indent 8 }}

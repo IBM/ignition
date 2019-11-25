@@ -1,8 +1,8 @@
 # Job Queue
 
-A Job Queue is a core feature required by many of the Services expected in a VIM or VNFC driver. As a result, all of the Services listed below are enabled by default when using the `ignition.boot.api.build_vim_driver` or `ignition.boot.api.build_vnfc_driver` method. 
+A Job Queue is a core feature required by many of the Services expected in a VIM or Lifecycle driver. As a result, all of the Services listed below are enabled by default when using the `ignition.boot.api.build_vim_driver` or `ignition.boot.api.build_lifecycle_driver` method. 
 
-In Ignition a job queue is implemented using a message bus, rather than in-memory, to maintain high availability. Jobs are queued on the message bus, each instance of the VIM/VNFC driver will take jobs from the queue, then either complete them or requeue them by posting it back to the bus.
+In Ignition a job queue is implemented using a message bus, rather than in-memory, to maintain high availability. Jobs are queued on the message bus, each instance of the VIM/Lifecycle driver will take jobs from the queue, then either complete them or requeue them by posting it back to the bus.
 
 The following service is auto-configured when enabled:
 
@@ -11,6 +11,30 @@ The following service is auto-configured when enabled:
 | MessagingJobQueueService | JobQueueCapability | PostalCapability, InboxCapability | bootstrap.job_queue.service_enabled | Handles receiving jobs, passing them off to registered handlers, before requeing them if the handling indicates the job cannot be completed yet |
 
 For an example of how the MessagingJobQueueService might be used see the InfrastructureTaskMonitoringService.
+
+## Configuration Properties
+
+The MessagingJobQueueService includes a `JobQueueProperties` property group, so the following properties may be configured in the configuration YAML file of a driver:
+
+| Property | Description | Default |
+| --- | --- | --- |
+| job_queue.consumer_group_id | The Consumer Group ID to use when consuming the queue from the Messaging Service (this ensures on restart that the driver may continue reading the queue from the last message it saw before it stopped) | job_queue_consumer | 
+
+In addition the MessagingJobQueueService also depends on the `topics.job_queue` property of the `MessagingProperties` group. This means the following configuration properties impact the job queue service:
+
+| Property | Description | Default |
+| --- | --- | --- |
+| messaging.topics.job_queue.name | Name of the topic used as a Job Queue | The driver's app name with special characters removed and spaces replaced with underscores (e.g. ignition.build_vim_driver('Openstack VIM Driver') generates a topic name of 'Openstack_VIM_Driver') | 
+| messaging.topics.job_queue.auto_create | Enable/disable auto-creation of the Job Queue topic. If disable then you must create it prior to starting the driver | True |
+| messaging.topics.job_queue.config | Map of configuration to be passed to the Topic when creating it | See below |
+
+Default job_queue.config:
+
+```
+retention.ms: 60000
+message.timestamp.difference.max.ms: 60000
+file.delete.delay.ms: 60000
+```
 
 ### Adding Jobs to the Queue
 
