@@ -60,6 +60,12 @@ class InfrastructureDriverCapability(Capability):
         :param str inputs: values for the inputs defined on the tosca template
         :param dict deployment_location: the deployment location to deploy to
         :return: an ignition.model.infrastructure.CreateInfrastructureResponse
+
+        :raises:
+            ignition.service.infrastructure.InvalidInfrastructureTemplateError: if the Template is not valid
+            ignition.service.infrastructure.TemporaryInfrastructureError: there is an issue handling this request at this time
+            ignition.service.infrastructure.UnreachableDeploymentLocationError: the Deployment Location cannot be reached
+            ignition.service.infrastructure.InfrastructureError: there was an error handling this request
         """
         pass
 
@@ -72,6 +78,13 @@ class InfrastructureDriverCapability(Capability):
         :param str request_id: identifier of the request to check
         :param dict deployment_location: the location the infrastructure was deployed to
         :return: an ignition.model.infrastructure.InfrastructureTask instance describing the status
+
+        :raises:
+            ignition.service.infrastructure.InfrastructureNotFoundError: if no infrastructure with the given infrastructure_id exists
+            ignition.service.infrastructure.InfrastructureRequestNotFoundError: if no request with the given request_id exists
+            ignition.service.infrastructure.UnreachableDeploymentLocationError: the Deployment Location cannot be reached
+            ignition.service.infrastructure.TemporaryInfrastructureError: there is an issue handling this request at this time, an attempt should be made again at a later time
+            ignition.service.infrastructure.InfrastructureError: there was an error handling this request
         """
         pass
 
@@ -85,6 +98,12 @@ class InfrastructureDriverCapability(Capability):
         :param str infrastructure_id: identifier of the infrastructure to be removed
         :param dict deployment_location: the location the infrastructure was deployed to
         :return: an ignition.model.infrastructure.DeleteInfrastructureResponse
+
+        :raises:
+            ignition.service.infrastructure.InfrastructureNotFoundError: if no infrastructure with the given infrastructure_id exists
+            ignition.service.infrastructure.UnreachableDeploymentLocationError: the Deployment Location cannot be reached
+            ignition.service.infrastructure.TemporaryInfrastructureError: there is an issue handling this request at this time, an attempt should be made again at a later time
+            ignition.service.infrastructure.InfrastructureError: there was an error handling this request
         """
         pass
 
@@ -98,6 +117,12 @@ class InfrastructureDriverCapability(Capability):
         :param str instance_name: name given as search criteria
         :param dict deployment_location: the deployment location to deploy to
         :return: an ignition.model.infrastructure.FindInfrastructureResponse
+
+        :raises:
+            ignition.service.infrastructure.InvalidInfrastructureTemplateError: if the Template is not valid
+            ignition.service.infrastructure.UnreachableDeploymentLocationError: the Deployment Location cannot be reached
+            ignition.service.infrastructure.TemporaryInfrastructureError: there is an issue handling this request at this time, an attempt should be made again at a later time
+            ignition.service.infrastructure.InfrastructureError: there was an error handling this request
         """
         pass
 ```
@@ -116,7 +141,7 @@ The `InfrastructureDriver` is expected to either:
 
 On receival of a CreateInfrastructureResponse, the InfrastructureService will inform the InfrastructureTaskMonitoringService that it should monitor the completion of the infrastructure creation, using the `infrastructure_id` and `request_id` on the response.
 
-The InfrastructureTaskMonitoringService will periodically, using the JobQueueService (see [job queue](./job_queue)), check if infrastructure has been created. It will do this by polling the `get_infrastructure_task` method of the `InfrastructureDriver`
+The InfrastructureTaskMonitoringService will periodically, using the JobQueueService (see [job queue](./job_queue)), check if infrastructure has been created. It will do this by polling the `get_infrastructure_task` method of the `InfrastructureDriver` (particular care should be taken raising Exceptions from this method, see the [errors](#errors) section of this document).
 
 Meanwhile, the InfrastructureService will return the `CreateInfrastructureResponse` to the InfrastructureApiService, so it may convert it to a HTTP response and return it to the original client.
 
@@ -147,11 +172,23 @@ The InfrastructureService takes this result and returns it to the Infrastructure
 
 ## Errors
 
-You are free to raise any Python errors in your code to indicate failure of a request. To customise the response returned to the API client on error, see [error handling](../../api-error-handling.md).
+Your InfrastructureDriver is free to raise any Python errors when handling create, delete, get or find requests in order to indicate a failure (errors thrown by `get_infrastructure_task` have implications on the monitoring service, discussed later in this section). To customise the response returned to the API client on error, see [error handling](../../api-error-handling.md).
 
-However, please note, in the `infrastructure` module of Ignition there already some error types you may use:
+In the `infrastructure` module of Ignition there are existing error types you are encouraged to use:
 
 | Error | Description |
 | --- | --- |
-| InfrastructureNotFoundError | To be used on a Delete request to indicate that the infrastructure could not be found to delete (HTTP Status: 400) | 
 | InvalidInfrastructureTemplateError | To be used on Create or Find, to indicate the Template provided is not valid (HTTP Status: 400) |
+| InfrastructureNotFoundError | To be used on a Delete and Get requests to indicate that the infrastructure could not be found (HTTP Status: 400) | 
+| InfrastructureRequestNotFoundError | To be used on a Get request to indicate the infrastructure request could not be found (HTTP Status: 400) |
+| TemporaryInfrastructureError | To be used to indicate the infrastructure request cannot be managed at this time (HTTP Status: 503) |
+| UnreachableDeploymentLocationError | To be used to indicate the Deployment Location cannot be reached (HTTP Status: 400) |
+| InfrastructureError | General purpose error for infrastructure (HTTP Status: 500) |
+
+The InfrastructureTaskMonitoringService has specific behaviour attached to Exception handling, as it continuously polls `get_infrastructure_task` and needs to know when it should stop monitoring a particular task. As a result, it will detect the following behaviours and react accordingly:
+
+| Error | Handling |
+| --- | --- |
+| TemporaryInfrastructureError | The monitoring service will re-queue the job, to check the status of the task later |
+| UnreachableDeploymentLocationError | The monitoring service will re-queue the job, to check the status of the task later |
+| Any other exception | The monitoring service will forget this infrastructure request and no longer poll for it's status |

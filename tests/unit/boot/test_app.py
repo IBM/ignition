@@ -33,7 +33,7 @@ class TestBootstrapRunner(unittest.TestCase):
         configuration = self.__minimal_working_configuration()
         bootstrap_runner = BootstrapRunner(configuration)
         app = bootstrap_runner.init_app()
-        mock_connexion_app.assert_called_once_with('BootstrapApplication', **{'specification_dir': './BootstrapApplication_boot/api_specs'})
+        mock_connexion_app.assert_called_once_with('BootstrapApplication', **{'specification_dir': '{0}/BootstrapApplication_boot/api_specs'.format(os.getcwd())})
 
     @patch('ignition.boot.app.ServiceRegister')
     @patch('ignition.boot.app.connexion.App')
@@ -95,7 +95,7 @@ class TestBootstrapRunner(unittest.TestCase):
         app_builder.add_api_configurator(mock_api_configurator)
         bootstrap_runner = BootstrapRunner(app_builder.build())
         app = bootstrap_runner.init_app()
-        mock_connexion_app.assert_called_once_with('MyTest', **{'specification_dir': './MyTest_boot/api_specs'})
+        mock_connexion_app.assert_called_once_with('MyTest', **{'specification_dir': '{0}/MyTest_boot/api_specs'.format(os.getcwd())})
         mock_connexion_App_inst.add_api.assert_called_once_with('vim_infrastructure.yaml', **{'resolver': mock_resolver, 'validator_map': {'body': RequestBodyValidator}})
         self.assertEqual(app.connexion_app, mock_connexion_App_inst)
 
@@ -106,7 +106,7 @@ class TestBootstrapRunner(unittest.TestCase):
         app_builder.property_groups.get_property_group(ApplicationProperties).connexion_init_props['test'] = True
         bootstrap_runner = BootstrapRunner(app_builder.build())
         app = bootstrap_runner.init_app()
-        mock_connexion_app.assert_called_once_with('MyTest', **{'test': True, 'specification_dir': './MyTest_boot/api_specs'})
+        mock_connexion_app.assert_called_once_with('MyTest', **{'test': True, 'specification_dir': '{0}/MyTest_boot/api_specs'.format(os.getcwd())})
 
     @patch('ignition.boot.app.connexion.App')
     def test_init_app_creates_connexion_app_with_runtime_args(self, mock_connexion_app):

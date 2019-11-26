@@ -66,4 +66,4 @@ def my_handler(job):
 queue_service.register_job_handler('DemoJob', my_handler)
 ```
 
-When asked to handle a job, the job handler must return `True` if the job has been complete or `False` if the job should be put back on the queue.
+When asked to handle a job, the job handler must return `True` if the job has been complete or `False` if the job should be put back on the queue. Any errors returned by the handler will result in the job being removed from the queue, so they should only be raised in exceptional circumstances. If relying on errors from 3rd party systems to indicate a job is not finished, you should catch this error with the `except` keyword, log the error (if useful) and return `False` instead. 

@@ -151,15 +151,18 @@ paths:
                 $ref: "#/components/schemas/FindInfrastructureResponse"
               examples:
                 found-example:
-                  $ref: '#/components/examples/ExampleFindInfrastructureResponse'
+                  $ref: "#/components/examples/ExampleFindInfrastructureResponse"
                 not-found-example:
-                  $ref: '#/components/examples/ExampleFindInfrastructureNotFoundResponse'
+                  $ref: "#/components/examples/ExampleFindInfrastructureNotFoundResponse"
         "400":
           description: Bad request
           content:
             application/json:
               schema:
-                $ref: "#/components/examples/ExampleFindInfrastructureErrorResponse"
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                example:
+                  $ref: "#/components/examples/ExampleFindInfrastructureErrorResponse"
 components:
   schemas:
     ErrorResponse:

@@ -48,7 +48,7 @@ class BootstrapRunner():
         if spec_dir is None:
             app_name_as_file_name = safe_filename(self.configuration.app_name)
             app_name_as_file_name = '{0}_boot'.format(app_name_as_file_name)
-            spec_dir = os.path.join('.', app_name_as_file_name, 'api_specs')
+            spec_dir = os.path.join(os.getcwd(), app_name_as_file_name, 'api_specs')
         return spec_dir
 
     def __get_server_port(self):

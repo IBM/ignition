@@ -1,5 +1,6 @@
 import json
 import threading
+import _thread
 import logging
 from ignition.service.framework import Capability, Service, interface
 from ignition.service.config import ConfigurationPropertiesGroup, ConfigurationProperties
@@ -130,6 +131,8 @@ class Message():
 
 class JsonContent():
 
+    ERROR_TYPE = json.JSONDecodeError
+
     def __init__(self, dict_val):
         self.dict_val = dict_val
 
@@ -188,10 +191,11 @@ class KafkaDeliveryService(Service, DeliveryCapability):
         logger.debug('Delivering envelope to {0} with message content: {1}'.format(envelope.address, content))
         self.producer.send(envelope.address, content).add_callback(self.__on_send_success).add_errback(self.__on_send_error)
 
-
 class KafkaInboxService(Service, InboxCapability):
 
-    def __init__(self, **kwargs):
+    def __init__(self, test_mode=False, **kwargs):
+        self.test_mode = test_mode
+        self.exited = False
         if 'messaging_config' not in kwargs:
             raise ValueError('messaging_config argument not provided')
         messaging_config = kwargs.get('messaging_config')
@@ -200,11 +204,18 @@ class KafkaInboxService(Service, InboxCapability):
             raise ValueError('connection_address not set on messaging_config')
         self.active_threads = []
 
-    def __thread_exit_func(self, thread):
+    def __thread_exit_func(self, thread, closing_error):
         self.active_threads.remove(thread)
+        if closing_error:
+            if self.test_mode:
+                self.exited = True
+            else:
+                logger.error('Interrupting application due to error in inbox thread {0}: {1}'.format(thread.topic, str(closing_error)))
+                _thread.interrupt_main()
 
     def watch_inbox(self, group_id, address, read_func):
         thread = KafkaInboxThread(self.bootstrap_servers, group_id, address, read_func, self.__thread_exit_func)
+        thread.setDaemon(True)
         self.active_threads.append(thread)
         try:
             thread.start()
@@ -215,6 +226,7 @@ class KafkaInboxService(Service, InboxCapability):
 class KafkaInboxThread(threading.Thread):
 
     def __init__(self, bootstrap_servers, group_id, topic, consumer_func, thread_exit_func):
+        self.parent = threading.currentThread()
         self.bootstrap_servers = bootstrap_servers
         self.group_id = group_id
         self.topic = topic
@@ -223,12 +235,24 @@ class KafkaInboxThread(threading.Thread):
         super().__init__()
 
     def run(self):
-        consumer = KafkaConsumer(self.topic, bootstrap_servers=self.bootstrap_servers, group_id=self.group_id)
+        logger.info('Starting watch on inbox topic: {0}'.format(self.topic))
+        closing_error = None
+        consumer = KafkaConsumer(self.topic, bootstrap_servers=self.bootstrap_servers, group_id=self.group_id, enable_auto_commit=False)
         try:
             for record in consumer:
-                self.consumer_func(record.value.decode('utf-8'))
+                logger.debug('Inbox ({0}) has received a new message: {1}'.format(self.topic, record))
+                record_content = record.value.decode('utf-8')
+                logger.debug('Inbox ({0}) message has content: {1}'.format(self.topic, record_content))
+                self.consumer_func(record_content)
+                # If consumer func returns without error we are ok to move on
+                consumer.commit()
+        except Exception as e:
+            logger.exception('Inbox thread for topic {0} is closing due to error (see below):'.format(self.topic))
+            closing_error = e
         finally:
             try:
                 consumer.close()
+            except Exception as e:
+                logger.exception('Error closing consumer for inbox thread on topic {0}'.format(self.topic))
             finally:
-                self.thread_exit_func(self)
+                self.thread_exit_func(self, closing_error)

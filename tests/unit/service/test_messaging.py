@@ -1,6 +1,6 @@
 import unittest
 import time
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, call
 from ignition.service.messaging import PostalService, KafkaDeliveryService, KafkaInboxService, Envelope, Message
 
 
@@ -90,12 +90,11 @@ class TestKafkaInboxService(unittest.TestCase):
         inbox_service = KafkaInboxService(messaging_config=self.mock_messaging_config)
         mock_read_inbox_func = MagicMock()
         inbox_service.watch_inbox('test_group', 'test_topic', mock_read_inbox_func)
-        mock_kafka_consumer_init.assert_called_once_with('test_topic', bootstrap_servers='test:9092', group_id='test_group')
+        mock_kafka_consumer_init.assert_called_once_with('test_topic', bootstrap_servers='test:9092', group_id='test_group', enable_auto_commit=False)
 
     @patch('ignition.service.messaging.KafkaConsumer')
     def test_watch_inbox_thread_inits_consumer(self, mock_kafka_consumer_init):
         mock_kafka_consumer = mock_kafka_consumer_init.return_value
-        mock_iterator = MagicMock()
         mock_record_1 = MagicMock()
         mock_record_2 = MagicMock()
         infinite_iter_stop = False
@@ -118,19 +117,48 @@ class TestKafkaInboxService(unittest.TestCase):
         inbox_service = KafkaInboxService(messaging_config=self.mock_messaging_config)
         mock_read_inbox_func = MagicMock()
         inbox_service.watch_inbox('test_group', 'test_topic', mock_read_inbox_func)
+        time.sleep(0.01)
         try:
             self.assertEqual(len(inbox_service.active_threads), 1)
-            mock_kafka_consumer_init.assert_called_once_with('test_topic', bootstrap_servers='test:9092', group_id='test_group')
+            mock_kafka_consumer_init.assert_called_once_with('test_topic', bootstrap_servers='test:9092', group_id='test_group', enable_auto_commit=False)
             mock_kafka_consumer.__iter__.assert_called_once()
             mock_record_1.value.decode.assert_called_once_with('utf-8')
             mock_record_2.value.decode.assert_not_called()
             mock_read_inbox_func.assert_called_once_with(mock_record_1.value.decode.return_value)
+            mock_kafka_consumer.commit.assert_called_once()
             ready_for_second_message = True
-            time.sleep(0.005)
+            time.sleep(0.01)
             mock_record_2.value.decode.assert_called_once_with('utf-8')
             mock_read_inbox_func.assert_called_with(mock_record_2.value.decode.return_value)
+            mock_kafka_consumer.commit.assert_has_calls([call(), call()])
         finally:
             infinite_iter_stop = True
         time.sleep(1)
         mock_kafka_consumer.close.assert_called_once()
         self.assertEqual(len(inbox_service.active_threads), 0)
+
+    @patch('ignition.service.messaging._thread')
+    @patch('ignition.service.messaging.KafkaConsumer')
+    def test_watch_inbox_thread_calls_exit_func_on_error(self, mock_kafka_consumer_init, mock_thread):
+        mock_kafka_consumer = mock_kafka_consumer_init.return_value
+        mock_record_1 = MagicMock()
+        infinite_iter_stop = False
+        ready_for_message = True
+        def build_iter():
+            def iter():
+                while not infinite_iter_stop:
+                    if ready_for_message:
+                        yield mock_record_1
+                        break
+            return iter
+        mock_kafka_consumer.__iter__.side_effect = build_iter()
+        inbox_service = KafkaInboxService(test_mode=True, messaging_config=self.mock_messaging_config)
+        mock_read_inbox_func = MagicMock()
+        mock_read_inbox_func.side_effect = ValueError('Test error')
+        self.assertFalse(inbox_service.exited)
+        inbox_service.watch_inbox('test_group', 'test_topic', mock_read_inbox_func)
+        ready_for_message = True
+        time.sleep(0.01)
+        ## Indicates the exit func on inbox_service was called when in "test_mode"
+        self.assertTrue(inbox_service.exited)
+        mock_kafka_consumer.commit.assert_not_called()

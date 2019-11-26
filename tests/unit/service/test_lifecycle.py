@@ -1,7 +1,8 @@
 import unittest
 from unittest.mock import patch, MagicMock, ANY
 from ignition.api.exceptions import BadRequest
-from ignition.service.lifecycle import LifecycleApiService, LifecycleService, LifecycleExecutionMonitoringService, LifecycleMessagingService, LifecycleScriptFileManagerService
+from ignition.service.lifecycle import (LifecycleApiService, LifecycleService, LifecycleExecutionMonitoringService, LifecycleMessagingService, 
+                        LifecycleScriptFileManagerService, TemporaryLifecycleError, LifecycleExecutionRequestNotFoundError)
 from ignition.model.lifecycle import LifecycleExecuteResponse, LifecycleExecution
 from ignition.model.failure import FailureDetails, FAILURE_CODE_INTERNAL_ERROR
 from ignition.service.messaging import Envelope, Message, TopicConfigProperties
@@ -217,6 +218,29 @@ class TestLifecycleExecutionMonitoringService(unittest.TestCase):
         })
         self.assertEqual(job_finished, False)
         self.mock_driver.get_lifecycle_execution.assert_called_once_with('req123', {'name': 'TestDl'})
+
+    def test_job_handler_does_not_mark_job_as_finished_if_temporary_error_thrown(self):
+        self.mock_driver.get_lifecycle_execution.side_effect = TemporaryLifecycleError('Retry it')
+        monitoring_service = LifecycleExecutionMonitoringService(job_queue_service=self.mock_job_queue, lifecycle_messaging_service=self.mock_lifecycle_messaging_service, driver=self.mock_driver)
+        job_finished = monitoring_service.job_handler({
+            'job_type': 'LifecycleExecutionMonitoring',
+            'request_id': 'req123',
+            'deployment_location': {'name': 'TestDl'}
+        })
+        self.assertEqual(job_finished, False)
+        self.mock_driver.get_lifecycle_execution.assert_called_once_with('req123', {'name': 'TestDl'})
+
+    def test_job_handler_marks_job_as_finished_if_request_not_found_error_thrown(self):
+        self.mock_driver.get_lifecycle_execution.side_effect = LifecycleExecutionRequestNotFoundError('Not found')
+        monitoring_service = LifecycleExecutionMonitoringService(job_queue_service=self.mock_job_queue, lifecycle_messaging_service=self.mock_lifecycle_messaging_service, driver=self.mock_driver)
+        job_finished = monitoring_service.job_handler({
+            'job_type': 'LifecycleExecutionMonitoring',
+            'request_id': 'req123',
+            'deployment_location': {'name': 'TestDl'}
+        })
+        self.assertEqual(job_finished, True)
+        self.mock_driver.get_lifecycle_execution.assert_called_once_with('req123', {'name': 'TestDl'})
+
 
     def test_job_handler_sends_message_when_task_complete(self):
         self.mock_driver.get_lifecycle_execution.return_value = LifecycleExecution('req123', 'COMPLETE', None)

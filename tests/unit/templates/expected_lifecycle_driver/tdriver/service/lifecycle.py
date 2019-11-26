@@ -16,6 +16,12 @@ class LifecycleDriver(Service, LifecycleDriverCapability):
         :param dict properties: property values of the Resource
         :param dict deployment_location: the deployment location the Resource is assigned to
         :return: an ignition.model.lifecycle.LifecycleExecuteResponse
+        
+        :raises:
+            ignition.service.lifecycle.InvalidLifecycleScriptsError: if the scripts are not valid
+            ignition.service.lifecycle.InvalidLifecycleNameError: if no script can be found to execute the transition/operation given by lifecycle_name
+            ignition.service.lifecycle.TemporaryLifecycleError: there is an issue handling this request at this time
+            ignition.service.lifecycle.LifecycleError: there was an error handling this request
         """
         print("Executing some Lifecycle")
         request_id = '1'
@@ -28,6 +34,11 @@ class LifecycleDriver(Service, LifecycleDriverCapability):
         :param str request_id: identifier of the request to check
         :param dict deployment_location: the deployment location the Resource is assigned to
         :return: an ignition.model.lifecycle.LifecycleExecution
+        
+        :raises:
+            ignition.service.lifecycle.LifecycleExecutionRequestNotFoundError: if no request with the given request_id exists
+            ignition.service.lifecycle.TemporaryLifecycleError: there is an issue handling this request at this time, an attempt should be made again at a later time
+            ignition.service.lifecycle.LifecycleError: there was an error handling this request
         """
         print("Querying some Lifecycle Execution")
         request_id = '1'

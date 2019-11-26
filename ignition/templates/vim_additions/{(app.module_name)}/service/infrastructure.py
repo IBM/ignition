@@ -15,6 +15,12 @@ class InfrastructureDriver(Service, InfrastructureDriverCapability):
         :param str inputs: values for the inputs defined on the tosca template
         :param dict deployment_location: the deployment location to deploy to
         :return: an ignition.model.infrastructure.CreateInfrastructureResponse
+
+        :raises:
+            ignition.service.infrastructure.InvalidInfrastructureTemplateError: if the Template is not valid
+            ignition.service.infrastructure.TemporaryInfrastructureError: there is an issue handling this request at this time
+            ignition.service.infrastructure.UnreachableDeploymentLocationError: the Deployment Location cannot be reached
+            ignition.service.infrastructure.InfrastructureError: there was an error handling this request
         """
         print("Creating some Infrastructure")
         infrastructure_id = '1'
@@ -29,6 +35,13 @@ class InfrastructureDriver(Service, InfrastructureDriverCapability):
         :param str request_id: identifier of the request to check
         :param dict deployment_location: the location the infrastructure was deployed to
         :return: an ignition.model.infrastructure.InfrastructureTask instance describing the status
+
+        :raises:
+            ignition.service.infrastructure.InfrastructureNotFoundError: if no infrastructure with the given infrastructure_id exists
+            ignition.service.infrastructure.InfrastructureRequestNotFoundError: if no request with the given request_id exists
+            ignition.service.infrastructure.UnreachableDeploymentLocationError: the Deployment Location cannot be reached
+            ignition.service.infrastructure.TemporaryInfrastructureError: there is an issue handling this request at this time, an attempt should be made again at a later time
+            ignition.service.infrastructure.InfrastructureError: there was an error handling this request
         """
         print("Querying some Infrastructure")
         return infrastructure_model.InfrastructureTask(infrastructure_id, request_id, infrastructure_model.STATUS_IN_PROGRESS)
@@ -42,6 +55,12 @@ class InfrastructureDriver(Service, InfrastructureDriverCapability):
         :param str infrastructure_id: identifier of the infrastructure to be removed
         :param dict deployment_location: the location the infrastructure was deployed to
         :return: an ignition.model.infrastructure.DeleteInfrastructureResponse
+
+        :raises:
+            ignition.service.infrastructure.InfrastructureNotFoundError: if no infrastructure with the given infrastructure_id exists
+            ignition.service.infrastructure.UnreachableDeploymentLocationError: the Deployment Location cannot be reached
+            ignition.service.infrastructure.TemporaryInfrastructureError: there is an issue handling this request at this time, an attempt should be made again at a later time
+            ignition.service.infrastructure.InfrastructureError: there was an error handling this request
         """
         print("Deleting some Infrastructure")
         request_id = '2'
@@ -56,6 +75,12 @@ class InfrastructureDriver(Service, InfrastructureDriverCapability):
         :param str instance_name: name given as search criteria
         :param dict deployment_location: the deployment location to deploy to
         :return: an ignition.model.infrastructure.FindInfrastructureResponse
+
+        :raises:
+            ignition.service.infrastructure.InvalidInfrastructureTemplateError: if the Template is not valid
+            ignition.service.infrastructure.UnreachableDeploymentLocationError: the Deployment Location cannot be reached
+            ignition.service.infrastructure.TemporaryInfrastructureError: there is an issue handling this request at this time, an attempt should be made again at a later time
+            ignition.service.infrastructure.InfrastructureError: there was an error handling this request
         """
         print("Finding some Infrastructure")
         return infrastructure_model.FindInfrastructureResponse()
