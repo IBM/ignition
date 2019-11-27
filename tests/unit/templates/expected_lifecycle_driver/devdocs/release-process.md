@@ -1,6 +1,6 @@
 # Releasing the Driver
 
-This section describes a recommended method for building and releasing the driver artifacts. 
+This section describes a recommended process for building and releasing the driver artifacts. 
 
 ## 1. Set Versions
 
@@ -69,11 +69,11 @@ The TAR will be created in the root directory of the project
 
 This requires `docker` to be installed and running on your local machine.
 
-4.1 Move the whl now in `dist` to the `docker/whl` directory (create the `whl` directory if it does not exist. Ensure no additional whls are in this directory if it does)
+4.1 Move the whl now in `dist` to the `docker/whls` directory (create the `whls` directory if it does not exist. Ensure no additional whls are in this directory if it does)
 
 ```
-rm -rf ./docker/whl
-mkdir ./docker/whl
+rm -rf ./docker/whls
+mkdir ./docker/whls
 cp dist/tdriver-<release version number>-py3-none-any.whl docker/whls/
 ```
 

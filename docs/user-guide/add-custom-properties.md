@@ -29,6 +29,8 @@ class DatabaseProperties(ConfigurationProperties):
         self.port = None
 ```
 
+The `app` string passed to `super().__init__()` identifies the key in the YAML file to find in order to read the desired attributes. 
+
 When registered to the application, the registered instance of the `AppProperties` will be populated with the values from the configuration file i.e. `self.database.host` would be set to `localhost`.
 
 ## Example

@@ -8,7 +8,7 @@ class InfrastructureDriver(Service, InfrastructureDriverCapability):
         """
         Initiates a request to create infrastructure based on a TOSCA template.
         This method should return immediate response of the request being accepted,
-        it is expected that the InfrastructureService will poll get_infrastructure_task on this driver to determine when the request has complete.
+        the InfrastructureService will poll get_infrastructure_task on this driver to determine when the request has completed.
 
         :param str template: template of infrastructure to be created
         :param str template_type: type of template used i.e. TOSCA or Heat
@@ -37,7 +37,7 @@ class InfrastructureDriver(Service, InfrastructureDriverCapability):
         """
         Initiates a request to delete infrastructure previously created with the given infrastructure_id.
         This method should return immediate response of the request being accepted,
-        it is expected that the InfrastructureService will poll get_infrastructure_task on this driver to determine when the request has complete.
+        the InfrastructureService will poll get_infrastructure_task on this driver to determine when the request has completed.
 
         :param str infrastructure_id: identifier of the infrastructure to be removed
         :param dict deployment_location: the location the infrastructure was deployed to

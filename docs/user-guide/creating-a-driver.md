@@ -7,6 +7,23 @@ Contents:
 - [Create Command](#create-command)
 - [The Basics of a Driver](#the-basics-of-a-driver)
 
+# Prerequisites
+
+You will need Python3 and Pip to complete this guide.
+
+On some Linux distributions you will need to also install `python3-dev`. Make sure you install the version which matches your Python version, in most cases the following is suitable:
+
+```
+sudo apt-get install python3-dev
+```
+
+If you have Python 3.6 or 3.7 then you must adjust the command:
+
+```
+sudo add-apt-repository ppa:deadsnakes/ppa
+sudo apt-get install python3.6-dev
+```
+
 # Create Command
 
 Creating a driver with Ignition is simple with the CLI tool provided with the framework. With a few simple inputs you can generate a ready-to-use Python project with solutions for:
@@ -72,7 +89,7 @@ Now install your driver module and run a development version of the driver with 
 
 ```
 pip install --editable .
-mydriver-dev #<module-name>-dev
+mydriver-dev
 ```
 
 If successful you should be able to access your driver at: 
@@ -96,6 +113,16 @@ After running the create command you will have a project which includes the foll
 - tests - directory to contain unit tests for your driver
 
 The following sections explain the contents of the major directories of the project.
+
+## devdocs
+
+This directory contains markdown instructions which explain:
+
+- Basic architecture of the Python application
+- How to run unit tests for the driver
+- Build a distributable version of the Python application
+- Build a docker image for your driver
+- Build and deploy the helm chart for your driver
 
 ## Setup.py
 
@@ -217,6 +244,8 @@ app_builder.add_service(InfrastructureDriver)
 
 The Ignition app builder has been auto-configured with several services, based on the type of driver being created (specified on the `build_driver` call), so we only need to add our additional services. In our example, we are adding our implementation of the InfrastructureDriver, which is ultimately called to handle infrastructure requests. You can read more about services and their role in an Ignition based app in the [framework](./framework/index.md) section.
 
+It's important to note that the Service you add (in this case the InfrastructureDriver) does not have to continue using this Service/Capability framework. The python code within your driver implementation is free to use any style you like.
+
 Finally we build the application and return it:
 
 ```
@@ -229,13 +258,15 @@ The last element of this file is the `init_app` method. This method creates the 
 
 These files are where you should begin implementing the functionality of your driver. In each file you will see a class which implements either the `InfrastructureCapability` or the `LifecycleCapability`.
 
-To add functionality to your driver, you must implement each method stub included on those classes. 
+To add functionality to your driver, you must implement each method stub included on those classes. To understand how these methods are used in the handling a request to your driver, see [infrastructure components](./framework/bootstrap-components/infrastructure.md) and [lifecycle components](./framework/bootstrap-components/lifecycle.md)
 
 ## Docker 
 
-This directory contains a recommended implementation of a Dockerfile to build an image for your driver. It contains a best practice solution for installing the driver from a pre-built `whl` (see [setup.py](#setup.py)), then running the driver in production mode and exposing the necessary port to allow access to it's APIs.
+This directory contains a recommended implementation of a Dockerfile to build an image for your driver. It contains a best practice solution for installing the driver from a pre-built `whl` (see [setup.py](#setup.py)), running the driver in production mode (inside a uwsgi container) and exposing the necessary port to allow access to it's APIs.
 
 You are free to adjust this file to produce an image more suited to your deployment patterns. There is no requirement to keep this directory, your Python application is unaffected by it's presence.
+
+To build the Docker image consult the `devdocs` included in your driver.
 
 ## Helm 
 
@@ -249,3 +280,13 @@ The Helm chart will install:
 - an Ingress rule to expose the APIs to external clients from the Kuberentes using an ingress controller (if your cluster has one installed)
 
 This implementation of a Helm chart should allow you deploy your driver to Kubernetes right away! However, you are free to adjust this directory to produce a chart more suited to your deployment patterns. There is no requirement to keep this directory, your Python application is unaffected by it's presence.
+
+To build the Helm chart consult the `devdocs` included in your driver.
+
+# Next Steps
+
+Ensure you have read through [The Basics of a Driver](#the-basic-of-a-driver) to become familiar with the contents of your driver project. 
+
+Read through the [devdocs](#devdocs) generated for your driver (at `<project root>/devdocs`) to learn how to build and deploy your driver.
+
+Read [infrastructure components](./framework/bootstrap-components/infrastructure.md) and [lifecycle components](./framework/bootstrap-components/lifecycle.md) to understand how Ignition bootstraps components handling the boilerplate of your driver and how to add your desired functionality.
