@@ -11,7 +11,7 @@ Contents:
 
 You will need Python3 and Pip to complete this guide.
 
-On some Linux distributions you will need to also installed `python3-dev`. Make sure you install the version which matches your Python version, in most cases the following is suitable:
+On some Linux distributions you will need to also install `python3-dev`. Make sure you install the version which matches your Python version, in most cases the following is suitable:
 
 ```
 sudo apt-get install python3-dev

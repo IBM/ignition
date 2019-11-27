@@ -56,7 +56,7 @@ Ignition loads configuration properties from any sources provided to the applica
 
 - `{(app.module_name)}/config/default_config.yml` - this is the default configuration file, bundled into the distributed version of your application
 - `{(app.module_name)}_config.yml` - Ignition will search for a configuration file with this name at the directory the application has been started from (ignored if not found)
-- `/var/{( app.module_name )}/{( app.module_name )}_config.yml` - this configuration file is only used in the Helm chart installation. Ignition will search for a configration file at this path (ignored if not found)
+- `/var/{( app.module_name )}/{( app.module_name )}_config.yml` - this configuration file is only used in the Helm chart installation. Ignition will search for a configuration file at this path (ignored if not found)
 - `{( app.module_name|upper )}_CONFIG` - set this environment variable to a file path and Ignition will load the configuration file (ignored if the environment variable is not set)
 
 This allows the user flexibility in how to configure the application. When running with Python (using `{(app.module_name)}-dev` or `{(app.module_name)}`) the best approach is to create a `{(app.module_name)}_config.yml` file in the current directory or configure `{( app.module_name|upper )}_CONFIG` with a file path. 

@@ -86,9 +86,9 @@ The `LifecycleDriver` is expected to either:
 - Complete the request by initiating execution of the target lifecycle, returning immediately with an instance of `ignition.model.lifecycle.LifecycleExecuteResponse` which includes a `request_id` which may be used at a later time to check the status of the execution.
 - Raise an Exception if the request is invalid or cannot be accepted. This Exception will end the continuation of this flow and instead result in an error being returned to the client of the LifecycleApiService. 
 
-On receival of a LifecycleExecuteResponse, the `LifecycleService` will inform the LifecycleExecutionMonitoringService that it should monitor the completion of the execution, using the `request_id` from the response.
+On receipt of a LifecycleExecuteResponse, the `LifecycleService` will inform the LifecycleExecutionMonitoringService that it should monitor the completion of the execution, using the `request_id` from the response.
 
-The LifecycleExecutionMonitoringService will periodically, using the JobQueueService (see [job queue](./job_queue)), check if execution has complete. It will do this by polling the `get_lifecycle_execution` method of the `LifecycleDriver`
+The LifecycleExecutionMonitoringService will periodically, using the JobQueueService (see [job queue](./job_queue)), check if execution has complete. It will do this by calling the `get_lifecycle_execution` method of the `LifecycleDriver`
 
 Meanwhile, the LifecycleService will return the LifecycleExecuteResponse to the LifecycleApiService, so it may convert it to a HTTP response and return it to the original client.
 
