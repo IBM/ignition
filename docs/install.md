@@ -1,16 +1,16 @@
 # Install Ignition
 
-The main intention of the Ignition framework is for it to be used as dependency which is installed as part of your Python application. 
+The Ignition framework is usually included as a dependency installed as part of your Python application. 
 
-However, we recommend installing Ignition to your machine so you may use the CLI tool which makes creating new drivers much simpler. 
+However, we recommend installing Ignition to your machine so you may use the CLI tool as it makes creating new drivers much simpler. 
 
-## Pre-requisites
+## Prerequisites
 
 ### Python 3
 
 Before you begin you will need to install:
 
-- <a href="https://www.python.org" target="_blank">Python3</a>
+- <a href="https://www.python.org" target="_blank">Python3 (v3.5+)</a>
 - <a href="https://pip.pypa.io/en/stable/installing/" target="_blank">Pip3</a> (already installed with many Python installations)
 
 As it's possible to have both Python2 and Python3 installed on one machine, this guide will make use of `python3` and `pip3` commands instead of `python` and `pip`. If you only have Python3, then you may use the latter instead. Verify which command works for you by running both:

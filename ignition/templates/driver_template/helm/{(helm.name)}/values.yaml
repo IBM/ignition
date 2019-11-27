@@ -11,19 +11,9 @@ app:
   replicas: 1
   ## os-vim-driver specific configuration
   config:
-    kafka:
-      ## note: assumes that Kafka is accessible at 'app.config.override.messaging.connection_address'
-
-      ## There is an additional option for configuring access to Kafka by fixed IP. This is added as a host entry to the container.
-      hostEnabled: false
-      ## the host must match the value of 'app.config.override.messaging.connection_address', if it is set
-      host: "foundation-kafka"
-      ## this must be set to the Kafka IP address
-      ip:
-
     ## Configure logging 
     log:
-      level: DEBUG
+      level: INFO
 
     ## Pass additional environment variables to the application containers
     env:
@@ -95,6 +85,7 @@ service:
   nodePort: {(helm.node_port)}
 
 ingress:
+  enabled: true
   ## The host used to access the service externally i.e. http://<server.ingress.hostname>/
   ## If not making use of a DNS to resolve this host you must add this to the client hosts file with the K8s IP
   ## E.g.

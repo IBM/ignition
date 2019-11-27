@@ -4,7 +4,7 @@ Ignition is built on 'Services' that each fulfill a 'Capability'.
 
 ## Capability
 
-A Capability defines a set of methods that are required to fulfill a particular role in the system (i.e. an Interface).
+A Capability defines a set of methods that must be implemented to fulfill a particular role in the system (i.e. an Interface).
 
 For example, there might be a MessagingCapability that expects a single `send_message(the_message)` function. This would be defined by the following:
 
@@ -126,7 +126,7 @@ Note: the above usage is recommended for any non-service based arguments. If you
 
 ## Service Dependencies
 
-In order for a Service to work, it may need to be injected with other registered Services that offer particular capabilities. For example, a Monitoring Service may need access to a service that can provide Messaging, to send messages out when it notices something has changed.
+This Service/Capability architecture allows a Service to have a dependency to another function of the system, by declaring a dependency to a Capability. On startup, the Service will be injected with the Service fulfilling the Capability. This keeps Services decoupled and ultimately allows Ignition to provide out-of-the-box functionality that you can easily replace by registering your own Service. 
 
 When a Service is registered, the capabilities it requires can be specified:
 
