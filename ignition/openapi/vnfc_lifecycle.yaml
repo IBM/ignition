@@ -33,7 +33,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ExecutionAcceptedResponse"
-              response:
+              examples:
                 example:
                   $ref: "#/components/examples/ExampleExecutionAcceptedResponse"
                 async-response:
