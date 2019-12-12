@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.6.1](https://github.com/accanto-systems/ignition/tree/0.6.1) (2019-12-12)
+[Full Changelog](https://github.com/accanto-systems/ignition/compare/0.6.0...0.6.1)
+
+**Fixed bugs:**
+- PropValueMap items_with_types iterator has no termination check [\#42](https://github.com/accanto-systems/ignition/issues/42)
+
 ## [0.6.0](https://github.com/accanto-systems/ignition/tree/0.6.0) (2019-12-12)
 [Full Changelog](https://github.com/accanto-systems/ignition/compare/0.5.0...0.6.0)
 
