@@ -159,7 +159,10 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/examples/ExampleFindInfrastructureErrorResponse"
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                example:
+                  $ref: "#/components/examples/ExampleFindInfrastructureErrorResponse"
 components:
   schemas:
     ErrorResponse:

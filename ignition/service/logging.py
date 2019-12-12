@@ -62,13 +62,15 @@ class LogstashFormatter(logging.Formatter):
             'msecs', 'msecs', 'message', 'msg', 'name', 'pathname', 'process',
             'processName', 'relativeCreated', 'thread', 'threadName', 'extra')
 
-        python_types = (str, bool, dict, float, int, list, type(None))
+        python_types = (str, bool, dict, float, int, list)
 
         fields = {}
 
         for key, value in record.__dict__.items():
             if key not in ignore_fields:
-                if isinstance(value, python_types):
+                if value is None:
+                    fields[key] = "None"
+                elif isinstance(value, python_types):
                     fields[key] = value
                 else:
                     fields[key] = repr(value)
@@ -154,5 +156,7 @@ else:
 
 logging.getLogger().setLevel(log_level)
 [handler.setFormatter(log_formatter) for handler in logging.getLogger().handlers]
+
+logging.getLogger('kafka').setLevel('INFO')
 
 logging_context = LoggingContext()
