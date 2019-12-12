@@ -66,10 +66,6 @@ class TestPropValueAndType(unittest.TestCase):
         self.assertEqual(values.get('prop3', None), None)
         self.assertEqual(values['prop1'], 'value1')
 
-        # with self.assertRaises(ValueError) as context:
-        #     values['prop3'] = "value3"
-        #     self.assertTrue('Value must have a type property' in context.exception)
-
         with self.assertRaises(ValueError) as context:
             values['prop3'] = {
                 "type": "string"
@@ -135,6 +131,26 @@ class TestPropValueAndType(unittest.TestCase):
 
         self.assertEqual(next(iter(values.get_keys().items())), ('prop2', 'privKey'))
 
+    def test_items_with_types_iterator(self):
+        values = PropValueMap({
+            'prop1': {
+                'value': 'value1',
+                'type': 'string'
+            },
+            'prop2': {
+                'privateKey': 'privKey',
+                'publicKey': 'pubKey',
+                'type': 'key'
+            },
+            'prop3': {
+                'value': 'value3',
+                'type': 'string'
+            }
+        })
+        # iteration should complete without error
+        for prop in values.get_keys().items_with_types():
+            pass
+
     def test_items_with_types(self):
         values = PropValueMap({
             'prop1': {
@@ -153,10 +169,10 @@ class TestPropValueAndType(unittest.TestCase):
         })
 
         it = values.items_with_types()
-        self.assertEqual(next(it), {
+        self.assertEqual(next(it), ('prop1', {
             'value': 'value1',
             'type': 'string'
-        })
+        }))
 
     def test_get_props(self):
         values = PropValueMap({
