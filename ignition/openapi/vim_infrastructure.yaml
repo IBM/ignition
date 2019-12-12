@@ -15,7 +15,7 @@ paths:
         - infrastructure
       summary: Create infrastructure
       description: >-
-        Create infrastructure described by a Template string in the given Deployment Location. If accepted, a response should be returned immediately with an infrastructureId, to refer to the infrastructured being created, and a requestId, to refer to the creation process.
+        Create infrastructure described by a Template string in the given Deployment Location. If accepted, a response should be returned immediately with an infrastructureId, to refer to the infrastructure being created, and a requestId, to refer to the creation process.
         The completion of the request (regardless of whether it was successful or not) should be returned via Kafka (with a message of type InfrastructureTask from the schema)
       operationId: .create
       requestBody:
@@ -92,7 +92,7 @@ paths:
         - infrastructure
       summary: Deletes infrastructure
       description: >-
-        Deletes infrastructure previously created in the given Deployment Location. If the request is accepted, a response should be returned immediately with a requestId to refer to the deletion process. The completion of the request (regardless of whether it was successful or not) should be returned via Kafka
+        Deletes infrastructure previously created in the given Deployment Location. If the request is accepted, a response should be returned immediately with a requestId to refer to the deletion process. The completion of the request (regardless of whether it was successful or not) should be returned via Kafka (this is handled by Ignition)
       operationId: .delete
       requestBody:
         content:
@@ -178,7 +178,7 @@ components:
       type: object
       properties:
         inputs:
-          type: object
+          $ref: "#/components/schemas/Properties"
           description: Key/value inputs to be provided to the Template
         deploymentLocation:
           $ref: "#/components/schemas/DeploymentLocation"
@@ -192,6 +192,15 @@ components:
         - deploymentLocation
         - template
         - templateType
+    Properties:
+      type: object
+      additionalProperties:
+        type: object
+        properties:
+          value:
+            type: string
+          type:
+            type: string
     CreateInfrastructureResponse:
       type: object
       properties:

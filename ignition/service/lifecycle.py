@@ -6,6 +6,7 @@ from ignition.service.messaging import Message, Envelope, JsonContent
 from ignition.utils.file import DirectoryTree
 from ignition.api.exceptions import ApiException
 from ignition.service.logging import logging_context
+from ignition.utils.propvaluemap import PropValueMap
 import uuid
 import logging
 import os
@@ -52,7 +53,7 @@ class LifecycleDriverCapability(Capability):
         """
         Execute a lifecycle transition/operation for a Resource.
         This method should return immediate response of the request being accepted,
-        it is expected that the LifecycleService will poll get_lifecycle_execution on this driver to determine when the request has complete (or devise your own method).
+        it is expected that the LifecycleService will poll get_lifecycle_execution on this driver to determine when the request has completed (or devise your own method).
 
         :param str lifecycle_name: name of the lifecycle transition/operation to execute
         :param ignition.utils.file.DirectoryTree lifecycle_scripts_tree: object for navigating the directory of the lifecycle scripts for the Resource
@@ -139,8 +140,8 @@ class LifecycleApiService(Service, LifecycleApiCapability, BaseController):
             logger.debug('Handling lifecycle execution request with body %s', body)
             lifecycle_name = self.get_body_required_field(body, 'lifecycleName')
             lifecycle_scripts = self.get_body_required_field(body, 'lifecycleScripts')
-            system_properties = self.get_body_required_field(body, 'systemProperties')
-            properties = self.get_body_field(body, 'properties', {})
+            system_properties = PropValueMap(self.get_body_required_field(body, 'systemProperties'))
+            properties = PropValueMap(self.get_body_field(body, 'properties', {}))
             deployment_location = self.get_body_required_field(body, 'deploymentLocation')
             execute_response = self.service.execute_lifecycle(lifecycle_name, lifecycle_scripts, system_properties, properties, deployment_location)
             response = {'requestId': execute_response.request_id}

@@ -5,6 +5,7 @@ from ignition.model.infrastructure import InfrastructureTask, infrastructure_tas
 from ignition.service.messaging import Message, Envelope, JsonContent, TopicCreator
 from ignition.api.exceptions import ApiException
 from ignition.service.logging import logging_context
+from ignition.utils.propvaluemap import PropValueMap
 import logging
 import pathlib
 import os
@@ -50,7 +51,7 @@ class InfrastructureDriverCapability(Capability):
         """
         Initiates a request to create infrastructure based on a TOSCA template.
         This method should return immediate response of the request being accepted,
-        it is expected that the InfrastructureService will poll get_infrastructure_task on this driver to determine when the request has complete.
+        it is expected that the InfrastructureService will poll get_infrastructure_task on this driver to determine when the request has completed.
 
         :param str template: template of infrastructure to be created
         :param str template_type: type of template used i.e. TOSCA or Heat
@@ -90,7 +91,7 @@ class InfrastructureDriverCapability(Capability):
         """
         Initiates a request to delete infrastructure previously created with the given infrastructure_id.
         This method should return immediate response of the request being accepted,
-        it is expected that the InfrastructureService will poll get_infrastructure_task on this driver to determine when the request has complete.
+        it is expected that the InfrastructureService will poll get_infrastructure_task on this driver to determine when the request has completed.
 
         :param str infrastructure_id: identifier of the infrastructure to be removed
         :param dict deployment_location: the location the infrastructure was deployed to
@@ -195,7 +196,7 @@ class InfrastructureApiService(Service, InfrastructureApiCapability, BaseControl
             template = self.get_body_required_field(body, 'template')
             template_type = self.get_body_required_field(body, 'templateType')
             deployment_location = self.get_body_required_field(body, 'deploymentLocation')
-            inputs = self.get_body_field(body, 'inputs', {})
+            inputs = PropValueMap(self.get_body_field(body, 'inputs', {}))
             create_response = self.service.create_infrastructure(template, template_type, inputs, deployment_location)
             response = {'infrastructureId': create_response.infrastructure_id, 'requestId': create_response.request_id}
             return (response, 202)

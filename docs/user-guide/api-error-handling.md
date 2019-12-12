@@ -2,7 +2,7 @@
 
 This section assumes you have already created your first driver and started working on your implementation of either the `InfrastructureDriverCapability` or `LifecycleDriverCapability`. It's at this stage you might wonder how to customise the errors thrown by the bootstrapped API services. 
 
-This guide will show you to easily customise the HTTP status code and localizedMessage included in the response by creating a Python exception to be raised in an implementation of a driver capapbility (or your own Service).
+This guide will show you to easily customise the HTTP status code and localizedMessage included in the response by creating a Python exception to be raised in an implementation of a driver capability (or your own Service).
 
 It will also show more advanced configuration to customise the full response body of an error. 
 

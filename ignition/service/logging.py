@@ -53,28 +53,6 @@ class LogstashFormatter(logging.Formatter):
         else:
             self.host = socket.gethostname()
 
-    def get_extra_fields(self, record):
-        # The list contains all the attributes listed in
-        # http://docs.python.org/library/logging.html#logrecord-attributes
-        ignore_fields = (
-            'args', 'asctime', 'created', 'exc_info', 'exc_text', 'filename',
-            'funcName', 'id', 'levelname', 'levelno', 'lineno', 'module',
-            'msecs', 'msecs', 'message', 'msg', 'name', 'pathname', 'process',
-            'processName', 'relativeCreated', 'thread', 'threadName', 'extra')
-
-        python_types = (str, bool, dict, float, int, list, type(None))
-
-        fields = {}
-
-        for key, value in record.__dict__.items():
-            if key not in ignore_fields:
-                if isinstance(value, python_types):
-                    fields[key] = value
-                else:
-                    fields[key] = repr(value)
-
-        return fields
-
     def get_debug_fields(self, record):
         fields = {
             'stack_trace': self.format_exception(record.exc_info),
@@ -126,9 +104,6 @@ class LogstashFormatter(logging.Formatter):
         # add LM transactional context to log message
         message.update(logging_context.get_all())
 
-        # Add extra fields
-        message.update(self.get_extra_fields(record))
-
         # If exception, add debug info
         if record.exc_info:
             message.update(self.get_debug_fields(record))
@@ -154,5 +129,7 @@ else:
 
 logging.getLogger().setLevel(log_level)
 [handler.setFormatter(log_formatter) for handler in logging.getLogger().handlers]
+
+logging.getLogger('kafka').setLevel('INFO')
 
 logging_context = LoggingContext()

@@ -19,7 +19,7 @@ The Helm chart for this driver includes the following features:
 
 # Build Helm Chart
 
-To build the Helm chart you will need to install Helm and initialised it (e.g. `helm init --client-only` on your local machine).
+To build the Helm chart you will need to install Helm and initialise it (e.g. `helm init --client-only` on your local machine).
 
 Build the chart with the package command:
 
@@ -99,3 +99,5 @@ docker:
 ```
 
 Include this values file on the Helm install command with the `-f` option.
+
+Note: if the Docker registry is insecure you need to inform the docker daemon (usually by adding it to a "insecure-registries" in `/etc/docker/daemon.json`).

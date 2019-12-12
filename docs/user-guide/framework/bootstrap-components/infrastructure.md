@@ -139,7 +139,7 @@ The `InfrastructureDriver` is expected to either:
 - Complete the request by initiating a creation of the infrastructure, returning immediately with an instance of `ignition.model.infrastructure.CreateInfrastructureResponse` which includes an `infrastructure_id` and `request_id` which may be used at a later time to check the status of the infrastructure being created. For example, in the Openstack VIM driver implementation, we return the Stack ID assigned to infrastructure.
 - Raise an Exception if the request is invalid or cannot be accepted. This Exception will end the continuation of this flow and instead result in an error being returned to the client of the InfrastructureApiService.
 
-On receival of a CreateInfrastructureResponse, the InfrastructureService will inform the InfrastructureTaskMonitoringService that it should monitor the completion of the infrastructure creation, using the `infrastructure_id` and `request_id` on the response.
+On receipt of a CreateInfrastructureResponse, the InfrastructureService will inform the InfrastructureTaskMonitoringService that it should monitor the completion of the infrastructure creation, using the `infrastructure_id` and `request_id` on the response.
 
 The InfrastructureTaskMonitoringService will periodically, using the JobQueueService (see [job queue](./job_queue)), check if infrastructure has been created. It will do this by polling the `get_infrastructure_task` method of the `InfrastructureDriver` (particular care should be taken raising Exceptions from this method, see the [errors](#errors) section of this document).
 
@@ -158,7 +158,7 @@ If the task has failed, the `InfrastructureDriver` should include `failure_detai
 
 ## On Delete
 
-The flow of a delete infrastructure request is the same as a create - instead of `create_infrastructure` the `delete_infrastructure` method of the user provided `InfrastructureDriver` is called instead and a `ignition.model.infrastructure.DeleteInfrastructureResponse` is expected. 
+The flow of a delete infrastructure request is the same as a create - instead of `create_infrastructure` the `delete_infrastructure` method of the user provided `InfrastructureDriver` is called and a `ignition.model.infrastructure.DeleteInfrastructureResponse` is expected. 
 
 ## On Find
 
@@ -174,7 +174,7 @@ The InfrastructureService takes this result and returns it to the Infrastructure
 
 Your InfrastructureDriver is free to raise any Python errors when handling create, delete, get or find requests in order to indicate a failure (errors thrown by `get_infrastructure_task` have implications on the monitoring service, discussed later in this section). To customise the response returned to the API client on error, see [error handling](../../api-error-handling.md).
 
-In the `infrastructure` module of Ignition there are existing error types you are encouraged to use:
+However, please note, in the `infrastructure` module of Ignition there are already some error types you may use:
 
 | Error | Description |
 | --- | --- |
