@@ -12,11 +12,17 @@ class PropValueMap(MutableMapping):
         self.update(values)
 
     def __getitem__(self, key):
-        valueAndType = self.values[key]
-        if valueAndType is None:
+        value_and_type = self.values[key]
+        if value_and_type is None:
             return None
+        elif value_and_type['type'] == 'key':
+            value = value_and_type['privateKey']
+            public_key = value_and_type.get('publicKey', None)
+            if public_key is not None:
+                value += '\n---\n' + public_key
+            return value
         else:
-            return valueAndType['value']
+            return value_and_type['value']
 
     def __delitem__(self, key):
         del self.values[key]
@@ -32,7 +38,7 @@ class PropValueMap(MutableMapping):
                 if value.get('value', None) is None:
                     raise ValueError("Value must have a value property")
             if key in self:
-                del self[self[key]]
+                del self.values[key]
             self.values[key] = value
         else:
             # assume type == 'string'
@@ -59,7 +65,7 @@ class PropValueMap(MutableMapping):
 
     def obfuscate_value(self, prop_value):
         if prop_value[1]['type'] == 'key':
-            prop_value[1]['value'] = OBFUSCATED_VALUE
+            prop_value[1]['privateKey'] = OBFUSCATED_VALUE
         return prop_value
 
     def get_value_and_type(self, key, default=None):

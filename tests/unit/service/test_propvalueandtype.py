@@ -18,7 +18,8 @@ class TestPropValueAndType(unittest.TestCase):
                 'type': 'string'
             },
             'prop2': {
-                'value': 'value2',
+                'privateKey': 'privKey',
+                'publicKey': 'pubKey',
                 'type': 'key'
             }
         })
@@ -29,7 +30,8 @@ class TestPropValueAndType(unittest.TestCase):
                     'value': 'value1',
                 },
                 'prop2': {
-                    'value': 'value2',
+                    'privateKey': 'privKey',
+                    'publicKey': 'pubKey',
                     'type': 'key'
                 }
             })
@@ -41,7 +43,8 @@ class TestPropValueAndType(unittest.TestCase):
                     'type': 'string',
                 },
                 'prop2': {
-                    'value': 'value2',
+                    'privateKey': 'privKey',
+                    'publicKey': 'pubKey',
                     'type': 'key'
                 }
             })
@@ -54,7 +57,8 @@ class TestPropValueAndType(unittest.TestCase):
                 'type': 'string'
             },
             'prop2': {
-                'value': 'value2',
+                'privateKey': 'privKey',
+                'publicKey': 'pubKey',
                 'type': 'key'
             }
         })
@@ -62,9 +66,9 @@ class TestPropValueAndType(unittest.TestCase):
         self.assertEqual(values.get('prop3', None), None)
         self.assertEqual(values['prop1'], 'value1')
 
-        with self.assertRaises(ValueError) as context:
-            values['prop3'] = "value3"
-            self.assertTrue('Value must have a type property' in context.exception)
+        # with self.assertRaises(ValueError) as context:
+        #     values['prop3'] = "value3"
+        #     self.assertTrue('Value must have a type property' in context.exception)
 
         with self.assertRaises(ValueError) as context:
             values['prop3'] = {
@@ -86,7 +90,8 @@ class TestPropValueAndType(unittest.TestCase):
                 'type': 'string'
             },
             'prop2': {
-                'value': 'value2',
+                'privateKey': 'privKey',
+                'publicKey': 'pubKey',
                 'type': 'key'
             },
             'prop3': {
@@ -97,12 +102,38 @@ class TestPropValueAndType(unittest.TestCase):
 
         self.assertEqual(values.get_keys(), PropValueMap({
             'prop2': {
-                'value': 'value2',
+                'privateKey': 'privKey',
+                'publicKey': 'pubKey',
                 'type': 'key'
             }
         }))
 
-        self.assertEqual(next(iter(values.get_keys().items())), ('prop2', 'value2'))
+        self.assertEqual(next(iter(values.get_keys().items())), ('prop2', 'privKey\n---\npubKey'))
+
+        # no public key
+        values = PropValueMap({
+            'prop1': {
+                'value': 'value1',
+                'type': 'string'
+            },
+            'prop2': {
+                'privateKey': 'privKey',
+                'type': 'key'
+            },
+            'prop3': {
+                'value': 'value3',
+                'type': 'string'
+            }
+        })
+
+        self.assertEqual(values.get_keys(), PropValueMap({
+            'prop2': {
+                'privateKey': 'privKey',
+                'type': 'key'
+            }
+        }))
+
+        self.assertEqual(next(iter(values.get_keys().items())), ('prop2', 'privKey'))
 
     def test_items_with_types(self):
         values = PropValueMap({
@@ -111,7 +142,8 @@ class TestPropValueAndType(unittest.TestCase):
                 'type': 'string'
             },
             'prop2': {
-                'value': 'value2',
+                'privateKey': 'privKey',
+                'publicKey': 'pubKey',
                 'type': 'key'
             },
             'prop3': {
@@ -133,7 +165,8 @@ class TestPropValueAndType(unittest.TestCase):
                 'type': 'string'
             },
             'prop2': {
-                'value': 'value2',
+                'privateKey': 'privKey',
+                'publicKey': 'pubKey',
                 'type': 'key'
             },
             'prop3': {
@@ -148,7 +181,8 @@ class TestPropValueAndType(unittest.TestCase):
                 'type': 'string'
             },
             'prop2': {
-                'value': OBFUSCATED_VALUE,
+                'privateKey': OBFUSCATED_VALUE,
+                'publicKey': 'pubKey',
                 'type': 'key'
             },
             'prop3': {
@@ -157,6 +191,26 @@ class TestPropValueAndType(unittest.TestCase):
             }
         }))
 
+    def test_get_item(self):
+        values = PropValueMap({
+            'prop1': {
+                'value': 'value1',
+                'type': 'string'
+            },
+            'prop2': {
+                'privateKey': 'privKey',
+                'publicKey': 'pubKey',
+                'type': 'key'
+            },
+            'prop3': {
+                'value': 'value3',
+                'type': 'string'
+            }
+        })
+
+        self.assertEqual(values['prop2'], 'privKey\n---\npubKey')
+
+
     def test_delete(self):
         values = PropValueMap({
             'prop1': {
@@ -164,7 +218,8 @@ class TestPropValueAndType(unittest.TestCase):
                 'type': 'string'
             },
             'prop2': {
-                'value': 'value2',
+                'privateKey': 'privKey',
+                'publicKey': 'pubKey',
                 'type': 'key'
             },
             'prop3': {
@@ -176,7 +231,8 @@ class TestPropValueAndType(unittest.TestCase):
         del values['prop1']
         self.assertEqual(values, PropValueMap({
             'prop2': {
-                'value': 'value2',
+                'privateKey': 'privKey',
+                'publicKey': 'pubKey',
                 'type': 'key'
             },
             'prop3': {
@@ -189,7 +245,8 @@ class TestPropValueAndType(unittest.TestCase):
             del values['prop1']
             self.assertEqual(values, PropValueMap({
                 'prop2': {
-                    'value': 'value2',
+                    'privateKey': 'privKey',
+                    'publicKey': 'pubKey',
                     'type': 'key'
                 },
                 'prop3': {
