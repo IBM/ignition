@@ -1,5 +1,29 @@
 # Change Log
 
+## [0.6.0](https://github.com/accanto-systems/ignition/tree/0.6.0) (2019-12-12)
+[Full Changelog](https://github.com/accanto-systems/ignition/compare/0.5.0...0.6.0)
+
+**Fixed bugs:**
+
+- UnicodeDecodeError: 'utf-8' codec can't decode byte 0x8f in position 5: invalid start byte [\#20](https://github.com/accanto-systems/ignition/issues/20)
+- Create command should not allow module names with dashes and special characters in module, helm and docker names [\#21](https://github.com/accanto-systems/ignition/issues/21)
+- Name used in setup.py of generated driver application should be the module name [\#27](https://github.com/accanto-systems/ignition/issues/27)
+- Correct driver template based on issues from other driver projects [\#28](https://github.com/accanto-systems/ignition/issues/28)
+- OpenAPI specification files are broken [\#37](https://github.com/accanto-systems/ignition/issues/37)
+- Logging Errors [\#29](https://github.com/accanto-systems/ignition/issues/29)
+- Job Queue thread aborts on error [\#31](https://github.com/accanto-systems/ignition/issues/31)
+
+**Implemented enhancements:**
+
+- Validate app name [\#12](https://github.com/accanto-systems/ignition/issues/12)
+- Input properties should include property type [\#39](https://github.com/accanto-systems/ignition/issues/39)
+ 
+**Documentation:**
+
+- Steps to build a docker image include incorrect whl directory [\#26](https://github.com/accanto-systems/ignition/issues/26)
+- Documentation should include details of how the framework should be used, preferaby with examples [\#25](https://github.com/accanto-systems/ignition/issues/25)
+- Document exception handling [\#18](https://github.com/accanto-systems/ignition/issues/18)
+
 ## [0.5.0](https://github.com/accanto-systems/ignition/tree/0.5.0) (2019-11-04)
 [Full Changelog](https://github.com/accanto-systems/ignition/compare/0.4.0...0.5.0)
 
