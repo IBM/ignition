@@ -6,6 +6,10 @@ logger = logging.getLogger(__name__)
 
 OBFUSCATED_VALUE = "****"
 
+"""
+A dictionary that holds property type and value for driver requests, with special handling
+for key properties.
+"""
 class PropValueMap(MutableMapping):
     def __init__(self, values={}):
         self.values = OrderedDict()
