@@ -101,6 +101,9 @@ class ValueAndTypeIterator:
         return self
 
     def __next__(self):
-        idx = self.idx
-        self.idx += 1
-        return self.propvaluemap.get_value_and_type(self.keys[idx])
+        if self.idx < len(self.keys):
+            idx = self.idx
+            self.idx += 1
+            return (self.keys[idx], self.propvaluemap.get_value_and_type(self.keys[idx]))
+        else:
+            raise StopIteration
