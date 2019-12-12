@@ -178,7 +178,7 @@ components:
       type: object
       properties:
         inputs:
-          type: object
+          $ref: "#/components/schemas/Properties"
           description: Key/value inputs to be provided to the Template
         deploymentLocation:
           $ref: "#/components/schemas/DeploymentLocation"
@@ -192,6 +192,15 @@ components:
         - deploymentLocation
         - template
         - templateType
+    Properties:
+      type: object
+      additionalProperties:
+        type: object
+        properties:
+          value:
+            type: string
+          type:
+            type: string
     CreateInfrastructureResponse:
       type: object
       properties:

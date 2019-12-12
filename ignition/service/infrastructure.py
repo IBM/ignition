@@ -5,6 +5,7 @@ from ignition.model.infrastructure import InfrastructureTask, infrastructure_tas
 from ignition.service.messaging import Message, Envelope, JsonContent, TopicCreator
 from ignition.api.exceptions import ApiException
 from ignition.service.logging import logging_context
+from ignition.utils.propvaluemap import PropValueMap
 import logging
 import pathlib
 import os
@@ -160,7 +161,7 @@ class InfrastructureApiService(Service, InfrastructureApiCapability, BaseControl
             template = self.get_body_required_field(body, 'template')
             template_type = self.get_body_required_field(body, 'templateType')
             deployment_location = self.get_body_required_field(body, 'deploymentLocation')
-            inputs = self.get_body_field(body, 'inputs', {})
+            inputs = PropValueMap(self.get_body_field(body, 'inputs', {}))
             create_response = self.service.create_infrastructure(template, template_type, inputs, deployment_location)
             response = {'infrastructureId': create_response.infrastructure_id, 'requestId': create_response.request_id}
             return (response, 202)
