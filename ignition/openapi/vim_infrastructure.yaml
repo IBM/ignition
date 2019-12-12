@@ -151,9 +151,9 @@ paths:
                 $ref: "#/components/schemas/FindInfrastructureResponse"
               examples:
                 found-example:
-                  $ref: '#/components/examples/ExampleFindInfrastructureResponse'
+                  $ref: "#/components/examples/ExampleFindInfrastructureResponse"
                 not-found-example:
-                  $ref: '#/components/examples/ExampleFindInfrastructureNotFoundResponse'
+                  $ref: "#/components/examples/ExampleFindInfrastructureNotFoundResponse"
         "400":
           description: Bad request
           content:

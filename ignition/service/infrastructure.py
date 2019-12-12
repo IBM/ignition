@@ -16,12 +16,22 @@ logger = logging.getLogger(__name__)
 # Grabs the __init__.py from the openapi package then takes it's parent, the openapi directory itself
 openapi_path = str(pathlib.Path(openapi.__file__).parent.resolve())
 
+class InfrastructureError(ApiException):
+    status_code = 500
 
-class InfrastructureNotFoundError(ApiException):
+class TemporaryInfrastructureError(InfrastructureError):
+    status_code = 503
+
+class InfrastructureNotFoundError(InfrastructureError):
     status_code = 400
 
+class InfrastructureRequestNotFoundError(InfrastructureError):
+    status_code = 400
 
-class InvalidInfrastructureTemplateError(ApiException):
+class InvalidInfrastructureTemplateError(InfrastructureError):
+    status_code = 400
+
+class UnreachableDeploymentLocationError(ApiException):
     status_code = 400
 
 
@@ -48,6 +58,12 @@ class InfrastructureDriverCapability(Capability):
         :param str inputs: values for the inputs defined on the tosca template
         :param dict deployment_location: the deployment location to deploy to
         :return: an ignition.model.infrastructure.CreateInfrastructureResponse
+
+        :raises:
+            ignition.service.infrastructure.InvalidInfrastructureTemplateError: if the Template is not valid
+            ignition.service.infrastructure.TemporaryInfrastructureError: there is an issue handling this request at this time
+            ignition.service.infrastructure.UnreachableDeploymentLocationError: the Deployment Location cannot be reached
+            ignition.service.infrastructure.InfrastructureError: there was an error handling this request
         """
         pass
 
@@ -60,6 +76,13 @@ class InfrastructureDriverCapability(Capability):
         :param str request_id: identifier of the request to check
         :param dict deployment_location: the location the infrastructure was deployed to
         :return: an ignition.model.infrastructure.InfrastructureTask instance describing the status
+
+        :raises:
+            ignition.service.infrastructure.InfrastructureNotFoundError: if no infrastructure with the given infrastructure_id exists
+            ignition.service.infrastructure.InfrastructureRequestNotFoundError: if no request with the given request_id exists
+            ignition.service.infrastructure.UnreachableDeploymentLocationError: the Deployment Location cannot be reached
+            ignition.service.infrastructure.TemporaryInfrastructureError: there is an issue handling this request at this time, an attempt should be made again at a later time
+            ignition.service.infrastructure.InfrastructureError: there was an error handling this request
         """
         pass
 
@@ -73,6 +96,12 @@ class InfrastructureDriverCapability(Capability):
         :param str infrastructure_id: identifier of the infrastructure to be removed
         :param dict deployment_location: the location the infrastructure was deployed to
         :return: an ignition.model.infrastructure.DeleteInfrastructureResponse
+
+        :raises:
+            ignition.service.infrastructure.InfrastructureNotFoundError: if no infrastructure with the given infrastructure_id exists
+            ignition.service.infrastructure.UnreachableDeploymentLocationError: the Deployment Location cannot be reached
+            ignition.service.infrastructure.TemporaryInfrastructureError: there is an issue handling this request at this time, an attempt should be made again at a later time
+            ignition.service.infrastructure.InfrastructureError: there was an error handling this request
         """
         pass
 
@@ -86,6 +115,12 @@ class InfrastructureDriverCapability(Capability):
         :param str instance_name: name given as search criteria
         :param dict deployment_location: the deployment location to deploy to
         :return: an ignition.model.infrastructure.FindInfrastructureResponse
+
+        :raises:
+            ignition.service.infrastructure.InvalidInfrastructureTemplateError: if the Template is not valid
+            ignition.service.infrastructure.UnreachableDeploymentLocationError: the Deployment Location cannot be reached
+            ignition.service.infrastructure.TemporaryInfrastructureError: there is an issue handling this request at this time, an attempt should be made again at a later time
+            ignition.service.infrastructure.InfrastructureError: there was an error handling this request
         """
         pass
 
@@ -284,7 +319,17 @@ class InfrastructureTaskMonitoringService(Service, InfrastructureTaskMonitoringC
         infrastructure_id = job_definition['infrastructure_id']
         request_id = job_definition['request_id']
         deployment_location = job_definition['deployment_location']
-        infrastructure_task = self.driver.get_infrastructure_task(infrastructure_id, request_id, deployment_location)
+        try:
+            infrastructure_task = self.driver.get_infrastructure_task(infrastructure_id, request_id, deployment_location)
+        except InfrastructureNotFoundError as e:
+            logger.debug('Infrastructure with ID {0} not found, the request with ID {1} will no longer be monitored'.format(infrastructure_id, request_id))
+            return True
+        except InfrastructureRequestNotFoundError as e:
+            logger.debug('Request with ID {0} not found on infrastructure with ID {1}, the request will no longer be monitored'.format(request_id, infrastructure_id))
+            return True
+        except (TemporaryInfrastructureError, UnreachableDeploymentLocationError) as e:
+            logger.exception('Temporary error occurred checking status of request with ID {0} for infrastructure with ID {1}. The monitoring job will be re-queued: {2}'.format(request_id, infrastructure_id, str(e)))
+            return False
         status = infrastructure_task.status
         if status in [STATUS_COMPLETE, STATUS_FAILED]:
             self.inf_messaging_service.send_infrastructure_task(infrastructure_task)

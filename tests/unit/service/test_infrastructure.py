@@ -4,7 +4,7 @@ from unittest.mock import patch, MagicMock
 from ignition.api.exceptions import BadRequest
 from ignition.model.infrastructure import InfrastructureTask, CreateInfrastructureResponse, DeleteInfrastructureResponse, FindInfrastructureResponse, FindInfrastructureResult
 from ignition.model.failure import FailureDetails, FAILURE_CODE_INFRASTRUCTURE_ERROR
-from ignition.service.infrastructure import InfrastructureService, InfrastructureApiService, InfrastructureTaskMonitoringService, InfrastructureMessagingService
+from ignition.service.infrastructure import InfrastructureService, InfrastructureApiService, InfrastructureTaskMonitoringService, InfrastructureMessagingService, TemporaryInfrastructureError, UnreachableDeploymentLocationError, InfrastructureNotFoundError, InfrastructureRequestNotFoundError
 from ignition.service.messaging import Envelope, Message
 from ignition.service.logging import LM_HTTP_HEADER_PREFIX, LM_HTTP_HEADER_TXNID
 from ignition.service.messaging import Envelope, Message, TopicConfigProperties
@@ -355,6 +355,54 @@ class TestInfrastructureTaskMonitoringService(unittest.TestCase):
         with self.assertRaises(ValueError) as context:
             monitoring_service.monitor_task('inf123', 'req123', None)
         self.assertEqual(str(context.exception), 'Cannot monitor task when deployment_location is not given')
+
+    def test_job_handler_does_not_mark_job_as_finished_if_temporary_error_thrown(self):
+        self.mock_driver.get_infrastructure_task.side_effect = TemporaryInfrastructureError('Retry it')
+        monitoring_service = InfrastructureTaskMonitoringService(job_queue_service=self.mock_job_queue, inf_messaging_service=self.mock_inf_messaging_service, driver=self.mock_driver)
+        job_finished = monitoring_service.job_handler({
+            'job_type': 'InfrastructureTaskMonitoring',
+            'infrastructure_id': 'inf123',
+            'request_id': 'req123',
+            'deployment_location': {'name': 'TestDl'}
+        })
+        self.assertEqual(job_finished, False)
+        self.mock_driver.get_infrastructure_task.assert_called_once_with('inf123', 'req123', {'name': 'TestDl'})
+
+    def test_job_handler_does_not_mark_job_as_finished_if_unreachable_dl_error_thrown(self):
+        self.mock_driver.get_infrastructure_task.side_effect = UnreachableDeploymentLocationError('Retry it')
+        monitoring_service = InfrastructureTaskMonitoringService(job_queue_service=self.mock_job_queue, inf_messaging_service=self.mock_inf_messaging_service, driver=self.mock_driver)
+        job_finished = monitoring_service.job_handler({
+            'job_type': 'InfrastructureTaskMonitoring',
+            'infrastructure_id': 'inf123',
+            'request_id': 'req123',
+            'deployment_location': {'name': 'TestDl'}
+        })
+        self.assertEqual(job_finished, False)
+        self.mock_driver.get_infrastructure_task.assert_called_once_with('inf123', 'req123', {'name': 'TestDl'})
+
+    def test_job_handler_marks_job_as_finished_if_inf_not_found_error_thrown(self):
+        self.mock_driver.get_infrastructure_task.side_effect = InfrastructureNotFoundError('Not Found')
+        monitoring_service = InfrastructureTaskMonitoringService(job_queue_service=self.mock_job_queue, inf_messaging_service=self.mock_inf_messaging_service, driver=self.mock_driver)
+        job_finished = monitoring_service.job_handler({
+            'job_type': 'InfrastructureTaskMonitoring',
+            'infrastructure_id': 'inf123',
+            'request_id': 'req123',
+            'deployment_location': {'name': 'TestDl'}
+        })
+        self.assertEqual(job_finished, True)
+        self.mock_driver.get_infrastructure_task.assert_called_once_with('inf123', 'req123', {'name': 'TestDl'})
+
+    def test_job_handler_marks_job_as_finished_if_request_not_found_error_thrown(self):
+        self.mock_driver.get_infrastructure_task.side_effect = InfrastructureRequestNotFoundError('Not Found')
+        monitoring_service = InfrastructureTaskMonitoringService(job_queue_service=self.mock_job_queue, inf_messaging_service=self.mock_inf_messaging_service, driver=self.mock_driver)
+        job_finished = monitoring_service.job_handler({
+            'job_type': 'InfrastructureTaskMonitoring',
+            'infrastructure_id': 'inf123',
+            'request_id': 'req123',
+            'deployment_location': {'name': 'TestDl'}
+        })
+        self.assertEqual(job_finished, True)
+        self.mock_driver.get_infrastructure_task.assert_called_once_with('inf123', 'req123', {'name': 'TestDl'})
 
     def test_job_handler_does_not_mark_job_as_finished_if_in_progress(self):
         self.mock_driver.get_infrastructure_task.return_value = InfrastructureTask('inf123', 'req123', 'IN_PROGRESS', None)

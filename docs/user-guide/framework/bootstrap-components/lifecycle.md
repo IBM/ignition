@@ -59,6 +59,12 @@ class LifecycleDriverCapability(Capability):
         :param dict properties: property values of the Resource
         :param dict deployment_location: the deployment location the Resource is assigned to
         :return: an ignition.model.lifecycle.LifecycleExecuteResponse
+
+        :raises:
+            ignition.service.lifecycle.InvalidLifecycleScriptsError: if the scripts are not valid
+            ignition.service.lifecycle.InvalidLifecycleNameError: if no script can be found to execute the transition/operation given by lifecycle_name
+            ignition.service.lifecycle.TemporaryLifecycleError: there is an issue handling this request at this time
+            ignition.service.lifecycle.LifecycleError: there was an error handling this request
         """
         pass
 
@@ -70,6 +76,11 @@ class LifecycleDriverCapability(Capability):
         :param str request_id: identifier of the request to check
         :param dict deployment_location: the deployment location the Resource is assigned to
         :return: an ignition.model.lifecycle.LifecycleExecution
+        
+        :raises:
+            ignition.service.lifecycle.LifecycleExecutionRequestNotFoundError: if no request with the given request_id exists
+            ignition.service.lifecycle.TemporaryLifecycleError: there is an issue handling this request at this time, an attempt should be made again at a later time
+            ignition.service.lifecycle.LifecycleError: there was an error handling this request
         """
         pass
 ```
@@ -88,7 +99,7 @@ The `LifecycleDriver` is expected to either:
 
 On receipt of a LifecycleExecuteResponse, the `LifecycleService` will inform the LifecycleExecutionMonitoringService that it should monitor the completion of the execution, using the `request_id` from the response.
 
-The LifecycleExecutionMonitoringService will periodically, using the JobQueueService (see [job queue](./job_queue)), check if execution has complete. It will do this by calling the `get_lifecycle_execution` method of the `LifecycleDriver`
+The LifecycleExecutionMonitoringService will periodically, using the JobQueueService (see [job queue](./job_queue)), check if execution has complete. It will do this by polling the `get_lifecycle_execution` method of the `LifecycleDriver` (particular care should be taken raising Exceptions from this method, see the [errors](#errors) section of this document).
 
 Meanwhile, the LifecycleService will return the LifecycleExecuteResponse to the LifecycleApiService, so it may convert it to a HTTP response and return it to the original client.
 
@@ -102,3 +113,24 @@ If the execution has failed, the `LifecycleDriver` should include `failure_detai
 | INFRASTRUCTURE_ERROR | There was an error with the Infrastructure |
 | INSUFFICIENT_CAPACITY | There is not enough capacity in the VIM to complete this execution |
 | INTERNAL_ERROR | For all other types of errors |
+
+## Errors
+
+Your LifecycleDriver is free to raise any Python errors when handling execution requests in order to indicate a failure (errors thrown by `get_lifecycle_execution` have implications on the monitoring service, discussed later in this section). To customise the response returned to the API client on error, see [error handling](../../api-error-handling.md).
+
+In the `lifecycle` module of Ignition there are existing error types you are encouraged to use:
+
+| Error | Description |
+| --- | --- |
+| InvalidLifecycleScriptsError | To be used on execute to indicate the scripts provided are not valid (HTTP Status: 400) |
+| InvalidLifecycleNameError | To be used on execute to indicate the lifecycle_name provided is not valid (HTTP Status: 400) |
+| LifecycleExecutionRequestNotFoundError | To be used on a Get request to indicate the infrastructure request could not be found (HTTP Status: 400) |
+| TemporaryLifecycleError | To be used to indicate the request cannot be managed at this time (HTTP Status: 503) |
+| LifecycleError | General purpose error for lifecycle (HTTP Status: 500) |
+
+The LifecycleExecutionMonitoringService has specific behaviour attached to Exception handling, as it continuously polls `get_lifecycle_execution` and needs to know when it should stop monitoring a particular task. As a result, it will detect the following behaviours and react accordingly:
+
+| Error | Handling |
+| --- | --- |
+| TemporaryLifecycleError | The monitoring service will re-queue the job, to check the status of the task later |
+| Any other exception | The monitoring service will forget this request and no longer poll for it's status |

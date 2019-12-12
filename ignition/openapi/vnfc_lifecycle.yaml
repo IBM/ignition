@@ -34,7 +34,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ExecutionAcceptedResponse"
               examples:
-                example:
+                response:
                   $ref: "#/components/examples/ExampleExecutionAcceptedResponse"
                 async-response:
                   $ref: "#/components/examples/ExampleExecutionAsyncResponse"

@@ -4,6 +4,7 @@ from ignition.service.api import BaseController
 from ignition.model.lifecycle import LifecycleExecution, lifecycle_execution_dict, STATUS_COMPLETE, STATUS_FAILED
 from ignition.service.messaging import Message, Envelope, JsonContent
 from ignition.utils.file import DirectoryTree
+from ignition.api.exceptions import ApiException
 from ignition.service.logging import logging_context
 from ignition.utils.propvaluemap import PropValueMap
 import uuid
@@ -19,6 +20,21 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 # Grabs the __init__.py from the openapi package then takes it's parent, the openapi directory itself
 openapi_path = str(pathlib.Path(openapi.__file__).parent.resolve())
+
+class LifecycleError(ApiException):
+    status_code = 500
+
+class TemporaryLifecycleError(LifecycleError):
+    status_code = 503
+
+class LifecycleExecutionRequestNotFoundError(LifecycleError):
+    status_code = 400
+
+class InvalidLifecycleScriptsError(LifecycleError):
+    status_code = 400
+
+class InvalidLifecycleNameError(LifecycleError):
+    status_code = 400
 
 
 class LifecycleProperties(ConfigurationPropertiesGroup, Service, Capability):
@@ -45,6 +61,12 @@ class LifecycleDriverCapability(Capability):
         :param dict properties: property values of the Resource
         :param dict deployment_location: the deployment location the Resource is assigned to
         :return: an ignition.model.lifecycle.LifecycleExecuteResponse
+
+        :raises:
+            ignition.service.lifecycle.InvalidLifecycleScriptsError: if the scripts are not valid
+            ignition.service.lifecycle.InvalidLifecycleNameError: if no script can be found to execute the transition/operation given by lifecycle_name
+            ignition.service.lifecycle.TemporaryLifecycleError: there is an issue handling this request at this time
+            ignition.service.lifecycle.LifecycleError: there was an error handling this request
         """
         pass
 
@@ -56,6 +78,11 @@ class LifecycleDriverCapability(Capability):
         :param str request_id: identifier of the request to check
         :param dict deployment_location: the deployment location the Resource is assigned to
         :return: an ignition.model.lifecycle.LifecycleExecution
+        
+        :raises:
+            ignition.service.lifecycle.LifecycleExecutionRequestNotFoundError: if no request with the given request_id exists
+            ignition.service.lifecycle.TemporaryLifecycleError: there is an issue handling this request at this time, an attempt should be made again at a later time
+            ignition.service.lifecycle.LifecycleError: there was an error handling this request
         """
         pass
 
@@ -181,7 +208,14 @@ class LifecycleExecutionMonitoringService(Service, LifecycleExecutionMonitoringC
             return True
         request_id = job_definition['request_id']
         deployment_location = job_definition['deployment_location']
-        lifecycle_execution_task = self.driver.get_lifecycle_execution(request_id, deployment_location)
+        try:
+            lifecycle_execution_task = self.driver.get_lifecycle_execution(request_id, deployment_location)
+        except LifecycleExecutionRequestNotFoundError as e:
+            logger.debug('Request with ID {0} not found, the request will no longer be monitored'.format(request_id))
+            return True
+        except TemporaryLifecycleError as e:
+            logger.exception('Temporary error occurred checking status of request with ID {0}. The monitoring job will be re-queued: {1}'.format(request_id, str(e)))
+            return False
         status = lifecycle_execution_task.status
         if status in [STATUS_COMPLETE, STATUS_FAILED]:
             self.lifecycle_messaging_service.send_lifecycle_execution(lifecycle_execution_task)

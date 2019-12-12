@@ -119,17 +119,28 @@ class TestMessagingJobQueueService(unittest.TestCase):
         mock_handler_func.assert_called_once_with({'job_type': 'test_job'})
         self.mock_postal_service.post.assert_not_called()
 
+    def test_next_job_handler_does_not_requeue_when_handler_func_throws_exception(self):
+        job_queue_service = MessagingJobQueueService(job_queue_config=self.job_queue_config, postal_service=self.mock_postal_service, inbox_service=self.mock_inbox_service, topics_config=self.mock_topics_config, messaging_config=MessagingProperties)
+        mock_handler_func = MagicMock()
+        mock_handler_func.side_effect = ValueError('Fake error')
+        job_queue_service.register_job_handler('test_job', mock_handler_func)
+        job_queue_service._MessagingJobQueueService__received_next_job_handler('{"job_type": "test_job"}')
+        mock_handler_func.assert_called_once_with({'job_type': 'test_job'})
+        self.mock_postal_service.post.assert_not_called()
+
     def test_next_job_handler_does_nothing_when_no_job_type(self):
         job_queue_service = MessagingJobQueueService(job_queue_config=self.job_queue_config, postal_service=self.mock_postal_service, inbox_service=self.mock_inbox_service, topics_config=self.mock_topics_config, messaging_config=MessagingProperties)
         mock_handler_func = MagicMock()
         mock_handler_func.return_value = True
         job_queue_service.register_job_handler('test_job', mock_handler_func)
-        job_queue_service._MessagingJobQueueService__received_next_job_handler('{"not_job_type": "test_job"}')
+        result = job_queue_service._MessagingJobQueueService__received_next_job_handler('{"not_job_type": "test_job"}')
         self.mock_postal_service.post.assert_not_called()
+        self.assertIsNone(result)
         
     def test_next_job_handler_requeues_job_when_no_handler_registered(self):
         job_queue_service = MessagingJobQueueService(job_queue_config=self.job_queue_config, postal_service=self.mock_postal_service, inbox_service=self.mock_inbox_service, topics_config=self.mock_topics_config, messaging_config=MessagingProperties)
-        job_queue_service._MessagingJobQueueService__received_next_job_handler('{"job_type": "test_job"}')
+        result = job_queue_service._MessagingJobQueueService__received_next_job_handler('{"job_type": "test_job"}')
+        self.assertIsNone(result)
         self.mock_postal_service.post.assert_called_once()
         args, kwargs = self.mock_postal_service.post.call_args
         self.assertEqual(len(args), 1)

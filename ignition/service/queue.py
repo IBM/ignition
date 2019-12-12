@@ -60,23 +60,44 @@ class MessagingJobQueueService(Service, JobQueueCapability):
         self.job_handlers = {}
         self.__init_watch_for_jobs()
 
-
     def __init_watch_for_jobs(self):
         self.inbox_service.watch_inbox(self.job_queue_config.consumer_group_id, self.job_queue_topic.name, self.__received_next_job_handler)
 
-    def __received_next_job_handler(self, job_definition_str):
+    def __read_incoming_job(self, job_definition_str):
         job_definition = JsonContent.read(job_definition_str).dict_val
-        if self.JOB_TYPE_KEY not in job_definition:
-            logger.warning('Job received from queue without job_type: {0}'.format(job_definition_str))
+        return job_definition
+
+    def __received_next_job_handler(self, job_definition_str):
+        logger.debug('Processing incoming job: {0}'.format(job_definition_str))
+        try:
+            job_definition = self.__read_incoming_job(job_definition_str)
+        except JsonContent.ERROR_TYPE as e:
+            logger.exception('Ignoring job as an error occurred whilst attempting to read it: {0}'.format(job_definition_str))
             return None
-        job_type = job_definition[self.JOB_TYPE_KEY]
-        if job_type not in self.job_handlers:
-            logger.warning('No handler for job received from queue with job_type {0}'.format(job_type))
-            self.queue_job(job_definition)
+        return self.__handle_job(job_definition)
+        
+    def __handle_job(self, job_definition):
+        requeue = False
+        job_type = job_definition.get(self.JOB_TYPE_KEY, None)
+        if job_type is None:
+            logger.warning('Ignoring job received from queue without job_type: {0}'.format(job_definition))
             return None
-        job_handler = self.job_handlers[job_type]
-        finished = job_handler(job_definition)
-        if finished is not True:
+        else:
+            job_handler = self.job_handlers.get(job_type, None)
+            if job_handler is None:
+                logger.warning('No handler for job received from queue with job_type {0} (will re-queue)'.format(job_type))
+                requeue = True
+            else:
+                logger.debug('Passing job to handler ({0}): {1}'.format(job_handler, job_definition))
+                try:
+                    finished = job_handler(job_definition)
+                except Exception as e:
+                    logger.exception('Handling of job {0} returned an Exception, this task will not be re-queued. The error was: {1}'.format(job_definition, str(e)))
+                    return None
+                if not finished:
+                    logger.debug('Handler marked job as incomplete, will re-queue: {0}'.format(job_definition))
+                    requeue = True
+        if requeue:
             self.queue_job(job_definition)
 
     def queue_job(self, job_definition):
