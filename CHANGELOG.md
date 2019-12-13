@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.6.2](https://github.com/accanto-systems/ignition/tree/0.6.2) (2019-12-13)
+[Full Changelog](https://github.com/accanto-systems/ignition/compare/0.6.1...0.6.2)
+
+**Fixed bugs:**
+- PropValueMap does not allow values of None [\#44](https://github.com/accanto-systems/ignition/issues/44)
+
 ## [0.6.1](https://github.com/accanto-systems/ignition/tree/0.6.1) (2019-12-12)
 [Full Changelog](https://github.com/accanto-systems/ignition/compare/0.6.0...0.6.1)
 
