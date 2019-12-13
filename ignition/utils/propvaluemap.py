@@ -38,9 +38,6 @@ class PropValueMap(MutableMapping):
             if value['type'] == 'key':
                 if value.get('privateKey', None) is None:
                     raise ValueError("Value must have a privateKey property")
-            else:
-                if value.get('value', None) is None:
-                    raise ValueError("Value must have a value property")
             if key in self:
                 del self.values[key]
             self.values[key] = value
@@ -60,8 +57,8 @@ class PropValueMap(MutableMapping):
     def __repr__(self):
         return f"{type(self).__name__}({self.values})"
 
-    def get_type(self, propName):
-        value_and_type = self.__getitem__(propName)
+    def get_type(self, prop_name):
+        value_and_type = self.__getitem__(prop_name)
         if value_and_type is None:
             return None
         else:

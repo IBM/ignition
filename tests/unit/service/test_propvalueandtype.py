@@ -37,19 +37,6 @@ class TestPropValueAndType(unittest.TestCase):
             })
             self.assertTrue('Value must have a type property' in context.exception)
 
-        with self.assertRaises(ValueError) as context:
-            PropValueMap({
-                'prop1': {
-                    'type': 'string',
-                },
-                'prop2': {
-                    'privateKey': 'privKey',
-                    'publicKey': 'pubKey',
-                    'type': 'key'
-                }
-            })
-            self.assertTrue('Value must have a value property' in context.exception)
-
     def test_basic_update_and_get(self):
         values = PropValueMap({
             'prop1': {
@@ -65,12 +52,6 @@ class TestPropValueAndType(unittest.TestCase):
         self.assertEqual(values.get('prop1', None), 'value1')
         self.assertEqual(values.get('prop3', None), None)
         self.assertEqual(values['prop1'], 'value1')
-
-        with self.assertRaises(ValueError) as context:
-            values['prop3'] = {
-                "type": "string"
-            }
-            self.assertTrue('Value must have a value property' in context.exception)
 
         values['prop3'] = {
             "value": "value3",
