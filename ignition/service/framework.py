@@ -1,5 +1,8 @@
+import logging
 from abc import ABC, abstractmethod
 import networkx as nx
+
+logger = logging.getLogger(__name__)
 
 interface = abstractmethod
 
@@ -193,7 +196,7 @@ class ServiceRegister():
 
     def __register_service_requirements(self, service_class, required_capabilities):
         for requirement_name, required_capability_class in required_capabilities.items():
-            if not issubclass(required_capability_class, Capability):
+            if required_capability_class is not None and not issubclass(required_capability_class, Capability):
                 raise RequirementNotACapabilityException('Service \'{0}\' not allowed requirement to class \'{1}\' as it does not subclass Capability'.format(
                     service_class, required_capability_class), service_class, required_capability_class)
             if self.__get_opt_capability_node(required_capability_class) is None:
@@ -389,6 +392,7 @@ class ServiceInitialiser():
                 raise NoServiceInstanceException('No instance of service \'{0}\' has been created, required by \'{1}\''.format(required_service, service_class), required_service, service_class)
             capability_instances_args[requirement_name] = instance_of_required_service
         service_args = self.service_register.get_service_args(service_class)
+        logger.debug("Instantiating service class {0} with args {1}".format(service_class, capability_instances_args))
         service_instance = service_class(*service_args, **capability_instances_args)
         self.service_instances.add_instance_of(service_instance, service_class)
 

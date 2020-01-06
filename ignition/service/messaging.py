@@ -155,12 +155,15 @@ class PostalService(Service, PostalCapability):
             raise ValueError('delivery_service argument not provided')
         self.delivery_service = kwargs.get('delivery_service')
 
-    def post(self, envelope):
+    def post(self, envelope, key=None):
         if envelope is None:
             raise ValueError('An envelope must be passed to post a message')
-        logger.debug('Posting envelope to {0} with message: {1}'.format(envelope.address, envelope.message))
-        self.delivery_service.deliver(envelope)
-
+        if key is None:
+            logger.debug('Posting envelope to {0} with message: {1}'.format(envelope.address, envelope.message))
+            self.delivery_service.deliver(envelope)
+        else:
+            logger.debug('Posting envelope to {0} with key: {1} and message: {2}'.format(envelope.address, key, envelope.message))
+            self.delivery_service.deliver(envelope, key=key)
 
 class KafkaDeliveryService(Service, DeliveryCapability):
 
@@ -183,13 +186,16 @@ class KafkaDeliveryService(Service, DeliveryCapability):
     def __on_send_error(self, excp):
         logger.error('Error sending envelope', exc_info=excp)
 
-    def deliver(self, envelope):
+    def deliver(self, envelope, key=None):
         if envelope is None:
             raise ValueError('An envelope must be passed to deliver a message')
         self.__lazy_init_producer()
         content = envelope.message.content
-        logger.debug('Delivering envelope to {0} with message content: {1}'.format(envelope.address, content))
-        self.producer.send(envelope.address, content).add_callback(self.__on_send_success).add_errback(self.__on_send_error)
+        logger.info('Delivering envelope to {0} with message content: {1}'.format(envelope.address, content))
+        if key is None:
+            self.producer.send(envelope.address, content).add_callback(self.__on_send_success).add_errback(self.__on_send_error)
+        else:
+            self.producer.send(envelope.address, key=str.encode(key), value=content).add_callback(self.__on_send_success).add_errback(self.__on_send_error)
 
 class KafkaInboxService(Service, InboxCapability):
 

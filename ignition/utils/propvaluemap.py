@@ -78,7 +78,7 @@ class PropValueMap(MutableMapping):
     """
     get properties, with "key" values obfuscated as "*****"
     """
-    def get_props(self):
+    def get_safelog_props(self):
         logger.info('get_props')
         return PropValueMap(dict(map(self.obfuscate_value, self.values.items())))
 

@@ -1,3 +1,4 @@
+import logging
 from ignition.boot.config import BootProperties, ApplicationProperties, ApiProperties, DynamicServiceConfigurator, DynamicApiConfigurator, PropertyGroups, BootstrapApplicationConfiguration
 from ignition.boot.app import BootstrapRunner
 from ignition.api.exceptions import ErrorResponseConverter, validation_error_handler
@@ -6,17 +7,20 @@ from ignition.boot.configurators.infrastructureapi import InfrastructureApiConfi
 from ignition.boot.configurators.lifecycleapi import LifecycleApiConfigurator, LifecycleServicesConfigurator
 from ignition.boot.configurators.messaging import MessagingConfigurator
 from ignition.boot.configurators.jobqueue import JobQueueConfigurator
+from ignition.boot.configurators.requestqueue import RequestQueueConfigurator
 from ignition.service.infrastructure import InfrastructureProperties
 from ignition.service.lifecycle import LifecycleProperties
 from ignition.service.messaging import MessagingProperties
 from ignition.service.queue import JobQueueProperties
+from ignition.service.requestqueue import InfrastructureRequestQueueProperties, LifecycleRequestQueueProperties
 from jsonschema import ValidationError
 
-SERVICE_CONFIGURATORS = [InfrastructureServicesConfigurator(), LifecycleServicesConfigurator(), MessagingConfigurator(), JobQueueConfigurator()]
+SERVICE_CONFIGURATORS = [RequestQueueConfigurator(), InfrastructureServicesConfigurator(), LifecycleServicesConfigurator(), MessagingConfigurator(), JobQueueConfigurator()]
 API_CONFIGURATORS = [InfrastructureApiConfigurator(), LifecycleApiConfigurator()]
 MANDATORY_PROPERTY_GROUPS = [ApplicationProperties, ApiProperties]
-ADDITIONAL_PROPERTY_GROUPS = [BootProperties, InfrastructureProperties, LifecycleProperties, MessagingProperties, JobQueueProperties]
+ADDITIONAL_PROPERTY_GROUPS = [BootProperties, InfrastructureProperties, LifecycleProperties, MessagingProperties, JobQueueProperties, InfrastructureRequestQueueProperties, LifecycleRequestQueueProperties]
 
+logger = logging.getLogger(__name__)
 
 def build_driver(app_name, vim=False, lifecycle=False):
     builder = build_app(app_name)

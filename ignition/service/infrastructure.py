@@ -40,6 +40,31 @@ class InfrastructureProperties(ConfigurationPropertiesGroup, Service, Capability
         super().__init__('infrastructure')
         self.api_spec = os.path.join(openapi_path, 'vim_infrastructure.yaml')
         self.async_messaging_enabled = True
+        self.request_queue = InfrastructureRequestQueueProperties()
+
+
+class InfrastructureRequestQueueProperties(ConfigurationPropertiesGroup, Service, Capability):
+    """
+    Configuration related to the request queue
+
+    Attributes:
+    - connection_address:
+            the bootstrap servers string for the Kafka cluster to connect with
+                (required: when delivery.bootstrap_service is enabled)
+    - infrastructure_requests_topic:
+            topic for infrastructure requests
+                (default: inf_request_queue)
+    - lifecycle_requests_topic:
+            topic for lifecycle requests
+                (default: lifecycle_request_queue)
+    """
+
+    def __init__(self):
+        super().__init__('request_queue')
+        self.enabled = False
+        self.group_id = "request_queue_consumer"
+        # name intentionally not set so that it can be constructed per-driver
+        self.topic = TopicConfigProperties(auto_create=True, num_partitions=20, config={'retention.ms': 60000, 'message.timestamp.difference.max.ms': 60000, 'file.delete.delay.ms': 60000})
 
 
 class InfrastructureDriverCapability(Capability):
@@ -162,7 +187,6 @@ class InfrastructureServiceCapability(Capability):
     def find_infrastructure(self, template, template_type, instance_name, deployment_location):
         pass
 
-
 class InfrastructureTaskMonitoringCapability(Capability):
 
     @interface
@@ -196,7 +220,7 @@ class InfrastructureApiService(Service, InfrastructureApiCapability, BaseControl
             template = self.get_body_required_field(body, 'template')
             template_type = self.get_body_required_field(body, 'templateType')
             deployment_location = self.get_body_required_field(body, 'deploymentLocation')
-            inputs = PropValueMap(self.get_body_field(body, 'inputs', {}))
+            inputs = self.get_body_field(body, 'inputs', {})
             create_response = self.service.create_infrastructure(template, template_type, inputs, deployment_location)
             response = {'infrastructureId': create_response.infrastructure_id, 'requestId': create_response.request_id}
             return (response, 202)
@@ -265,11 +289,28 @@ class InfrastructureService(Service, InfrastructureServiceCapability):
             if 'inf_monitor_service' not in kwargs:
                 raise ValueError('inf_monitor_service argument not provided (required when async_messaging_enabled is True)')
             self.inf_monitor_service = kwargs.get('inf_monitor_service')
+        self.async_requests_enabled = infrastructure_config.request_queue.enabled
+        if self.async_requests_enabled:
+            if 'request_queue' not in kwargs:
+                raise ValueError('request_queue argument not provided (required when async_requests_enabled is True)')
+            self.request_queue = kwargs.get('request_queue')
 
     def create_infrastructure(self, template, template_type, inputs, deployment_location):
-        create_response = self.driver.create_infrastructure(template, template_type, inputs, deployment_location)
-        if self.async_enabled is True:
-            self.__async_infrastructure_task_completion(create_response.infrastructure_id, create_response.request_id, deployment_location)
+        # if self.async_requests_enabled expect a quick response with ids, without initiating create infrastructure
+        if self.async_requests_enabled:
+            self.request_queue.queue_infrastructure_request({
+                # 'infrastructure_id': create_response.infrastructure_id,
+                'request_id': str(uuid.uuid4()),
+                'template': template,
+                'template_type': template_type,
+                'inputs': inputs,
+                'deployment_location': deployment_location
+            })
+        else:
+            create_response = self.driver.create_infrastructure(template, template_type, PropValueMap(inputs), deployment_location)
+            if self.async_enabled is True:
+                self.__async_infrastructure_task_completion(create_response.infrastructure_id, create_response.request_id, deployment_location)
+
         return create_response
 
     def get_infrastructure_task(self, infrastructure_id, request_id, deployment_location):

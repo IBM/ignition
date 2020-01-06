@@ -3,10 +3,12 @@ from ignition.service.config import ConfigurationPropertiesGroup
 from ignition.service.api import BaseController
 from ignition.model.lifecycle import LifecycleExecution, lifecycle_execution_dict, STATUS_COMPLETE, STATUS_FAILED
 from ignition.service.messaging import Message, Envelope, JsonContent
+from ignition.model.lifecycle import LifecycleExecuteResponse
 from ignition.utils.file import DirectoryTree
 from ignition.api.exceptions import ApiException
 from ignition.service.logging import logging_context
 from ignition.utils.propvaluemap import PropValueMap
+from ignition.service.requestqueue import RequestQueue
 import uuid
 import logging
 import os
@@ -43,7 +45,29 @@ class LifecycleProperties(ConfigurationPropertiesGroup, Service, Capability):
         super().__init__('lifecycle')
         self.api_spec = os.path.join(openapi_path, 'vnfc_lifecycle.yaml')
         self.async_messaging_enabled = True
-        self.scripts_workspace = './scripts_workspace'
+        self.request_queue = LifecycleRequestQueueProperties()
+
+
+class LifecycleRequestQueueProperties(ConfigurationPropertiesGroup, Service, Capability):
+    """
+    Configuration related to the request queue
+
+    Attributes:
+    - enabled:
+            is the request queue enabled?
+    - group_id:
+            Kafka consumer group_id for the request queue
+                (default: request_queue_consumer)
+    - topic:
+            Kafka request queue topic configuration
+    """
+
+    def __init__(self):
+        super().__init__('request_queue')
+        self.enabled = False
+        self.group_id = "request_queue_consumer"
+        # name intentionally not set so that it can be constructed per-driver
+        self.topic = TopicConfigProperties(auto_create=True, num_partitions=20, config={'retention.ms': 60000, 'message.timestamp.difference.max.ms': 60000, 'file.delete.delay.ms': 60000})
 
 
 class LifecycleDriverCapability(Capability):
@@ -85,7 +109,6 @@ class LifecycleDriverCapability(Capability):
             ignition.service.lifecycle.LifecycleError: there was an error handling this request
         """
         pass
-
 
 class LifecycleApiCapability(Capability):
 
@@ -140,8 +163,8 @@ class LifecycleApiService(Service, LifecycleApiCapability, BaseController):
             logger.debug('Handling lifecycle execution request with body %s', body)
             lifecycle_name = self.get_body_required_field(body, 'lifecycleName')
             lifecycle_scripts = self.get_body_required_field(body, 'lifecycleScripts')
-            system_properties = PropValueMap(self.get_body_required_field(body, 'systemProperties'))
-            properties = PropValueMap(self.get_body_field(body, 'properties', {}))
+            system_properties = self.get_body_required_field(body, 'systemProperties')
+            properties = self.get_body_field(body, 'properties', {})
             deployment_location = self.get_body_required_field(body, 'deploymentLocation')
             execute_response = self.service.execute_lifecycle(lifecycle_name, lifecycle_scripts, system_properties, properties, deployment_location)
             response = {'requestId': execute_response.request_id}
@@ -169,13 +192,31 @@ class LifecycleService(Service, LifecycleServiceCapability):
             if 'lifecycle_monitor_service' not in kwargs:
                 raise ValueError('lifecycle_monitor_service argument not provided (required when async_messaging_enabled is True)')
             self.lifecycle_monitor_service = kwargs.get('lifecycle_monitor_service')
+        self.async_requests_enabled = lifecycle_config.request_queue.enabled
+        if self.async_requests_enabled:
+            if 'request_queue' not in kwargs:
+                raise ValueError('request_queue argument not provided (required when async_requests_enabled is True)')
+            self.request_queue = kwargs.get('request_queue')
 
     def execute_lifecycle(self, lifecycle_name, lifecycle_scripts, system_properties, properties, deployment_location):
-        file_name = '{0}'.format(str(uuid.uuid4()))
-        lifecycle_scripts_tree = self.script_file_manager.build_tree(file_name, lifecycle_scripts)
-        execute_response = self.driver.execute_lifecycle(lifecycle_name, lifecycle_scripts_tree, system_properties, properties, deployment_location)
-        if self.async_enabled is True:
-            self.__async_lifecycle_execution_completion(execute_response.request_id, deployment_location)
+        if self.async_requests_enabled:
+            request_id = str(uuid.uuid4())
+            self.request_queue.queue_lifecycle_request({
+                'request_id': request_id,
+                'lifecycle_name': lifecycle_name,
+                'lifecycle_scripts': lifecycle_scripts,
+                'system_properties': system_properties,
+                'properties': properties,
+                'deployment_location': deployment_location
+            })
+            execute_response = LifecycleExecuteResponse(request_id)
+        else:
+            file_name = '{0}'.format(str(uuid.uuid4()))
+            lifecycle_scripts_tree = self.script_file_manager.build_tree(file_name, lifecycle_scripts)
+            execute_response = self.driver.execute_lifecycle(lifecycle_name, lifecycle_scripts_tree, PropValueMap(system_properties), PropValueMap(properties), deployment_location)
+            if self.async_enabled is True:
+                self.__async_lifecycle_execution_completion(execute_response.request_id, deployment_location)
+
         return execute_response
 
     def __async_lifecycle_execution_completion(self, request_id, deployment_location):
