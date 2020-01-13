@@ -8,8 +8,15 @@ from ignition.service.infrastructure import InfrastructureService, Infrastructur
 from ignition.service.messaging import Envelope, Message
 from ignition.service.logging import LM_HTTP_HEADER_PREFIX, LM_HTTP_HEADER_TXNID
 from ignition.service.messaging import Envelope, Message, TopicConfigProperties
+from ignition.utils.propvaluemap import PropValueMap
 
 class TestInfrastructureApiService(unittest.TestCase):
+
+    def __props_with_types(self, orig_props):
+        return {k:{'type': 'string', 'value': v} for k,v in orig_props.items()}
+
+    def __propvaluemap(self, orig_props):
+        return PropValueMap(self.__props_with_types(orig_props))
 
     @patch('ignition.service.infrastructure.logging_context')
     def test_init_without_service_throws_error(self, logging_context):
@@ -22,8 +29,8 @@ class TestInfrastructureApiService(unittest.TestCase):
         mock_service = MagicMock()
         mock_service.create_infrastructure.return_value = CreateInfrastructureResponse('123', '456')
         controller = InfrastructureApiService(service=mock_service)
-        response, code = controller.create(**{ 'body': { 'template': 'template', 'templateType': 'TOSCA', 'inputs': {'a': 1}, 'deploymentLocation': {'name': 'test'} } })
-        mock_service.create_infrastructure.assert_called_once_with('template', 'TOSCA', {'a': 1}, {'name': 'test'})
+        response, code = controller.create(**{ 'body': { 'template': 'template', 'templateType': 'TOSCA', 'systemProperties': self.__props_with_types({'resourceId': '1'}), 'properties': self.__props_with_types({'a': '1'}), 'deploymentLocation': {'name': 'test'} } })
+        mock_service.create_infrastructure.assert_called_once_with('template', 'TOSCA', self.__propvaluemap({'resourceId': '1'}), self.__propvaluemap({'a': '1'}), {'name': 'test'})
         self.assertEqual(response, {'infrastructureId': '123', 'requestId': '456'})
         self.assertEqual(code, 202)
         logging_context.set_from_headers.assert_called_once()
@@ -33,7 +40,7 @@ class TestInfrastructureApiService(unittest.TestCase):
         mock_service = MagicMock()
         controller = InfrastructureApiService(service=mock_service)
         with self.assertRaises(BadRequest) as context:
-            controller.create(**{ 'body': { 'templateType': 'TOSCA', 'inputs': {'a': 1}, 'deploymentLocation': {'name': 'test' } } })
+            controller.create(**{ 'body': { 'templateType': 'TOSCA', 'systemProperties': self.__props_with_types({'resourceId': '1'}), 'properties': self.__props_with_types({'a': '1'}), 'deploymentLocation': {'name': 'test' } } })
         self.assertEqual(str(context.exception), '\'template\' is a required field but was not found in the request data body')
 
     @patch('ignition.service.infrastructure.logging_context')
@@ -41,7 +48,7 @@ class TestInfrastructureApiService(unittest.TestCase):
         mock_service = MagicMock()
         controller = InfrastructureApiService(service=mock_service)
         with self.assertRaises(BadRequest) as context:
-            controller.create(**{ 'body': { 'template': 'template', 'inputs': {'a': 1}, 'deploymentLocation': {'name': 'test' } } })
+            controller.create(**{ 'body': { 'template': 'template', 'systemProperties': self.__props_with_types({'resourceId': '1'}), 'properties': self.__props_with_types({'a': '1'}), 'deploymentLocation': {'name': 'test' } } })
         self.assertEqual(str(context.exception), '\'templateType\' is a required field but was not found in the request data body')
 
     @patch('ignition.service.infrastructure.logging_context')
@@ -49,16 +56,24 @@ class TestInfrastructureApiService(unittest.TestCase):
         mock_service = MagicMock()
         controller = InfrastructureApiService(service=mock_service)
         with self.assertRaises(BadRequest) as context:
-            controller.create(**{ 'body': { 'inputs': {'a': 1}, 'template': 'template', 'templateType': 'TOSCA' } })
+            controller.create(**{ 'body': { 'properties': self.__props_with_types({'a': '1'}),  'systemProperties': self.__props_with_types({'resourceId': '1'}), 'template': 'template', 'templateType': 'TOSCA' } })
         self.assertEqual(str(context.exception), '\'deploymentLocation\' is a required field but was not found in the request data body')
 
     @patch('ignition.service.infrastructure.logging_context')
-    def test_create_missing_inputs_uses_default(self, logging_context):
+    def test_create_missing_system_properties(self, logging_context):
+        mock_service = MagicMock()
+        controller = InfrastructureApiService(service=mock_service)
+        with self.assertRaises(BadRequest) as context:
+            controller.create(**{ 'body': { 'properties': self.__props_with_types({'a': '1'}), 'template': 'template', 'templateType': 'TOSCA', 'deploymentLocation': {'name': 'test'} } })
+        self.assertEqual(str(context.exception), '\'systemProperties\' is a required field but was not found in the request data body')
+
+    @patch('ignition.service.infrastructure.logging_context')
+    def test_create_missing_properties_uses_default(self, logging_context):
         mock_service = MagicMock()
         mock_service.create_infrastructure.return_value = CreateInfrastructureResponse('123', '456')
         controller = InfrastructureApiService(service=mock_service)
-        response, code = controller.create(**{ 'body': { 'template': 'template', 'templateType': 'TOSCA', 'deploymentLocation': {'name': 'test'} } })
-        mock_service.create_infrastructure.assert_called_once_with('template', 'TOSCA', {}, {'name': 'test'})
+        response, code = controller.create(**{ 'body': { 'template': 'template', 'templateType': 'TOSCA', 'systemProperties': self.__props_with_types({'resourceId': '1'}), 'deploymentLocation': {'name': 'test'} } })
+        mock_service.create_infrastructure.assert_called_once_with('template', 'TOSCA', self.__propvaluemap({'resourceId': '1'}), self.__propvaluemap({}), {'name': 'test'})
         self.assertEqual(response, {'infrastructureId': '123', 'requestId': '456'})
         self.assertEqual(code, 202)
 
@@ -167,7 +182,7 @@ class TestInfrastructureApiService(unittest.TestCase):
         mock_service = MagicMock()
         controller = InfrastructureApiService(service=mock_service)
         with self.assertRaises(BadRequest) as context:
-            controller.find(**{ 'body': { 'templateType': 'TOSCA', 'inputs': {'a': 1}, 'deploymentLocation': {'name': 'test' } } })
+            controller.find(**{ 'body': { 'templateType': 'TOSCA', 'deploymentLocation': {'name': 'test' } } })
         self.assertEqual(str(context.exception), '\'template\' is a required field but was not found in the request data body')
 
     @patch('ignition.service.infrastructure.logging_context')
@@ -175,7 +190,7 @@ class TestInfrastructureApiService(unittest.TestCase):
         mock_service = MagicMock()
         controller = InfrastructureApiService(service=mock_service)
         with self.assertRaises(BadRequest) as context:
-            controller.find(**{ 'body': { 'template': 'template', 'inputs': {'a': 1}, 'deploymentLocation': {'name': 'test' } } })
+            controller.find(**{ 'body': { 'template': 'template', 'deploymentLocation': {'name': 'test' } } })
         self.assertEqual(str(context.exception), '\'templateType\' is a required field but was not found in the request data body')
 
     @patch('ignition.service.infrastructure.logging_context')
@@ -195,6 +210,12 @@ class TestInfrastructureApiService(unittest.TestCase):
         self.assertEqual(str(context.exception), '\'instanceName\' is a required field but was not found in the request data body')
 
 class TestInfrastructureService(unittest.TestCase):
+
+    def __props_with_types(self, orig_props):
+        return {k:{'type': 'string', 'value': v} for k,v in orig_props.items()}
+
+    def __propvaluemap(self, orig_props):
+        return PropValueMap(self.__props_with_types(orig_props))
 
     def test_init_without_driver_throws_error(self):
         mock_infrastructure_config = MagicMock()
@@ -225,10 +246,11 @@ class TestInfrastructureService(unittest.TestCase):
         service = InfrastructureService(driver=mock_service_driver, infrastructure_config=mock_infrastructure_config)
         template = 'template'
         template_type = 'TOSCA'
-        inputs = {'inputA': 'valueA'}
+        system_properties = self.__propvaluemap({'resourceId': '1'})
+        properties = self.__propvaluemap({'propA': 'valueA'})
         deployment_location = {'name': 'TestDl'}
-        result = service.create_infrastructure(template, template_type, inputs, deployment_location)
-        mock_service_driver.create_infrastructure.assert_called_once_with(template, template_type, inputs, deployment_location)
+        result = service.create_infrastructure(template, template_type, system_properties, properties, deployment_location)
+        mock_service_driver.create_infrastructure.assert_called_once_with(template, template_type, system_properties, properties, deployment_location)
         self.assertEqual(result, create_response)
 
     def test_create_infrastructure_uses_monitor_when_async_enabled(self):
@@ -241,9 +263,10 @@ class TestInfrastructureService(unittest.TestCase):
         service = InfrastructureService(driver=mock_service_driver, infrastructure_config=mock_infrastructure_config, inf_monitor_service=mock_inf_monitor_service)
         template = 'template'
         template_type = 'TOSCA'
-        inputs = {'inputA': 'valueA'}
+        system_properties = self.__propvaluemap({'resourceId': '1'})
+        properties = self.__propvaluemap({'propA': 'valueA'})
         deployment_location = {'name': 'TestDl'}
-        result = service.create_infrastructure(template, template_type, inputs, deployment_location)
+        result = service.create_infrastructure(template, template_type, system_properties, properties, deployment_location)
         mock_inf_monitor_service.monitor_task.assert_called_once_with('test', 'test_req', deployment_location)
 
     def test_get_infrastructure_task_uses_driver(self):

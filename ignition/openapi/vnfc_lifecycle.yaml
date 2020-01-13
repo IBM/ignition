@@ -28,7 +28,7 @@ paths:
                 $ref: "#/components/examples/ExampleExecutionRequest"
       responses:
         "202":
-          description: Request accepted (async examples shown for information but they will never be returned via this API, they are returned by Kafka instead)
+          description: Request accepted (async examples shown for information but they will never be returned via this API, they are returned on Kafka instead)
           content:
             application/json:
               schema:
