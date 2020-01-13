@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.7.0](https://github.com/accanto-systems/ignition/tree/0.7.0) (2020-01-13)
+[Full Changelog](https://github.com/accanto-systems/ignition/compare/0.6.2...0.7.0)
+
+**Implemented enhancements:**
+- Update infrastructure API to include systemProperties on create requests [\#48](https://github.com/accanto-systems/ignition/issues/48)
+
 ## [0.6.2](https://github.com/accanto-systems/ignition/tree/0.6.2) (2019-12-13)
 [Full Changelog](https://github.com/accanto-systems/ignition/compare/0.6.1...0.6.2)
 
