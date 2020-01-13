@@ -2,7 +2,7 @@ from ignition.service.framework import Capability, Service, interface
 from ignition.service.config import ConfigurationPropertiesGroup
 from ignition.service.api import BaseController
 from ignition.model.infrastructure import InfrastructureTask, infrastructure_task_dict, infrastructure_find_response_dict, STATUS_COMPLETE, STATUS_FAILED
-from ignition.service.messaging import Message, Envelope, JsonContent, TopicCreator
+from ignition.service.messaging import Message, Envelope, JsonContent, TopicCreator, TopicConfigProperties
 from ignition.api.exceptions import ApiException
 from ignition.service.logging import logging_context
 from ignition.utils.propvaluemap import PropValueMap

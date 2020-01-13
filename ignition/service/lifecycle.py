@@ -2,13 +2,12 @@ from ignition.service.framework import Capability, Service, interface
 from ignition.service.config import ConfigurationPropertiesGroup
 from ignition.service.api import BaseController
 from ignition.model.lifecycle import LifecycleExecution, lifecycle_execution_dict, STATUS_COMPLETE, STATUS_FAILED
-from ignition.service.messaging import Message, Envelope, JsonContent
+from ignition.service.messaging import Message, Envelope, JsonContent, TopicConfigProperties
 from ignition.model.lifecycle import LifecycleExecuteResponse
 from ignition.utils.file import DirectoryTree
 from ignition.api.exceptions import ApiException
 from ignition.service.logging import logging_context
 from ignition.utils.propvaluemap import PropValueMap
-from ignition.service.requestqueue import RequestQueue
 import uuid
 import logging
 import os
@@ -45,6 +44,7 @@ class LifecycleProperties(ConfigurationPropertiesGroup, Service, Capability):
         super().__init__('lifecycle')
         self.api_spec = os.path.join(openapi_path, 'vnfc_lifecycle.yaml')
         self.async_messaging_enabled = True
+        self.scripts_workspace = './scripts_workspace'
         self.request_queue = LifecycleRequestQueueProperties()
 
 

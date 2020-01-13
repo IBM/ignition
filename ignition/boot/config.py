@@ -64,6 +64,14 @@ class ApplicationProperties(ConfigurationPropertiesGroup, Service, Capability):
         self.port = None
         self.connexion_init_props = {}
         self.connexion_runtime_props = {}
+        self.ssl = SSLProperties()
+
+
+class SSLProperties(ConfigurationPropertiesGroup):
+
+    def __init__(self):
+        self.enabled = False
+        self.cert_dir = None
 
 
 class PropertyGroupError(Exception):

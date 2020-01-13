@@ -141,21 +141,23 @@ class KafkaRequestQueueService(Service, RequestQueueCapability):
     def __init__(self, **kwargs):
         if 'messaging_config' not in kwargs:
             raise ValueError('messaging_config argument not provided')
-        if 'infrastructure_request_queue_config' not in kwargs:
-            raise ValueError('infrastructure_request_queue_config argument not provided')
-        if 'lifecycle_request_queue_config' not in kwargs:
-            raise ValueError('lifecycle_request_queue_config argument not provided')
+        if 'infrastructure_config' not in kwargs:
+            raise ValueError('infrastructure_config argument not provided')
+        if 'lifecycle_config' not in kwargs:
+            raise ValueError('lifecycle_config argument not provided')
         if 'postal_service' not in kwargs:
             raise ValueError('postal_service argument not provided')
         if 'script_file_manager' not in kwargs:
             raise ValueError('script_file_manager argument not provided')
 
         messaging_config = kwargs.get('messaging_config')
+        infrastructure_config = kwargs.get('infrastructure_config')
+        lifecycle_config = kwargs.get('lifecycle_config')
+
         self.script_file_manager = kwargs.get('script_file_manager')
         self.bootstrap_servers = messaging_config.connection_address
-        self.infrastructure_request_queue_config =  kwargs.get('infrastructure_request_queue_config')
-        self.lifecycle_request_queue_config =  kwargs.get('lifecycle_request_queue_config')
-        logger.info('lifecycle_request_queue_config=' + str(type(self.lifecycle_request_queue_config)))
+        self.infrastructure_request_queue_config = infrastructure_config.request_queue
+        self.lifecycle_request_queue_config = lifecycle_config.request_queue
         self.postal_service = kwargs.get('postal_service')
 
     def queue_infrastructure_request(self, request):
