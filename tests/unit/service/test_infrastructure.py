@@ -13,16 +13,10 @@ from ignition.utils.propvaluemap import PropValueMap
 class TestInfrastructureApiService(unittest.TestCase):
 
     def __props_with_types(self, orig_props):
-        props = {}
-        for k, v in orig_props.items():
-            props[k] = {'type': 'string', 'value': v}
-        return props
+        return {k:{'type': 'string', 'value': v} for k,v in orig_props.items()}
 
     def __propvaluemap(self, orig_props):
-        props = {}
-        for k, v in orig_props.items():
-            props[k] = {'type': 'string', 'value': v}
-        return PropValueMap(props)
+        return PropValueMap(self.__props_with_types(orig_props))
 
     @patch('ignition.service.infrastructure.logging_context')
     def test_init_without_service_throws_error(self, logging_context):
@@ -217,11 +211,11 @@ class TestInfrastructureApiService(unittest.TestCase):
 
 class TestInfrastructureService(unittest.TestCase):
 
+    def __props_with_types(self, orig_props):
+        return {k:{'type': 'string', 'value': v} for k,v in orig_props.items()}
+
     def __propvaluemap(self, orig_props):
-        props = {}
-        for k, v in orig_props.items():
-            props[k] = {'type': 'string', 'value': v}
-        return PropValueMap(props)
+        return PropValueMap(self.__props_with_types(orig_props))
 
     def test_init_without_driver_throws_error(self):
         mock_infrastructure_config = MagicMock()
