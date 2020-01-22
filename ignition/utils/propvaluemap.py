@@ -38,6 +38,8 @@ class PropValueMap(MutableMapping):
             if value['type'] == 'key':
                 if value.get('privateKey', None) is None:
                     raise ValueError("Value must have a privateKey property")
+            if 'value' not in value:
+                value['value'] = None
             if key in self:
                 del self.values[key]
             self.values[key] = value
