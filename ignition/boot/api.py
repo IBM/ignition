@@ -6,16 +6,18 @@ from ignition.boot.configurators.infrastructureapi import InfrastructureApiConfi
 from ignition.boot.configurators.lifecycleapi import LifecycleApiConfigurator, LifecycleServicesConfigurator
 from ignition.boot.configurators.messaging import MessagingConfigurator
 from ignition.boot.configurators.jobqueue import JobQueueConfigurator
+from ignition.boot.configurators.management import ManagementApiConfigurator, ManagmentServicesConfigurator
 from ignition.service.infrastructure import InfrastructureProperties
 from ignition.service.lifecycle import LifecycleProperties
 from ignition.service.messaging import MessagingProperties
 from ignition.service.queue import JobQueueProperties
+from ignition.service.management import ManagementProperties
 from jsonschema import ValidationError
 
-SERVICE_CONFIGURATORS = [InfrastructureServicesConfigurator(), LifecycleServicesConfigurator(), MessagingConfigurator(), JobQueueConfigurator()]
-API_CONFIGURATORS = [InfrastructureApiConfigurator(), LifecycleApiConfigurator()]
+SERVICE_CONFIGURATORS = [InfrastructureServicesConfigurator(), LifecycleServicesConfigurator(), MessagingConfigurator(), JobQueueConfigurator(), ManagmentServicesConfigurator()]
+API_CONFIGURATORS = [InfrastructureApiConfigurator(), LifecycleApiConfigurator(), ManagementApiConfigurator()]
 MANDATORY_PROPERTY_GROUPS = [ApplicationProperties, ApiProperties]
-ADDITIONAL_PROPERTY_GROUPS = [BootProperties, InfrastructureProperties, LifecycleProperties, MessagingProperties, JobQueueProperties]
+ADDITIONAL_PROPERTY_GROUPS = [BootProperties, InfrastructureProperties, LifecycleProperties, MessagingProperties, JobQueueProperties, ManagementProperties]
 
 
 def build_driver(app_name, vim=False, lifecycle=False):

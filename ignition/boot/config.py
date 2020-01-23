@@ -11,7 +11,20 @@ class BootProperties(ConfigurationPropertiesGroup):
         self.messaging = BootMessagingProperties()
         self.job_queue = BootJobQueueProperties()
         self.lifecycle = BootLifecycleProperties()
+        self.management = BootManagementProperties()
 
+class BootManagementProperties(ConfigurationProperties):
+
+    def __init__(self):
+        self.api_enabled = True
+        self.api_service_enabled = True
+        self.service_enabled = True
+        self.health = BootManagementHealthProperties()
+
+class BootManagementHealthProperties(ConfigurationProperties):
+
+    def __init__(self):
+        self.service_enabled = True
 
 class BootInfrastructureProperties(ConfigurationProperties):
 

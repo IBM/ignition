@@ -1,0 +1,73 @@
+openapi: 3.0.0
+info:
+  description: APIs to manage the application
+  version: "1.0.0"
+  title: Management
+servers:
+  - url: /management
+tags:
+  - name: management
+    description: Management APIs
+paths:
+  /health:
+    get:
+      tags:
+        - management
+      summary: Health Check
+      description: >-
+        Check the health of the application
+      operationId: .health
+      responses:
+        "200":
+          description: All key vitals of the application are reporting as OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthReport"
+              examples:
+                healthy:
+                  $ref: "#/components/examples/ExampleHealthyReport"
+        "503":
+          description: At least one key vital of the application is reporting as UNHEALTHY
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthReport"
+              examples:
+                unhealthy:
+                  $ref: "#/components/examples/ExampleUnhealthyReport"
+components:
+  schemas:
+    HealthReport:
+      type: object
+      properties:
+        vitals:
+          $ref: '#/components/schemas/HealthVitals'
+    HealthVitals:
+      type: object
+      properties:
+        app: 
+          $ref: '#/components/schemas/HealthVital'
+      additionalProperties:
+        $ref: '#/components/schemas/HealthVital'
+    HealthVital:
+      type: object
+      properties:
+        status: 
+          $ref: '#/components/schemas/HealthStatus'
+    HealthStatus:
+      type: string
+      enum: 
+        - OK
+        - UNHEALTHY
+  examples:
+    ExampleHealthyReport:
+      value:
+        vitals:
+          app:
+            status: OK
+    ExampleUnhealthyReport:
+      value:
+        vitals: 
+          app:
+            status: UNHEALTHY
