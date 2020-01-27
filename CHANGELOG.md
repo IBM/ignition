@@ -1,5 +1,15 @@
 # Change Log
 
+## [0.8.0](https://github.com/accanto-systems/ignition/tree/0.8.0) (2020-01-27)
+[Full Changelog](https://github.com/accanto-systems/ignition/compare/0.7.0...0.8.0)
+
+**Implemented enhancements:**
+- Add autoscaling on CPU usage rules to template Helm charts [\#50](https://github.com/accanto-systems/ignition/issues/50)
+- Add health endpoint so drivers have an API to use for health checks in their pod deployments [\#53](https://github.com/accanto-systems/ignition/issues/53)
+
+**Fixed bugs:**
+- KeyError: 'value' when iterating PropValueMap including an entry with no value [\#52](https://github.com/accanto-systems/ignition/issues/52)
+
 ## [0.7.0](https://github.com/accanto-systems/ignition/tree/0.7.0) (2020-01-13)
 [Full Changelog](https://github.com/accanto-systems/ignition/compare/0.6.2...0.7.0)
 
