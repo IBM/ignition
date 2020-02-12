@@ -363,6 +363,13 @@ class TestLifecycleScriptFileManagerService(unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(self.tmp_workspace)
 
+    def test_auto_creates_workspace(self):
+        workspace = os.path.join(self.tmp_workspace, 'my_workspace')
+        self.assertFalse(os.path.exists(workspace))
+        mock_lifecycle_config = MagicMock(scripts_workspace=workspace)
+        service = LifecycleScriptFileManagerService(lifecycle_config=mock_lifecycle_config)
+        self.assertTrue(os.path.exists(workspace))
+
     def test_build_tree(self):
         service = LifecycleScriptFileManagerService(lifecycle_config=self.mock_lifecycle_config)
         with open(test_valid_scripts_zip_file, 'rb') as file:

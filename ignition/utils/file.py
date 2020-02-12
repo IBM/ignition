@@ -2,6 +2,7 @@ import os
 import string
 import unicodedata
 import logging
+import shutil
 
 logger = logging.getLogger(__name__)
 
@@ -63,3 +64,8 @@ class DirectoryTree():
 
     def get_path(self):
         return self.root_path
+
+    def remove_all(self, ignore_errors=False):
+        if os.path.exists(self.root_path):
+            shutil.rmtree(self.root_path, ignore_errors=ignore_errors)
+
