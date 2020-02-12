@@ -1,5 +1,12 @@
 # Change Log
 
+## [0.9.0](https://github.com/accanto-systems/ignition/tree/0.9.0) (2020-02-12)
+[Full Changelog](https://github.com/accanto-systems/ignition/compare/0.8.0...0.9.0)
+
+**Implemented enhancements:**
+- LifecycleScripts workspace should be cleaned to save space on disk [\#58](https://github.com/accanto-systems/ignition/issues/58)
+- LifecycleScripts workspace should be auto-created [\#57](https://github.com/accanto-systems/ignition/issues/57)
+
 ## [0.8.0](https://github.com/accanto-systems/ignition/tree/0.8.0) (2020-01-27)
 [Full Changelog](https://github.com/accanto-systems/ignition/compare/0.7.0...0.8.0)
 
