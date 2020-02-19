@@ -6,13 +6,15 @@ info:
 servers:
   - url: /management
 tags:
-  - name: management
-    description: Management APIs
+  - name: monitoring
+    description: Monitoring APIs
+  - name: logging
+    description: Logging APIs
 paths:
   /health:
     get:
       tags:
-        - management
+        - monitoring
       summary: Health Check
       description: >-
         Check the health of the application
@@ -36,6 +38,59 @@ paths:
               examples:
                 unhealthy:
                   $ref: "#/components/examples/ExampleUnhealthyReport"
+  /logger/{logger}:
+    get:
+      tags:
+        - logging
+      summary: Get configuration of a logger
+      description: >-
+        Check the configuration of a logger by name
+      operationId: .get_logger
+      parameters:
+        - in: path
+          name: logger
+          required: true
+          schema:
+            type: string
+          description: The name of the logger
+      responses:
+        "200":
+          description: The configuration of the logger
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Logger"
+              examples:
+                success:
+                  $ref: "#/components/examples/ExampleLogger"
+    put:
+      tags:
+        - logging
+      summary: Update configuration of a logger
+      description: >-
+        Update the configuration of a logger by name
+      operationId: .update_logger
+      parameters:
+        - in: path
+          name: logger
+          required: true
+          schema:
+            type: string
+          description: The name of the logger
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateLoggerRequest'
+            examples:
+              example:
+                $ref: '#/components/examples/ExampleUpdateLoggerRequest'
+      responses:
+        "200":
+          description: The logger has been updated
+        "400": 
+          description: Bad request - an invalid log level was used
+        
 components:
   schemas:
     HealthReport:
@@ -60,6 +115,16 @@ components:
       enum: 
         - OK
         - UNHEALTHY
+    Logger:
+      type: object
+      properties:
+        level:
+          type: string
+    UpdateLoggerRequest:
+      type: object
+      properties:
+        level: 
+          type: string
   examples:
     ExampleHealthyReport:
       value:
@@ -71,3 +136,9 @@ components:
         vitals: 
           app:
             status: UNHEALTHY
+    ExampleLogger:
+      value:
+        level: DEBUG
+    ExampleUpdateLoggerRequest:
+      value:
+        level: DEBUG

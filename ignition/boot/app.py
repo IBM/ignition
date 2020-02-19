@@ -6,6 +6,7 @@ from ignition.boot.config import ApplicationProperties, ApiProperties
 from ignition.boot.connexionutils import RequestBodyValidator
 from ignition.service.config import ConfigParserService, ConfigurationProperties
 from ignition.service.framework import ServiceRegister, ServiceInstances, ServiceInitialiser, ServiceRegistration, Service
+from ignition.service.logging import LogInitialiser, LogProperties
 from ignition.utils.file import safe_filename
 
 logger = logging.getLogger(__name__)
@@ -36,6 +37,7 @@ class BootstrapRunner():
         self.api_register = ApiRegister()
         self.service_register = ServiceRegister()
         self.service_instances = ServiceInstances()
+        self.log_initialiser = LogInitialiser()
 
     def __process_properties(self):
         parser = ConfigParserService()
@@ -115,12 +117,26 @@ class BootstrapRunner():
                 if value is not None:
                     self.__register_property_group_instances(value)
 
+    def __configure_env_logging(self):
+        # Configures logging based on defaults, which makes use of environment variables
+        # This allows early logs to be in the correct format and at the right level
+        self.log_initialiser.initialise()
+
+    def __configure_property_based_logging(self):
+        # Update the logging configuration with values from the property sources
+        log_properties = self.property_groups.get_property_group(LogProperties)
+        self.log_initialiser.update_from_props(log_properties)
+
     def init_app(self):
+        self.__configure_env_logging()
         app_name = self.configuration.app_name
         logger.info('Bootstrapping Application: {0}'.format(app_name))
 
         # Read all the Property Sources
         self.__process_properties()
+
+        # Re-configure logging
+        self.__configure_property_based_logging()
 
         # Allow ConfigurationProperties classes to be registered as Services
         for property_group in self.property_groups.all_groups():

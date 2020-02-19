@@ -3,6 +3,7 @@ from ignition.boot.connexionutils import build_resolver_to_instance
 from ignition.boot.config import BootProperties
 from ignition.service.management import ManagementApi, Management, ManagementProperties, ManagementApiService, ManagementService
 from ignition.service.health import HealthChecker, HealthCheckerService
+from ignition.service.logging import LogManager, LogManagerService
 from ignition.boot.configurators.utils import validate_no_service_with_capability_exists
 from ignition.service.framework import ServiceRegistration
 
@@ -41,6 +42,7 @@ class ManagmentServicesConfigurator():
         self.__configure_api_service(configuration, service_register)
         self.__configure_service(configuration, service_register)
         self.__configure_health_service(configuration, service_register)
+        self.__configure_log_service(configuration, service_register)
 
     def __configure_api_service(self, configuration, service_register):
         auto_config = configuration.property_groups.get_property_group(BootProperties)
@@ -59,7 +61,8 @@ class ManagmentServicesConfigurator():
             # Check if a user has enabled the auto configuration of the Management service but has also added their own
             validate_no_service_with_capability_exists(service_register, Management, 'Management', 'bootstrap.management.service_enabled')
             required_capabilities = {
-                'health_checker': HealthChecker
+                'health_checker': HealthChecker,
+                'log_manager': LogManager
             }
             service_register.add_service(ServiceRegistration(ManagementService, **required_capabilities))
         else:
@@ -74,3 +77,13 @@ class ManagmentServicesConfigurator():
             service_register.add_service(ServiceRegistration(HealthCheckerService))
         else:
             logger.debug('Disabled: bootstrapped Health Checker Service')
+
+    def __configure_log_service(self, configuration, service_register):
+        auto_config = configuration.property_groups.get_property_group(BootProperties)
+        if auto_config.management.log_manager.service_enabled is True:
+            logger.debug('Bootstrapping Log Manager Service')
+            # Check if a user has enabled the auto configuration of the LogManager service but has also added their own
+            validate_no_service_with_capability_exists(service_register, LogManager, 'LogManager', 'bootstrap.management.log_manager.service_enabled')
+            service_register.add_service(ServiceRegistration(LogManagerService))
+        else:
+            logger.debug('Disabled: bootstrapped Log Manager Service')

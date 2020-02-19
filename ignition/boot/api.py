@@ -1,22 +1,23 @@
+from ignition.api.exceptions import ErrorResponseConverter, validation_error_handler
 from ignition.boot.config import BootProperties, ApplicationProperties, ApiProperties, DynamicServiceConfigurator, DynamicApiConfigurator, PropertyGroups, BootstrapApplicationConfiguration
 from ignition.boot.app import BootstrapRunner
-from ignition.api.exceptions import ErrorResponseConverter, validation_error_handler
-from ignition.service.config import YmlFileSource, EnvironmentVariableYmlFileSource
 from ignition.boot.configurators.infrastructureapi import InfrastructureApiConfigurator, InfrastructureServicesConfigurator
 from ignition.boot.configurators.lifecycleapi import LifecycleApiConfigurator, LifecycleServicesConfigurator
 from ignition.boot.configurators.messaging import MessagingConfigurator
 from ignition.boot.configurators.jobqueue import JobQueueConfigurator
 from ignition.boot.configurators.management import ManagementApiConfigurator, ManagmentServicesConfigurator
+from ignition.service.config import YmlFileSource, EnvironmentVariableYmlFileSource
 from ignition.service.infrastructure import InfrastructureProperties
 from ignition.service.lifecycle import LifecycleProperties
 from ignition.service.messaging import MessagingProperties
 from ignition.service.queue import JobQueueProperties
 from ignition.service.management import ManagementProperties
+from ignition.service.logging import LogProperties
 from jsonschema import ValidationError
 
 SERVICE_CONFIGURATORS = [InfrastructureServicesConfigurator(), LifecycleServicesConfigurator(), MessagingConfigurator(), JobQueueConfigurator(), ManagmentServicesConfigurator()]
 API_CONFIGURATORS = [InfrastructureApiConfigurator(), LifecycleApiConfigurator(), ManagementApiConfigurator()]
-MANDATORY_PROPERTY_GROUPS = [ApplicationProperties, ApiProperties]
+MANDATORY_PROPERTY_GROUPS = [ApplicationProperties, ApiProperties, LogProperties]
 ADDITIONAL_PROPERTY_GROUPS = [BootProperties, InfrastructureProperties, LifecycleProperties, MessagingProperties, JobQueueProperties, ManagementProperties]
 
 

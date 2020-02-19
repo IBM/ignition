@@ -20,8 +20,14 @@ class BootManagementProperties(ConfigurationProperties):
         self.api_service_enabled = True
         self.service_enabled = True
         self.health = BootManagementHealthProperties()
+        self.log_manager = BootManagementLogProperties()
 
 class BootManagementHealthProperties(ConfigurationProperties):
+
+    def __init__(self):
+        self.service_enabled = True
+
+class BootManagementLogProperties(ConfigurationProperties):
 
     def __init__(self):
         self.service_enabled = True
