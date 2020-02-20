@@ -176,11 +176,11 @@ class LogInitialiser:
     def __configure_ignition_level_from_env(self):
         if self.env_vars.ignition_level is not None:
             ignition_logger = logging.getLogger('ignition')
-            ignition_level = configuration.ignition_level
+            ignition_level = self.env_vars.ignition_level
             ignition_logger.setLevel(ignition_level)
         if self.env_vars.ignition_boot_level is not None:
             ignition_boot_logger = logging.getLogger('ignition.boot')
-            ignition_boot_level = configuration.ignition_boot_level
+            ignition_boot_level = self.env_vars.ignition_boot_level
             ignition_boot_logger.setLevel(ignition_boot_level)
 
     def update_from_props(self, props):
@@ -220,28 +220,28 @@ class LogEnvironmentVariables:
     IGNITION_BOOT_LOG_LEVEL = 'IGNITION_BOOT_LOG_LEVEL'
 
     def __init__(self):
-        self.boot_enabled = self._read_env_var(LogEnvironmentConfiguration.LOG_BOOTSTRAPPING_ENABLED)
+        self.boot_enabled = self._read_env_var(LogEnvironmentVariables.LOG_BOOTSTRAPPING_ENABLED)
         if self.boot_enabled is not None:
             self.boot_enabled = self.boot_enabled.upper() == 'TRUE'
-        self.format = self._read_env_var(LogEnvironmentConfiguration.LOG_FORMAT)
+        self.format = self._read_env_var(LogEnvironmentVariables.LOG_FORMAT)
         if self.format is None:
-            self.format = self._read_env_var(LogEnvironmentConfiguration.LOG_TYPE)
-        self.root_level = self._read_env_var(LogEnvironmentConfiguration.ROOT_LOG_LEVEL)
-        self.ignition_level = self._read_env_var(LogEnvironmentConfiguration.IGNITION_LOG_LEVEL)
-        self.ignition_boot_level = self._read_env_var(LogEnvironmentConfiguration.IGNITION_BOOT_LOG_LEVEL)
+            self.format = self._read_env_var(LogEnvironmentVariables.LOG_TYPE)
+        self.root_level = self._read_env_var(LogEnvironmentVariables.ROOT_LOG_LEVEL)
+        self.ignition_level = self._read_env_var(LogEnvironmentVariables.IGNITION_LOG_LEVEL)
+        self.ignition_boot_level = self._read_env_var(LogEnvironmentVariables.IGNITION_BOOT_LOG_LEVEL)
 
     def _read_env_var(self, env_var_name):
         value = os.getenv(env_var_name)
-        if value is None or len(value) == 0:
+        if value is None or len(value.strip()) == 0:
             return None
         else:
-            return value
+            return value.strip()
 
 class LogProperties(ConfigurationPropertiesGroup, Service, Capability):
 
     def __init__(self):
         super().__init__('logging')
-        env_conf = EnvironmentLogConfiguration()
+        env_conf = LogEnvironmentVariables()
         self.boot_enabled = env_conf.boot_enabled
         self.loggers = {}
 
