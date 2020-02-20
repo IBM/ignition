@@ -1,5 +1,11 @@
 # Change Log
 
+## [1.0.0](https://github.com/accanto-systems/ignition/tree/1.0.0) (2020-02-20)
+[Full Changelog](https://github.com/accanto-systems/ignition/compare/0.9.0...1.0.0)
+
+**Fixed bugs:**
+- Private keys should not be logged [\#61](https://github.com/accanto-systems/ignition/issues/61)
+
 ## [0.9.0](https://github.com/accanto-systems/ignition/tree/0.9.0) (2020-02-12)
 [Full Changelog](https://github.com/accanto-systems/ignition/compare/0.8.0...0.9.0)
 

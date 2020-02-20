@@ -5,6 +5,7 @@ import logging
 import socket
 import sys
 import os
+import re
 import connexion
 from ignition.api.exceptions import ApiException
 from ignition.service.framework import Service, Capability, interface
@@ -18,10 +19,55 @@ except ImportError:
     import simplejson as json
 import threading
 
+PRIVATE_KEY_PREFIX = '-----BEGIN RSA PRIVATE KEY-----'
+PRIVATE_KEY_SUFFIX = '-----END RSA PRIVATE KEY-----'
+PRIVATE_KEY_REGEX = re.compile('{0}(.*?){1}'.format(PRIVATE_KEY_PREFIX, PRIVATE_KEY_SUFFIX), flags=re.DOTALL)
+OBFUSCATED_PRIVATE_KEY = '***obfuscated private key***'
+
 LM_HTTP_HEADER_PREFIX = "X-Tracectx-"
 LOGGING_CONTEXT_KEY_PREFIX = "traceCtx."
 LM_HTTP_HEADER_TXNID = "TransactionId".lower()
 LM_HTTP_HEADER_PROCESS_ID = "ProcessId".lower()
+
+class LoggingContext(threading.local):
+
+    def __init__(self):
+        self.data = {}
+
+    def set_from_headers(self):
+        # extract tracing headers such as transactionid, convert their names to logging format and set them in the thread context
+        self.data.update(list(map(lambda header: (LOGGING_CONTEXT_KEY_PREFIX + header[0][len(LM_HTTP_HEADER_PREFIX):].lower(), header[1]),
+            filter(lambda header: header[0].lower().startswith(LM_HTTP_HEADER_PREFIX.lower()), connexion.request.headers.items()))))
+
+    def set_from_dict(self, d):
+        self.data.update(d)
+
+    def get(self, name, default=''):
+        return self.data.get(name, default)
+
+    def get_all(self):
+        # protect the dictionary from changes - use the setters to do this
+        return frozendict(self.data)
+    
+    def clear(self):
+        self.data = {}
+
+logging_context = LoggingContext()
+
+class SensitiveDataFormatter(logging.Formatter):
+
+    def __init__(self, wrapped_formatter):
+        self.wrapped_formatter = wrapped_formatter
+
+    def format(self, record):
+        result = self.wrapped_formatter.format(record)
+        result = self._obfuscate_sensitive_data(result)
+        return result
+    def _obfuscate_sensitive_data(self, record_message):
+
+        if record_message is None:
+            return record_message
+        return re.sub(PRIVATE_KEY_REGEX, OBFUSCATED_PRIVATE_KEY, record_message)
 
 class LogstashFormatter(logging.Formatter):
 
@@ -166,7 +212,7 @@ class LogInitialiser:
         else:
             log_formatter = logging.Formatter()
         for handler in root_logger.handlers:
-            handler.setFormatter(log_formatter)
+            handler.setFormatter(SensitiveDataFormatter(log_formatter))
 
     def __configure_root_level_from_env(self):
         root_logger = logging.getLogger()
@@ -184,7 +230,7 @@ class LogInitialiser:
             ignition_boot_logger.setLevel(ignition_boot_level)
 
     def update_from_props(self, props):
-        if props.boot_enabled is True:
+        if self.env_vars.boot_enabled is True:
             self.__configure_loggers(props)
 
     def __configure_loggers(self, props):
@@ -204,7 +250,7 @@ class LogInitialiser:
             level = raw_logger_config.get('level', None)
             invalid_keys = []
             for k in raw_logger_config.keys():
-                if k not in LOGGER_FIELDS:
+                if k not in self.LOGGER_FIELDS:
                     invalid_keys.append(k)
             if len(invalid_keys) > 1:
                 raise ValueError('Logger configuration \'{0}\' has invalid fields: {1}. Allowed fields: {2}'.format(logger_name, invalid_keys, self.LOGGER_FIELDS))
@@ -223,6 +269,8 @@ class LogEnvironmentVariables:
         self.boot_enabled = self._read_env_var(LogEnvironmentVariables.LOG_BOOTSTRAPPING_ENABLED)
         if self.boot_enabled is not None:
             self.boot_enabled = self.boot_enabled.upper() == 'TRUE'
+        else:
+            self.boot_enabled = True
         self.format = self._read_env_var(LogEnvironmentVariables.LOG_FORMAT)
         if self.format is None:
             self.format = self._read_env_var(LogEnvironmentVariables.LOG_TYPE)
@@ -241,31 +289,4 @@ class LogProperties(ConfigurationPropertiesGroup, Service, Capability):
 
     def __init__(self):
         super().__init__('logging')
-        env_conf = LogEnvironmentVariables()
-        self.boot_enabled = env_conf.boot_enabled
         self.loggers = {}
-
-class LoggingContext(threading.local):
-
-    def __init__(self):
-        self.data = {}
-
-    def set_from_headers(self):
-        # extract tracing headers such as transactionid, convert their names to logging format and set them in the thread context
-        self.data.update(list(map(lambda header: (LOGGING_CONTEXT_KEY_PREFIX + header[0][len(LM_HTTP_HEADER_PREFIX):].lower(), header[1]),
-            filter(lambda header: header[0].lower().startswith(LM_HTTP_HEADER_PREFIX.lower()), connexion.request.headers.items()))))
-
-    def set_from_dict(self, d):
-        self.data.update(d)
-
-    def get(self, name, default=''):
-        return self.data.get(name, default)
-
-    def get_all(self):
-        # protect the dictionary from changes - use the setters to do this
-        return frozendict(self.data)
-    
-    def clear(self):
-        self.data = {}
-
-logging_context = LoggingContext()
