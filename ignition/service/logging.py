@@ -5,6 +5,7 @@ import logging
 import socket
 import sys
 import os
+import re
 import connexion
 from datetime import datetime
 from frozendict import frozendict
@@ -13,6 +14,11 @@ try:
 except ImportError:
     import simplejson as json
 import threading
+
+PRIVATE_KEY_PREFIX = '-----BEGIN RSA PRIVATE KEY-----'
+PRIVATE_KEY_SUFFIX = '-----END RSA PRIVATE KEY-----'
+PRIVATE_KEY_REGEX = re.compile('{0}(.*?){1}'.format(PRIVATE_KEY_PREFIX, PRIVATE_KEY_SUFFIX), flags=re.DOTALL)
+OBFUSCATED_PRIVATE_KEY = '***obfuscated private key***'
 
 LM_HTTP_HEADER_PREFIX = "X-Tracectx-"
 LOGGING_CONTEXT_KEY_PREFIX = "traceCtx."
@@ -41,6 +47,21 @@ class LoggingContext(threading.local):
     
     def clear(self):
         self.data = {}
+
+class SensitiveDataFormatter(logging.Formatter):
+
+    def __init__(self, wrapped_formatter):
+        self.wrapped_formatter = wrapped_formatter
+
+    def format(self, record):
+        result = self.wrapped_formatter.format(record)
+        result = self._obfuscate_sensitive_data(result)
+        return result
+
+    def _obfuscate_sensitive_data(self, record_message):
+        if record_message is None:
+            return record_message
+        return re.sub(PRIVATE_KEY_REGEX, OBFUSCATED_PRIVATE_KEY, record_message)
 
 class LogstashFormatter(logging.Formatter):
 
@@ -110,6 +131,8 @@ class LogstashFormatter(logging.Formatter):
 
         return self.serialize(message)
 
+
+
 # configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -128,7 +151,7 @@ else:
     log_formatter = logging.Formatter()
 
 logging.getLogger().setLevel(log_level)
-[handler.setFormatter(log_formatter) for handler in logging.getLogger().handlers]
+[handler.setFormatter(SensitiveDataFormatter(log_formatter)) for handler in logging.getLogger().handlers]
 
 logging.getLogger('kafka').setLevel('INFO')
 
