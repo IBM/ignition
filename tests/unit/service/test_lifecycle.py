@@ -11,8 +11,21 @@ import os
 import tempfile
 import shutil
 import base64
+from ignition.utils.propvaluemap import PropValueMap
 
 class TestLifecycleApiService(unittest.TestCase):
+    
+    def __props_with_types(self, orig_props):
+        props = {}
+        for k, v in orig_props.items():
+            props[k] = {'type': 'string', 'value': v}
+        return props
+
+    def __propvaluemap(self, orig_props):
+        props = {}
+        for k, v in orig_props.items():
+            props[k] = {'type': 'string', 'value': v}
+        return PropValueMap(props)
 
     @patch('ignition.service.lifecycle.logging_context')
     def test_init_without_service_throws_error(self, logging_context):
@@ -25,8 +38,8 @@ class TestLifecycleApiService(unittest.TestCase):
         mock_service = MagicMock()
         mock_service.execute_lifecycle.return_value = LifecycleExecuteResponse('123')
         controller = LifecycleApiService(service=mock_service)
-        response, code = controller.execute(**{ 'body': { 'lifecycleName': 'start', 'systemProperties': {'resourceId': 1}, 'properties': {'a': 2}, 'lifecycleScripts': b'123', 'deploymentLocation': {'name': 'test'} } })
-        mock_service.execute_lifecycle.assert_called_once_with('start', b'123', {'resourceId': 1}, {'a': 2}, {'name': 'test'})
+        response, code = controller.execute(**{ 'body': { 'lifecycleName': 'start', 'systemProperties': self.__props_with_types({'resourceId': '1'}), 'properties': self.__props_with_types({'a': '2'}), 'lifecycleScripts': b'123', 'deploymentLocation': {'name': 'test'} } })
+        mock_service.execute_lifecycle.assert_called_once_with('start', b'123', self.__propvaluemap({'resourceId': '1'}), self.__propvaluemap({'a': '2'}), {'name': 'test'})
         self.assertEqual(response, {'requestId': '123'})
         self.assertEqual(code, 202)
         logging_context.set_from_headers.assert_called_once()
@@ -36,7 +49,7 @@ class TestLifecycleApiService(unittest.TestCase):
         mock_service = MagicMock()
         controller = LifecycleApiService(service=mock_service)
         with self.assertRaises(BadRequest) as context:
-            controller.execute(**{ 'body': { 'systemProperties': {'resourceId': 1}, 'properties': {'a': 2}, 'lifecycleScripts': b'123', 'deploymentLocation': {'name': 'test'} } })
+            controller.execute(**{ 'body': { 'systemProperties': self.__props_with_types({'resourceId': '1'}), 'properties': self.__props_with_types({'a': '2'}), 'lifecycleScripts': b'123', 'deploymentLocation': {'name': 'test'} } })
         self.assertEqual(str(context.exception), '\'lifecycleName\' is a required field but was not found in the request data body')
 
     @patch('ignition.service.lifecycle.logging_context')
@@ -44,7 +57,7 @@ class TestLifecycleApiService(unittest.TestCase):
         mock_service = MagicMock()
         controller = LifecycleApiService(service=mock_service)
         with self.assertRaises(BadRequest) as context:
-            controller.execute(**{ 'body': { 'lifecycleName': 'start', 'systemProperties': {'resourceId': 1}, 'properties': {'a': 2}, 'deploymentLocation': {'name': 'test'} } })
+            controller.execute(**{ 'body': { 'lifecycleName': 'start', 'systemProperties': self.__props_with_types({'resourceId': '1'}), 'properties': self.__props_with_types({'a': '2'}), 'deploymentLocation': {'name': 'test'} } })
         self.assertEqual(str(context.exception), '\'lifecycleScripts\' is a required field but was not found in the request data body')
 
     @patch('ignition.service.lifecycle.logging_context')
@@ -52,7 +65,7 @@ class TestLifecycleApiService(unittest.TestCase):
         mock_service = MagicMock()
         controller = LifecycleApiService(service=mock_service)
         with self.assertRaises(BadRequest) as context:
-            controller.execute(**{ 'body': { 'lifecycleName': 'start', 'systemProperties': {'resourceId': 1}, 'properties': {'a': 2}, 'lifecycleScripts': b'123' } })
+            controller.execute(**{ 'body': { 'lifecycleName': 'start', 'systemProperties': self.__props_with_types({'resourceId': '1'}), 'properties': self.__props_with_types({'a': '2'}), 'lifecycleScripts': b'123' } })
         self.assertEqual(str(context.exception), '\'deploymentLocation\' is a required field but was not found in the request data body')
 
     @patch('ignition.service.lifecycle.logging_context')
@@ -60,7 +73,7 @@ class TestLifecycleApiService(unittest.TestCase):
         mock_service = MagicMock()
         controller = LifecycleApiService(service=mock_service)
         with self.assertRaises(BadRequest) as context:
-            controller.execute(**{ 'body': { 'lifecycleName': 'start', 'properties': {'a': 2}, 'lifecycleScripts': b'123', 'deploymentLocation': {'name': 'test'} } })
+            controller.execute(**{ 'body': { 'lifecycleName': 'start', 'properties': self.__props_with_types({'a': '2'}), 'lifecycleScripts': b'123', 'deploymentLocation': {'name': 'test'} } })
         self.assertEqual(str(context.exception), '\'systemProperties\' is a required field but was not found in the request data body')
 
     @patch('ignition.service.lifecycle.logging_context')
@@ -68,12 +81,18 @@ class TestLifecycleApiService(unittest.TestCase):
         mock_service = MagicMock()
         mock_service.execute_lifecycle.return_value = LifecycleExecuteResponse('123')
         controller = LifecycleApiService(service=mock_service)
-        response, code = controller.execute(**{ 'body': { 'lifecycleName': 'start', 'systemProperties': {'resourceId': 1}, 'lifecycleScripts': b'123', 'deploymentLocation': {'name': 'test'} } })
-        mock_service.execute_lifecycle.assert_called_once_with('start', b'123', {'resourceId': 1}, {}, {'name': 'test'})
+        response, code = controller.execute(**{ 'body': { 'lifecycleName': 'start', 'systemProperties': self.__props_with_types({'resourceId': '1'}), 'lifecycleScripts': b'123', 'deploymentLocation': {'name': 'test'} } })
+        mock_service.execute_lifecycle.assert_called_once_with('start', b'123', {'resourceId': '1'}, {}, {'name': 'test'})
         self.assertEqual(response, {'requestId': '123'})
         self.assertEqual(code, 202)
 
 class TestLifecycleService(unittest.TestCase):
+
+    def __propvaluemap(self, orig_props):
+        props = {}
+        for k, v in orig_props.items():
+            props[k] = {'type': 'string', 'value': v}
+        return PropValueMap(props)
 
     def test_init_without_driver_throws_error(self):
         mock_lifecycle_config = MagicMock()
@@ -116,8 +135,8 @@ class TestLifecycleService(unittest.TestCase):
         service = LifecycleService(driver=mock_service_driver, lifecycle_config=mock_lifecycle_config, script_file_manager=mock_script_file_manager)
         lifecycle_name = 'start'
         lifecycle_scripts = b'123'
-        system_properties = {'resourceId': '999'}
-        properties = {'a': 1}
+        system_properties = self.__propvaluemap({'resourceId': '999'})
+        properties = self.__propvaluemap({'a': 1})
         deployment_location = {'name': 'TestDl'}
         result = service.execute_lifecycle(lifecycle_name, lifecycle_scripts, system_properties, properties, deployment_location)
         mock_service_driver.execute_lifecycle.assert_called_once_with(lifecycle_name, mock_script_tree, system_properties, properties, deployment_location)
@@ -134,8 +153,8 @@ class TestLifecycleService(unittest.TestCase):
         service = LifecycleService(driver=mock_service_driver, lifecycle_config=mock_lifecycle_config, script_file_manager=mock_script_file_manager)
         lifecycle_name = 'start'
         lifecycle_scripts = b'123'
-        system_properties = {'resourceId': '999'}
-        properties = {'a': 1}
+        system_properties = self.__propvaluemap({'resourceId': '999'})
+        properties = self.__propvaluemap({'a': 1})
         deployment_location = {'name': 'TestDl'}
         result = service.execute_lifecycle(lifecycle_name, lifecycle_scripts, system_properties, properties, deployment_location)
         mock_script_file_manager.build_tree.assert_called_once_with(ANY, lifecycle_scripts)
@@ -155,8 +174,8 @@ class TestLifecycleService(unittest.TestCase):
         service = LifecycleService(driver=mock_service_driver, lifecycle_config=mock_lifecycle_config, script_file_manager=mock_script_file_manager, lifecycle_monitor_service=mock_lifecycle_monitor_service)
         lifecycle_name = 'start'
         lifecycle_scripts = b'123'
-        system_properties = {'resourceId': '999'}
-        properties = {'a': 1}
+        system_properties = self.__propvaluemap({'resourceId': '999'})
+        properties = self.__propvaluemap({'a': 1})
         deployment_location = {'name': 'TestDl'}
         result = service.execute_lifecycle(lifecycle_name, lifecycle_scripts, system_properties, properties, deployment_location)
         mock_lifecycle_monitor_service.monitor_execution.assert_called_once_with('123', deployment_location)
@@ -343,6 +362,13 @@ class TestLifecycleScriptFileManagerService(unittest.TestCase):
 
     def tearDown(self):
         shutil.rmtree(self.tmp_workspace)
+
+    def test_auto_creates_workspace(self):
+        workspace = os.path.join(self.tmp_workspace, 'my_workspace')
+        self.assertFalse(os.path.exists(workspace))
+        mock_lifecycle_config = MagicMock(scripts_workspace=workspace)
+        service = LifecycleScriptFileManagerService(lifecycle_config=mock_lifecycle_config)
+        self.assertTrue(os.path.exists(workspace))
 
     def test_build_tree(self):
         service = LifecycleScriptFileManagerService(lifecycle_config=self.mock_lifecycle_config)

@@ -137,8 +137,8 @@ class DriverProducer:
         new_dir_name = file_name_env.from_string(template_dir_name).render(render_props)
         new_dir_path = os.path.join(target_parent_path, new_dir_name)
         if os.path.exists(new_dir_path):
-            if not os.path.isdir(self.target_location):
-                raise ProducerError('Template item \'{0}\' already exists but is not a directory'.format(self.new_dir_path))
+            if not os.path.isdir(new_dir_path):
+                raise ProducerError('Template item \'{0}\' already exists but is not a directory'.format(new_dir_path))
         else:
             os.mkdir(new_dir_path)
         for item in os.listdir(template_dir_path):

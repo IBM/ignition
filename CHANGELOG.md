@@ -1,5 +1,34 @@
 # Change Log
 
+## [1.0.0](https://github.com/accanto-systems/ignition/tree/1.0.0) (2020-02-20)
+[Full Changelog](https://github.com/accanto-systems/ignition/compare/0.9.0...1.0.0)
+
+**Fixed bugs:**
+- Private keys should not be logged [\#61](https://github.com/accanto-systems/ignition/issues/61)
+
+## [0.9.0](https://github.com/accanto-systems/ignition/tree/0.9.0) (2020-02-12)
+[Full Changelog](https://github.com/accanto-systems/ignition/compare/0.8.0...0.9.0)
+
+**Implemented enhancements:**
+- LifecycleScripts workspace should be cleaned to save space on disk [\#58](https://github.com/accanto-systems/ignition/issues/58)
+- LifecycleScripts workspace should be auto-created [\#57](https://github.com/accanto-systems/ignition/issues/57)
+
+## [0.8.0](https://github.com/accanto-systems/ignition/tree/0.8.0) (2020-01-27)
+[Full Changelog](https://github.com/accanto-systems/ignition/compare/0.7.0...0.8.0)
+
+**Implemented enhancements:**
+- Add autoscaling on CPU usage rules to template Helm charts [\#50](https://github.com/accanto-systems/ignition/issues/50)
+- Add health endpoint so drivers have an API to use for health checks in their pod deployments [\#53](https://github.com/accanto-systems/ignition/issues/53)
+
+**Fixed bugs:**
+- KeyError: 'value' when iterating PropValueMap including an entry with no value [\#52](https://github.com/accanto-systems/ignition/issues/52)
+
+## [0.7.0](https://github.com/accanto-systems/ignition/tree/0.7.0) (2020-01-13)
+[Full Changelog](https://github.com/accanto-systems/ignition/compare/0.6.2...0.7.0)
+
+**Implemented enhancements:**
+- Update infrastructure API to include systemProperties on create requests [\#48](https://github.com/accanto-systems/ignition/issues/48)
+
 ## [0.6.2](https://github.com/accanto-systems/ignition/tree/0.6.2) (2019-12-13)
 [Full Changelog](https://github.com/accanto-systems/ignition/compare/0.6.1...0.6.2)
 

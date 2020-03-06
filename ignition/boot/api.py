@@ -12,12 +12,13 @@ from ignition.service.infrastructure import InfrastructureProperties, Infrastruc
 from ignition.service.lifecycle import LifecycleProperties, LifecycleRequestQueueProperties
 from ignition.service.messaging import MessagingProperties
 from ignition.service.queue import JobQueueProperties
+from ignition.service.management import ManagementProperties
 from jsonschema import ValidationError
 
-SERVICE_CONFIGURATORS = [RequestQueueConfigurator(), InfrastructureServicesConfigurator(), LifecycleServicesConfigurator(), MessagingConfigurator(), JobQueueConfigurator()]
-API_CONFIGURATORS = [InfrastructureApiConfigurator(), LifecycleApiConfigurator()]
+SERVICE_CONFIGURATORS = [RequestQueueConfigurator(), InfrastructureServicesConfigurator(), LifecycleServicesConfigurator(), MessagingConfigurator(), JobQueueConfigurator(), ManagmentServicesConfigurator()]
+API_CONFIGURATORS = [InfrastructureApiConfigurator(), LifecycleApiConfigurator(), ManagementApiConfigurator()]
 MANDATORY_PROPERTY_GROUPS = [ApplicationProperties, ApiProperties]
-ADDITIONAL_PROPERTY_GROUPS = [BootProperties, InfrastructureProperties, LifecycleProperties, MessagingProperties, JobQueueProperties]
+ADDITIONAL_PROPERTY_GROUPS = [BootProperties, InfrastructureProperties, LifecycleProperties, MessagingProperties, JobQueueProperties, ManagementProperties]
 
 logger = logging.getLogger(__name__)
 

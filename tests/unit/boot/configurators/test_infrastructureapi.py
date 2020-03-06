@@ -39,7 +39,6 @@ class TestInfrastructureApiConfigurator(ConfiguratorTestCase):
     def test_configure_fails_when_api_service_not_registered(self):
         configuration = self.__bootstrap_config()
         configuration.property_groups.get_property_group(BootProperties).infrastructure.api_enabled = True
-        configuration.property_groups.get_property_group(BootProperties).infrastructure.api_enabled = True
         configuration.property_groups.get_property_group(InfrastructureProperties).api_spec = 'vim_infrastructure.yml'
         self.mock_service_register.get_service_offering_capability.return_value = None
         with self.assertRaises(ValueError) as context:
@@ -89,9 +88,9 @@ class TestInfrastructureServicesConfigurator(ConfiguratorTestCase):
         boot_conf = configuration.property_groups.get_property_group(BootProperties)
         boot_conf.infrastructure.api_service_enabled = False
         boot_conf.infrastructure.service_enabled = False
-        boot_conf.infrastructure.service_enabled = False
         boot_conf.infrastructure.monitoring_service_enabled = False
         boot_conf.infrastructure.messaging_service_enabled = False
+        InfrastructureServicesConfigurator().configure(configuration, self.mock_service_register)
         self.mock_service_register.add_service.assert_not_called()
 
     def test_configure_api_service(self):

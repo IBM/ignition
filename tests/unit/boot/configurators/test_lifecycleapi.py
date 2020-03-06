@@ -90,6 +90,7 @@ class TestLifecycleServicesConfigurator(ConfiguratorTestCase):
         configuration.property_groups.get_property_group(BootProperties).lifecycle.service_enabled = False
         configuration.property_groups.get_property_group(BootProperties).lifecycle.monitoring_service_enabled = False
         configuration.property_groups.get_property_group(BootProperties).lifecycle.messaging_service_enabled = False
+        LifecycleServicesConfigurator().configure(configuration, self.mock_service_register)
         self.mock_service_register.add_service.assert_not_called()
 
     def test_configure_api_service(self):

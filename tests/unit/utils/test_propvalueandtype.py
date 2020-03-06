@@ -252,6 +252,12 @@ class TestPropValueAndType(unittest.TestCase):
                 }
             }))
 
-
-
-
+    def test_iter_without_value(self):
+        values = PropValueMap({
+            'prop1': {
+                'type': 'string'
+            }
+        })
+        for k, v in values.items():
+            self.assertEqual(k, 'prop1')
+            self.assertEqual(v, None)

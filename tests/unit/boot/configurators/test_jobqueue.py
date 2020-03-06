@@ -1,4 +1,3 @@
-import logging
 from .utils import ConfiguratorTestCase
 from unittest.mock import MagicMock, patch
 from ignition.boot.config import BootstrapApplicationConfiguration, BootProperties
@@ -6,8 +5,6 @@ from ignition.boot.configurators.jobqueue import JobQueueConfigurator
 from ignition.service.queue import JobQueueCapability, MessagingJobQueueService, JobQueueProperties
 from ignition.service.messaging import MessagingProperties, TopicsProperties, PostalCapability, InboxCapability
 from ignition.service.framework import ServiceRegistration
-
-logger = logging.getLogger(__name__)
 
 class TestJobQueueConfigurator(ConfiguratorTestCase):
 
