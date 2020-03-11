@@ -8,6 +8,7 @@ from ignition.boot.configurators.lifecycleapi import LifecycleApiConfigurator, L
 from ignition.boot.configurators.messaging import MessagingConfigurator
 from ignition.boot.configurators.jobqueue import JobQueueConfigurator
 from ignition.boot.configurators.requestqueue import RequestQueueConfigurator
+from ignition.boot.configurators.management import ManagmentServicesConfigurator, ManagementApiConfigurator
 from ignition.service.infrastructure import InfrastructureProperties, InfrastructureRequestQueueProperties
 from ignition.service.lifecycle import LifecycleProperties, LifecycleRequestQueueProperties
 from ignition.service.messaging import MessagingProperties
