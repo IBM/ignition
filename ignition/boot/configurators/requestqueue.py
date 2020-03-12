@@ -26,8 +26,11 @@ class RequestQueueConfigurator():
         validate_no_service_with_capability_exists(service_register, RequestQueueCapability, 'Request Queue', None)
         self.configure_topics(configuration, messaging_config, infrastructure_config.request_queue, lifecycle_config.request_queue)
 
+        kafka_infrastructure_consumer_factory = KafkaConsumerFactory(messaging_config.connection_address, infrastructure_config.request_queue.topic.name, infrastructure_config.request_queue.group_id)
+        kafka_lifecycle_consumer_factory = KafkaConsumerFactory(messaging_config.connection_address, lifecycle_config.request_queue.topic.name, lifecycle_config.request_queue.group_id)
         service_register.add_service(ServiceRegistration(KafkaRequestQueueService, messaging_config=MessagingProperties, infrastructure_config=InfrastructureProperties,
-            lifecycle_config=LifecycleProperties, postal_service=PostalCapability, script_file_manager=LifecycleScriptFileManagerCapability))
+            lifecycle_config=LifecycleProperties, postal_service=PostalCapability, script_file_manager=LifecycleScriptFileManagerCapability,
+            kafka_infrastructure_consumer_factory=kafka_infrastructure_consumer_factory, kafka_lifecycle_consumer_factory=kafka_lifecycle_consumer_factory))
 
     def configure_topics(self, configuration, messaging_config, infrastructure_request_queue_config, lifecycle_request_queue_config):
         safe_topic_name = re.sub('[^A-Za-z0-9-_ ]+', '', configuration.app_name)

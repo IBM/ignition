@@ -27,23 +27,20 @@ class RequestQueueCapability(Capability):
         pass
 
 
-class RequestQueueHandler():
-    def __init__(self, bootstrap_servers, request_queue_config):
-        self.bootstrap_servers = bootstrap_servers
-        self.request_queue_config = request_queue_config
-        self.group_id = request_queue_config.group_id
-        # create Kafka consumer that does not auto-commit
-        self.requests_consumer = KafkaConsumer(self.request_queue_config.topic.name, bootstrap_servers=self.bootstrap_servers, group_id=self.group_id, enable_auto_commit=False, max_poll_interval_ms=300000)
+class KafkaRequestQueueHandler():
+    def __init__(self, kafka_consumer_factory):
+        self.requests_consumer = kafka_consumer_factory.create_consumer()
 
     def process_request(self):
         try:
             for topic_partition, messages in self.requests_consumer.poll(timeout_ms=200, max_records=1).items():
-                if topic_partition.topic == self.request_queue_config.topic.name and len(messages) > 0:
+                if len(messages) > 0:
                     request = JsonContent.read(messages[0].value.decode('utf-8')).dict_val
+                    request["partition"] = topic_partition.partition
+                    request["offset"] = messages[0].offset
                     if self.handle_request(request):
                         # If request handler returns with 'true' and without raising an error we are ok
                         # to commit topic offset and move on
-                        logger.debug("Committing offsets for topic {}".format(self.request_queue_config.topic.name))
                         self.requests_consumer.commit()
         except Exception as e:
             logger.exception('Lifecycle request queue for topic {0} is closing due to error {1}'.format(self.request_queue_config.topic.name, str(e)))
@@ -57,31 +54,33 @@ class RequestQueueHandler():
         pass
 
 
-class KafkaInfrastructureRequestQueueHandler(RequestQueueHandler):
-    def __init__(self, bootstrap_servers, request_queue_config, infrastructure_request_handler):
-        super(KafkaInfrastructureRequestQueueHandler, self).__init__(bootstrap_servers, request_queue_config)
+class KafkaInfrastructureRequestQueueHandler(KafkaRequestQueueHandler):
+    def __init__(self, kafka_consumer_factory, infrastructure_request_handler):
+        super(KafkaInfrastructureRequestQueueHandler, self).__init__(kafka_consumer_factory)
         self.infrastructure_request_handler = infrastructure_request_handler
-        logger.info("Created KafkaInfrastructureRequestQueueHandler with group_id {0}".format(self.group_id))
 
     def handle_request(self, request):
         try:
+            partition = request.get("partition", None)
+            offset = request.get("offset", None)
+
             if 'request_id' not in request or request['request_id'] is None:
-                logger.warning('Infrastructure request {0} is missing request_id. This request has been discarded'.format(request))
+                logger.warning('Infrastructure request for partition {0} offset {1} is missing request_id. This request has been discarded'.format(partition, offset))
                 return False
             if 'template' not in request or request['template'] is None:
-                logger.warning('Infrastructure request {0} is missing template. This request has been discarded'.format(request))
+                logger.warning('Infrastructure request for partition {0} offset {1} is missing template. This request has been discarded'.format(partition, offset))
                 return False
             if 'template_type' not in request or request['template_type'] is None:
-                logger.warning('Infrastructure request {0} is missing template_type. This request has been discarded'.format(request))
+                logger.warning('Infrastructure request for partition {0} offset {1} is missing template_type. This request has been discarded'.format(partition, offset))
                 return False
             if 'properties' not in request or request['properties'] is None:
-                logger.warning('Infrastructure request {0} is missing properties. This request has been discarded'.format(request))
+                logger.warning('Infrastructure request for partition {0} offset {1} is missing properties. This request has been discarded'.format(partition, offset))
                 return False
             if 'system_properties' not in request or request['system_properties'] is None:
-                logger.warning('Infrastructure request {0} is missing system_properties. This request has been discarded'.format(request))
+                logger.warning('Infrastructure request for partition {0} offset {1} is missing system_properties. This request has been discarded'.format(partition, offset))
                 return False
             if 'deployment_location' not in request or request['deployment_location'] is None:
-                logger.warning('Infrastructure request {0} is missing deployment_location. This request has been discarded'.format(request))
+                logger.warning('Infrastructure request for partition {0} offset {1} is missing deployment_location. This request has been discarded'.format(partition, offset))
                 return False
 
             request['properties'] = PropValueMap(request['properties'])
@@ -94,32 +93,34 @@ class KafkaInfrastructureRequestQueueHandler(RequestQueueHandler):
             raise e
 
 
-class KafkaLifecycleRequestQueueHandler(RequestQueueHandler):
-    def __init__(self, bootstrap_servers, request_queue_config, script_file_manager, lifecycle_request_handler):
-        super(KafkaLifecycleRequestQueueHandler, self).__init__(bootstrap_servers, request_queue_config)
+class KafkaLifecycleRequestQueueHandler(KafkaRequestQueueHandler):
+    def __init__(self, kafka_consumer_factory, script_file_manager, lifecycle_request_handler):
+        super(KafkaLifecycleRequestQueueHandler, self).__init__(kafka_consumer_factory)
         self.script_file_manager = script_file_manager
         self.lifecycle_request_handler = lifecycle_request_handler
-        logger.info("Created KafkaLifecycleRequestQueueHandler with group_id {0}".format(self.group_id))
 
     def handle_request(self, request):
         try:
+            partition = request.get("partition", None)
+            offset = request.get("offset", None)
+
             if 'request_id' not in request or request['request_id'] is None:
-                logger.warning('Lifecycle request {0} is missing request_id. This request has been discarded'.format(request))
+                logger.warning('Lifecycle request for partition {0} offset {1} is missing request_id. This request has been discarded'.format(partition, offset))
                 return False
             if 'lifecycle_name' not in request or request['lifecycle_name'] is None:
-                logger.warning('Lifecycle request {0} is missing lifecycle_name. This request has been discarded'.format(request))
+                logger.warning('Lifecycle request for partition {0} offset {1} is missing lifecycle_name. This request has been discarded'.format(partition, offset))
                 return False
             if 'lifecycle_scripts' not in request or request['lifecycle_scripts'] is None:
-                logger.warning('Lifecycle request {0} is missing lifecycle_scripts. This request has been discarded'.format(request))
+                logger.warning('Lifecycle request for partition {0} offset {1} is missing lifecycle_scripts. This request has been discarded'.format(partition, offset))
                 return False
             if 'system_properties' not in request or request['system_properties'] is None:
-                logger.warning('Lifecycle request {0} is missing system_properties. This request has been discarded'.format(request))
+                logger.warning('Lifecycle request for partition {0} offset {1} is missing system_properties. This request has been discarded'.format(partition, offset))
                 return False
             if 'properties' not in request or request['properties'] is None:
-                logger.warning('Lifecycle request {0} is missing properties. This request has been discarded'.format(request))
+                logger.warning('Lifecycle request for partition {0} offset {1} is missing properties. This request has been discarded'.format(partition, offset))
                 return False
             if 'deployment_location' not in request or request['deployment_location'] is None:
-                logger.warning('Lifecycle request {0} is missing deployment_location. This request has been discarded'.format(request))
+                logger.warning('Lifecycle request for partition {0} offset {1} is missing deployment_location. This request has been discarded'.format(partition, offset))
                 return False
 
             file_name = '{0}'.format(str(uuid.uuid4()))
@@ -145,6 +146,16 @@ class RequestHandler():
         pass
 
 
+class KafkaConsumerFactory():
+    def __init__(self, bootstrap_servers, topic_name, group_id):
+        self.bootstrap_servers = bootstrap_servers
+        self.topic_name = topic_name
+        self.group_id = group_id
+
+    def create_consumer(self):
+        return KafkaConsumer(self.topic_name, bootstrap_servers=self.bootstrap_servers, group_id=self.group_id, enable_auto_commit=False, max_poll_interval_ms=300000)
+
+
 class KafkaRequestQueueService(Service, RequestQueueCapability):
 
     def __init__(self, **kwargs):
@@ -158,6 +169,10 @@ class KafkaRequestQueueService(Service, RequestQueueCapability):
             raise ValueError('postal_service argument not provided')
         if 'script_file_manager' not in kwargs:
             raise ValueError('script_file_manager argument not provided')
+        if 'kafka_infrastructure_consumer_factory' not in kwargs:
+            raise ValueError('kafka_infrastructure_consumer_factory argument not provided')
+        if 'kafka_lifecycle_consumer_factory' not in kwargs:
+            raise ValueError('kafka_lifecycle_consumer_factory argument not provided')
 
         messaging_config = kwargs.get('messaging_config')
         infrastructure_config = kwargs.get('infrastructure_config')
@@ -168,6 +183,8 @@ class KafkaRequestQueueService(Service, RequestQueueCapability):
         self.infrastructure_request_queue_config = infrastructure_config.request_queue
         self.lifecycle_request_queue_config = lifecycle_config.request_queue
         self.postal_service = kwargs.get('postal_service')
+        self.kafka_infrastructure_consumer_factory = kwargs.get('kafka_infrastructure_consumer_factory')
+        self.kafka_lifecycle_consumer_factory = kwargs.get('kafka_lifecycle_consumer_factory')
 
     def queue_infrastructure_request(self, request):
         logger.debug('queue_infrastructure_request {0} on topic {1}'.format(str(request), self.infrastructure_request_queue_config.topic.name))
@@ -192,10 +209,10 @@ class KafkaRequestQueueService(Service, RequestQueueCapability):
         self.postal_service.post(Envelope(self.lifecycle_request_queue_config.topic.name, Message(JsonContent(request).get())), key=request['request_id'])
 
     def get_infrastructure_request_queue(self, name, infrastructure_request_handler):
-        return KafkaInfrastructureRequestQueueHandler(self.bootstrap_servers, self.infrastructure_request_queue_config, infrastructure_request_handler)
+        return KafkaInfrastructureRequestQueueHandler(self.kafka_infrastructure_consumer_factory, infrastructure_request_handler)
 
     def get_lifecycle_request_queue(self, name, lifecycle_request_handler):
-        return KafkaLifecycleRequestQueueHandler(self.bootstrap_servers, self.lifecycle_request_queue_config, self.script_file_manager, lifecycle_request_handler)
+        return KafkaLifecycleRequestQueueHandler(self.kafka_lifecycle_consumer_factory, self.script_file_manager, lifecycle_request_handler)
 
     def close(self):
         pass
