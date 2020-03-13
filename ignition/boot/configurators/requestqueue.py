@@ -7,30 +7,35 @@ from ignition.service.messaging import PostalCapability, InboxCapability, Messag
 from ignition.service.queue import JobQueueCapability, MessagingJobQueueService, JobQueueProperties
 from ignition.service.infrastructure import InfrastructureServiceCapability, InfrastructureProperties
 from ignition.service.lifecycle import LifecycleServiceCapability, LifecycleScriptFileManagerCapability, LifecycleProperties
-from ignition.service.requestqueue import KafkaRequestQueueService, RequestQueueCapability
+from ignition.service.requestqueue import RequestQueueCapability, KafkaRequestQueueService, InfrastructureConsumerFactoryCapability, LifecycleConsumerFactoryCapability, KafkaInfrastructureConsumerFactory, KafkaLifecycleConsumerFactory
 
 logger = logging.getLogger(__name__)
 
 class RequestQueueConfigurator():
 
-    def __init__(self):
-        pass
+    def __init__(self, topic_creator):
+        self.topic_creator = topic_creator
 
     def configure(self, configuration, service_register):
-        logger.debug('Bootstrapping Infrastructure Request Queue Service')
+        auto_config = configuration.property_groups.get_property_group(BootProperties)
+        if auto_config.request_queue.enabled is True:
+            logger.debug('Bootstrapping Request Queue Service')
 
-        messaging_config = configuration.property_groups.get_property_group(MessagingProperties)
-        infrastructure_config = configuration.property_groups.get_property_group(InfrastructureProperties)
-        lifecycle_config = configuration.property_groups.get_property_group(LifecycleProperties)
+            messaging_config = configuration.property_groups.get_property_group(MessagingProperties)
+            infrastructure_config = configuration.property_groups.get_property_group(InfrastructureProperties)
+            lifecycle_config = configuration.property_groups.get_property_group(LifecycleProperties)
+            self.configure_topics(configuration, messaging_config, infrastructure_config.request_queue, lifecycle_config.request_queue)
 
-        validate_no_service_with_capability_exists(service_register, RequestQueueCapability, 'Request Queue', None)
-        self.configure_topics(configuration, messaging_config, infrastructure_config.request_queue, lifecycle_config.request_queue)
+            validate_no_service_with_capability_exists(service_register, RequestQueueCapability, 'Request Queue', 'bootstrap.request_queue.enabled')
 
-        kafka_infrastructure_consumer_factory = KafkaConsumerFactory(messaging_config.connection_address, infrastructure_config.request_queue.topic.name, infrastructure_config.request_queue.group_id)
-        kafka_lifecycle_consumer_factory = KafkaConsumerFactory(messaging_config.connection_address, lifecycle_config.request_queue.topic.name, lifecycle_config.request_queue.group_id)
-        service_register.add_service(ServiceRegistration(KafkaRequestQueueService, messaging_config=MessagingProperties, infrastructure_config=InfrastructureProperties,
-            lifecycle_config=LifecycleProperties, postal_service=PostalCapability, script_file_manager=LifecycleScriptFileManagerCapability,
-            kafka_infrastructure_consumer_factory=kafka_infrastructure_consumer_factory, kafka_lifecycle_consumer_factory=kafka_lifecycle_consumer_factory))
+            service_register.add_service(ServiceRegistration(KafkaInfrastructureConsumerFactory, messaging_config=MessagingProperties, infrastructure_config=InfrastructureProperties))
+            service_register.add_service(ServiceRegistration(KafkaLifecycleConsumerFactory, messaging_config=MessagingProperties, lifecycle_config=LifecycleProperties))
+            service_register.add_service(ServiceRegistration(KafkaRequestQueueService, messaging_config=MessagingProperties, infrastructure_config=InfrastructureProperties,
+                lifecycle_config=LifecycleProperties, postal_service=PostalCapability, script_file_manager=LifecycleScriptFileManagerCapability,
+                infrastructure_consumer_factory=InfrastructureConsumerFactoryCapability, lifecycle_consumer_factory=LifecycleConsumerFactoryCapability))
+        else:
+            logger.debug('Disabled: bootstrapped Request Queue Service')
+
 
     def configure_topics(self, configuration, messaging_config, infrastructure_request_queue_config, lifecycle_request_queue_config):
         safe_topic_name = re.sub('[^A-Za-z0-9-_ ]+', '', configuration.app_name)
@@ -44,5 +49,5 @@ class RequestQueueConfigurator():
         if lifecycle_request_queue_config.topic.name is None:
             lifecycle_request_queue_config.topic.name = '{0}_lifecycle_request_queue'.format(safe_topic_name)
 
-        TopicCreator().create_topic_if_needed(messaging_config.connection_address, infrastructure_request_queue_config.topic)
-        TopicCreator().create_topic_if_needed(messaging_config.connection_address, lifecycle_request_queue_config.topic)
+        self.topic_creator.create_topic_if_needed(messaging_config.connection_address, infrastructure_request_queue_config.topic)
+        self.topic_creator.create_topic_if_needed(messaging_config.connection_address, lifecycle_request_queue_config.topic)

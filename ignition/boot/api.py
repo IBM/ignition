@@ -11,12 +11,12 @@ from ignition.boot.configurators.requestqueue import RequestQueueConfigurator
 from ignition.boot.configurators.management import ManagmentServicesConfigurator, ManagementApiConfigurator
 from ignition.service.infrastructure import InfrastructureProperties, InfrastructureRequestQueueProperties
 from ignition.service.lifecycle import LifecycleProperties, LifecycleRequestQueueProperties
-from ignition.service.messaging import MessagingProperties
+from ignition.service.messaging import MessagingProperties, TopicCreator
 from ignition.service.queue import JobQueueProperties
 from ignition.service.management import ManagementProperties
 from jsonschema import ValidationError
 
-SERVICE_CONFIGURATORS = [RequestQueueConfigurator(), InfrastructureServicesConfigurator(), LifecycleServicesConfigurator(), MessagingConfigurator(), JobQueueConfigurator(), ManagmentServicesConfigurator()]
+SERVICE_CONFIGURATORS = [RequestQueueConfigurator(TopicCreator()), InfrastructureServicesConfigurator(), LifecycleServicesConfigurator(), MessagingConfigurator(), JobQueueConfigurator(), ManagmentServicesConfigurator()]
 API_CONFIGURATORS = [InfrastructureApiConfigurator(), LifecycleApiConfigurator(), ManagementApiConfigurator()]
 MANDATORY_PROPERTY_GROUPS = [ApplicationProperties, ApiProperties]
 ADDITIONAL_PROPERTY_GROUPS = [BootProperties, InfrastructureProperties, LifecycleProperties, MessagingProperties, JobQueueProperties, ManagementProperties]
@@ -45,6 +45,7 @@ def configure_vim_driver(builder):
     boot_config.messaging.postal_enabled = True
     boot_config.messaging.delivery_enabled = True
     boot_config.messaging.inbox_enabled = True
+    boot_config.request_queue.enabled = False
     boot_config.job_queue.service_enabled = True
     return builder
 
@@ -63,6 +64,7 @@ def configure_lifecycle_driver(builder):
     boot_config.messaging.postal_enabled = True
     boot_config.messaging.delivery_enabled = True
     boot_config.messaging.inbox_enabled = True
+    boot_config.request_queue.enabled = False
     boot_config.job_queue.service_enabled = True
     return builder
 

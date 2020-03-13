@@ -27,6 +27,18 @@ class RequestQueueCapability(Capability):
         pass
 
 
+class InfrastructureConsumerFactoryCapability(Capability):
+    @interface
+    def create_consumer():
+        pass
+
+
+class LifecycleConsumerFactoryCapability(Capability):
+    @interface
+    def create_consumer():
+        pass
+
+
 class KafkaRequestQueueHandler():
     def __init__(self, kafka_consumer_factory):
         self.requests_consumer = kafka_consumer_factory.create_consumer()
@@ -146,11 +158,33 @@ class RequestHandler():
         pass
 
 
-class KafkaConsumerFactory():
-    def __init__(self, bootstrap_servers, topic_name, group_id):
-        self.bootstrap_servers = bootstrap_servers
-        self.topic_name = topic_name
-        self.group_id = group_id
+class KafkaInfrastructureConsumerFactory(InfrastructureConsumerFactoryCapability):
+    def __init__(self, messaging_config, infrastructure_config):
+        if messaging_config.connection_address is None or messaging_config.connection_address == '':
+            raise ValueError('messaging_config.connection_address cannot be null')
+        self.bootstrap_servers = messaging_config.connection_address
+        if infrastructure_config.request_queue.topic.name is None or infrastructure_config.request_queue.topic.name == '':
+            raise ValueError('infrastructure_config.request_queue.topic.name cannot be null')
+        self.topic_name = infrastructure_config.request_queue.topic.name
+        if infrastructure_config.request_queue.group_id is None or infrastructure_config.request_queue.group_id == '':
+            raise ValueError('infrastructure_config.request_queue.group_id cannot be null')
+        self.group_id = infrastructure_config.request_queue.group_id
+
+    def create_consumer(self):
+        return KafkaConsumer(self.topic_name, bootstrap_servers=self.bootstrap_servers, group_id=self.group_id, enable_auto_commit=False, max_poll_interval_ms=300000)
+
+
+class KafkaLifecycleConsumerFactory(LifecycleConsumerFactoryCapability):
+    def __init__(self, messaging_config, lifecycle_config):
+        if messaging_config.connection_address is None or messaging_config.connection_address == '':
+            raise ValueError('messaging_config.connection_address cannot be null')
+        self.bootstrap_servers = messaging_config.connection_address
+        if lifecycle_config.request_queue.topic.name is None or lifecycle_config.request_queue.topic.name == '':
+            raise ValueError('lifecycle_config.request_queue.topic.name cannot be null')
+        self.topic_name = lifecycle_config.request_queue.topic.name
+        if lifecycle_config.request_queue.group_id is None or lifecycle_config.request_queue.group_id == '':
+            raise ValueError('lifecycle_config.request_queue.group_id cannot be null')
+        self.group_id = lifecycle_config.request_queue.group_id
 
     def create_consumer(self):
         return KafkaConsumer(self.topic_name, bootstrap_servers=self.bootstrap_servers, group_id=self.group_id, enable_auto_commit=False, max_poll_interval_ms=300000)
@@ -169,10 +203,10 @@ class KafkaRequestQueueService(Service, RequestQueueCapability):
             raise ValueError('postal_service argument not provided')
         if 'script_file_manager' not in kwargs:
             raise ValueError('script_file_manager argument not provided')
-        if 'kafka_infrastructure_consumer_factory' not in kwargs:
-            raise ValueError('kafka_infrastructure_consumer_factory argument not provided')
-        if 'kafka_lifecycle_consumer_factory' not in kwargs:
-            raise ValueError('kafka_lifecycle_consumer_factory argument not provided')
+        if 'infrastructure_consumer_factory' not in kwargs:
+            raise ValueError('infrastructure_consumer_factory argument not provided')
+        if 'lifecycle_consumer_factory' not in kwargs:
+            raise ValueError('lifecycle_consumer_factory argument not provided')
 
         messaging_config = kwargs.get('messaging_config')
         infrastructure_config = kwargs.get('infrastructure_config')
@@ -183,8 +217,8 @@ class KafkaRequestQueueService(Service, RequestQueueCapability):
         self.infrastructure_request_queue_config = infrastructure_config.request_queue
         self.lifecycle_request_queue_config = lifecycle_config.request_queue
         self.postal_service = kwargs.get('postal_service')
-        self.kafka_infrastructure_consumer_factory = kwargs.get('kafka_infrastructure_consumer_factory')
-        self.kafka_lifecycle_consumer_factory = kwargs.get('kafka_lifecycle_consumer_factory')
+        self.infrastructure_consumer_factory = kwargs.get('infrastructure_consumer_factory')
+        self.lifecycle_consumer_factory = kwargs.get('lifecycle_consumer_factory')
 
     def queue_infrastructure_request(self, request):
         logger.debug('queue_infrastructure_request {0} on topic {1}'.format(str(request), self.infrastructure_request_queue_config.topic.name))
@@ -209,10 +243,10 @@ class KafkaRequestQueueService(Service, RequestQueueCapability):
         self.postal_service.post(Envelope(self.lifecycle_request_queue_config.topic.name, Message(JsonContent(request).get())), key=request['request_id'])
 
     def get_infrastructure_request_queue(self, name, infrastructure_request_handler):
-        return KafkaInfrastructureRequestQueueHandler(self.kafka_infrastructure_consumer_factory, infrastructure_request_handler)
+        return KafkaInfrastructureRequestQueueHandler(self.infrastructure_consumer_factory, infrastructure_request_handler)
 
     def get_lifecycle_request_queue(self, name, lifecycle_request_handler):
-        return KafkaLifecycleRequestQueueHandler(self.kafka_lifecycle_consumer_factory, self.script_file_manager, lifecycle_request_handler)
+        return KafkaLifecycleRequestQueueHandler(self.lifecycle_consumer_factory, self.script_file_manager, lifecycle_request_handler)
 
     def close(self):
         pass
