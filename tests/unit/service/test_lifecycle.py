@@ -82,7 +82,7 @@ class TestLifecycleApiService(unittest.TestCase):
         mock_service.execute_lifecycle.return_value = LifecycleExecuteResponse('123')
         controller = LifecycleApiService(service=mock_service)
         response, code = controller.execute(**{ 'body': { 'lifecycleName': 'start', 'systemProperties': self.__props_with_types({'resourceId': '1'}), 'lifecycleScripts': b'123', 'deploymentLocation': {'name': 'test'} } })
-        mock_service.execute_lifecycle.assert_called_once_with('start', b'123', {'resourceId': '1'}, {}, {'name': 'test'})
+        mock_service.execute_lifecycle.assert_called_once_with('start', b'123', self.__propvaluemap({'resourceId': '1'}), {}, {'name': 'test'})
         self.assertEqual(response, {'requestId': '123'})
         self.assertEqual(code, 202)
 
@@ -124,6 +124,16 @@ class TestLifecycleService(unittest.TestCase):
             LifecycleService(driver=mock_service_driver, lifecycle_config=mock_lifecycle_config, script_file_manager=mock_script_file_manager)
         self.assertEqual(str(context.exception), 'lifecycle_monitor_service argument not provided (required when async_messaging_enabled is True)')
 
+    def test_init_without_request_queue_service_when_async_requests_enabled_throws_error(self):
+        mock_service_driver = MagicMock()
+        mock_script_file_manager = MagicMock()
+        mock_lifecycle_config = MagicMock()
+        mock_lifecycle_config.async_messaging_enabled = False
+        mock_lifecycle_config.request_queue.enabled = True
+        with self.assertRaises(ValueError) as context:
+            LifecycleService(driver=mock_service_driver, lifecycle_config=mock_lifecycle_config, script_file_manager=mock_script_file_manager)
+        self.assertEqual(str(context.exception), 'request_queue argument not provided (required when async_requests_enabled is True)')
+
     def test_execute_uses_driver(self):
         mock_service_driver = MagicMock()
         execute_response = LifecycleExecuteResponse('123')
@@ -132,6 +142,7 @@ class TestLifecycleService(unittest.TestCase):
         mock_script_tree = MagicMock()
         mock_script_file_manager.build_tree.return_value = mock_script_tree
         mock_lifecycle_config = MagicMock()
+        mock_lifecycle_config.request_queue.enabled = False
         service = LifecycleService(driver=mock_service_driver, lifecycle_config=mock_lifecycle_config, script_file_manager=mock_script_file_manager)
         lifecycle_name = 'start'
         lifecycle_scripts = b'123'
@@ -150,6 +161,7 @@ class TestLifecycleService(unittest.TestCase):
         mock_script_tree = MagicMock()
         mock_script_file_manager.build_tree.return_value = mock_script_tree
         mock_lifecycle_config = MagicMock()
+        mock_lifecycle_config.request_queue.enabled = False
         service = LifecycleService(driver=mock_service_driver, lifecycle_config=mock_lifecycle_config, script_file_manager=mock_script_file_manager)
         lifecycle_name = 'start'
         lifecycle_scripts = b'123'
@@ -170,6 +182,7 @@ class TestLifecycleService(unittest.TestCase):
         mock_script_file_manager.build_pointer.return_value = mock_pointer
         mock_lifecycle_config = MagicMock()
         mock_lifecycle_config.async_messaging_enabled = True
+        mock_lifecycle_config.request_queue.enabled = False
         mock_lifecycle_monitor_service = MagicMock()
         service = LifecycleService(driver=mock_service_driver, lifecycle_config=mock_lifecycle_config, script_file_manager=mock_script_file_manager, lifecycle_monitor_service=mock_lifecycle_monitor_service)
         lifecycle_name = 'start'

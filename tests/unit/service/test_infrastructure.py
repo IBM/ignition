@@ -237,12 +237,22 @@ class TestInfrastructureService(unittest.TestCase):
             InfrastructureService(driver=mock_service_driver, infrastructure_config=mock_infrastructure_config)
         self.assertEqual(str(context.exception), 'inf_monitor_service argument not provided (required when async_messaging_enabled is True)')
 
+    def test_init_without_request_queue_service_when_async_requests_enabled_throws_error(self):
+        mock_service_driver = MagicMock()
+        mock_infrastructure_config = MagicMock()
+        mock_infrastructure_config.async_messaging_enabled = False
+        mock_infrastructure_config.request_queue.enabled = True
+        with self.assertRaises(ValueError) as context:
+            InfrastructureService(driver=mock_service_driver, infrastructure_config=mock_infrastructure_config)
+        self.assertEqual(str(context.exception), 'request_queue argument not provided (required when async_requests_enabled is True)')
+
     def test_create_infrastructure_uses_driver(self):
         mock_service_driver = MagicMock()
         create_response = CreateInfrastructureResponse('test', 'test_req')
         mock_service_driver.create_infrastructure.return_value = create_response
         mock_infrastructure_config = MagicMock()
         mock_infrastructure_config.async_messaging_enabled = False
+        mock_infrastructure_config.request_queue.enabled = False
         service = InfrastructureService(driver=mock_service_driver, infrastructure_config=mock_infrastructure_config)
         template = 'template'
         template_type = 'TOSCA'
@@ -259,6 +269,7 @@ class TestInfrastructureService(unittest.TestCase):
         mock_service_driver.create_infrastructure.return_value = create_response
         mock_infrastructure_config = MagicMock()
         mock_infrastructure_config.async_messaging_enabled = True
+        mock_infrastructure_config.request_queue.enabled = False
         mock_inf_monitor_service = MagicMock()
         service = InfrastructureService(driver=mock_service_driver, infrastructure_config=mock_infrastructure_config, inf_monitor_service=mock_inf_monitor_service)
         template = 'template'
@@ -275,6 +286,7 @@ class TestInfrastructureService(unittest.TestCase):
         mock_service_driver.get_infrastructure_task.return_value = retuned_task
         mock_infrastructure_config = MagicMock()
         mock_infrastructure_config.async_messaging_enabled = False
+        mock_infrastructure_config.request_queue.enabled = False
         service = InfrastructureService(driver=mock_service_driver, infrastructure_config=mock_infrastructure_config)
         infrastructure_id = 'test'
         request_id = 'test_req'
@@ -289,6 +301,7 @@ class TestInfrastructureService(unittest.TestCase):
         mock_service_driver.delete_infrastructure.return_value = delete_response
         mock_infrastructure_config = MagicMock()
         mock_infrastructure_config.async_messaging_enabled = False
+        mock_infrastructure_config.request_queue.enabled = False
         service = InfrastructureService(driver=mock_service_driver, infrastructure_config=mock_infrastructure_config)
         infrastructure_id = 'test'
         deployment_location = {'name': 'TestDl'}
@@ -302,6 +315,7 @@ class TestInfrastructureService(unittest.TestCase):
         mock_service_driver.delete_infrastructure.return_value = delete_response
         mock_infrastructure_config = MagicMock()
         mock_infrastructure_config.async_messaging_enabled = True
+        mock_infrastructure_config.request_queue.enabled = False
         mock_inf_monitor_service = MagicMock()
         service = InfrastructureService(driver=mock_service_driver, infrastructure_config=mock_infrastructure_config, inf_monitor_service=mock_inf_monitor_service)
         infrastructure_id = 'test'
@@ -315,6 +329,7 @@ class TestInfrastructureService(unittest.TestCase):
         mock_service_driver.find_infrastructure.return_value = find_response
         mock_infrastructure_config = MagicMock()
         mock_infrastructure_config.async_messaging_enabled = False
+        mock_infrastructure_config.request_queue.enabled = False
         service = InfrastructureService(driver=mock_service_driver, infrastructure_config=mock_infrastructure_config)
         template = 'template'
         template_type = 'TOSCA'

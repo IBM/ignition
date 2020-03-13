@@ -162,8 +162,8 @@ class LifecycleApiService(Service, LifecycleApiCapability, BaseController):
             logger.debug('Handling lifecycle execution request with body %s', body)
             lifecycle_name = self.get_body_required_field(body, 'lifecycleName')
             lifecycle_scripts = self.get_body_required_field(body, 'lifecycleScripts')
-            system_properties = self.get_body_required_field(body, 'systemProperties')
-            properties = self.get_body_field(body, 'properties', {})
+            system_properties = PropValueMap(self.get_body_required_field(body, 'systemProperties'))
+            properties = PropValueMap(self.get_body_field(body, 'properties', {}))
             deployment_location = self.get_body_required_field(body, 'deploymentLocation')
             execute_response = self.service.execute_lifecycle(lifecycle_name, lifecycle_scripts, system_properties, properties, deployment_location)
             response = {'requestId': execute_response.request_id}
