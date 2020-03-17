@@ -3,7 +3,7 @@ from unittest.mock import MagicMock
 from ignition.boot.config import BootstrapApplicationConfiguration, BootProperties
 from ignition.boot.configurators.requestqueue import RequestQueueConfigurator
 from ignition.service.messaging import MessagingProperties, DeliveryCapability, PostalCapability, KafkaDeliveryService, PostalService, KafkaInboxService, TopicConfigProperties
-from ignition.service.framework import ServiceRegistration
+from ignition.service.framework import ServiceRegistration, ServiceRegister
 from ignition.service.infrastructure import InfrastructureProperties, InfrastructureRequestQueueProperties
 from ignition.service.lifecycle import LifecycleProperties, LifecycleScriptFileManagerCapability, LifecycleRequestQueueProperties
 from ignition.service.requestqueue import InfrastructureConsumerFactoryCapability, LifecycleConsumerFactoryCapability, KafkaRequestQueueService
@@ -35,6 +35,12 @@ class TestRequestQueueConfigurator(ConfiguratorTestCase):
         self.mock_service_register.add_service.assert_not_called()
         self.mock_topic_creator.create_topic_if_needed.assert_not_called()
 
+    def test_configure_request_queue_service_with_real_service_register(self):
+        service_register = ServiceRegister()
+        configuration = self.__bootstrap_config()
+        configuration.property_groups.get_property_group(BootProperties).request_queue.enabled = True
+        RequestQueueConfigurator(self.mock_topic_creator).configure(configuration, service_register)
+
     def test_configure_request_queue_service(self):
         configuration = self.__bootstrap_config()
         configuration.property_groups.get_property_group(BootProperties).request_queue.enabled = True
@@ -48,7 +54,7 @@ class TestRequestQueueConfigurator(ConfiguratorTestCase):
 
         self.mock_topic_creator.create_topic_if_needed.assert_called()
         service_calls = self.mock_topic_creator.create_topic_if_needed.call_args_list
-        self.assertEqual(len(service_calls), 2)
+        self.assertEqual(len(service_calls), 4)
 
         service_call = service_calls[0]
         service_call_args, kwargs = service_call
@@ -59,6 +65,22 @@ class TestRequestQueueConfigurator(ConfiguratorTestCase):
         self.assertIsInstance(topic_config_properties, TopicConfigProperties)
 
         service_call = service_calls[1]
+        service_call_args, kwargs = service_call
+        self.assertEqual(len(service_call_args), 2)
+        connection_address = service_call_args[0]
+        self.assertEqual(connection_address, "kafka")
+        topic_config_properties = service_call_args[1]
+        self.assertIsInstance(topic_config_properties, TopicConfigProperties)
+
+        service_call = service_calls[2]
+        service_call_args, kwargs = service_call
+        self.assertEqual(len(service_call_args), 2)
+        connection_address = service_call_args[0]
+        self.assertEqual(connection_address, "kafka")
+        topic_config_properties = service_call_args[1]
+        self.assertIsInstance(topic_config_properties, TopicConfigProperties)
+
+        service_call = service_calls[3]
         service_call_args, kwargs = service_call
         self.assertEqual(len(service_call_args), 2)
         connection_address = service_call_args[0]

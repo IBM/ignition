@@ -11,6 +11,12 @@ from ignition.service.requestqueue import RequestQueueCapability, KafkaRequestQu
 
 logger = logging.getLogger(__name__)
 
+
+INFRASTRUCTURE_REQUEST_QUEUE_TOPIC = "{0}_infrastructure_request_queue"
+LIFECYCLE_REQUEST_QUEUE_TOPIC = "{0}_lifecycle_request_queue"
+FAILED_REQUEST_QUEUE = "{0}_failed"
+
+
 class RequestQueueConfigurator():
 
     def __init__(self, topic_creator):
@@ -28,8 +34,8 @@ class RequestQueueConfigurator():
 
             validate_no_service_with_capability_exists(service_register, RequestQueueCapability, 'Request Queue', 'bootstrap.request_queue.enabled')
 
-            service_register.add_service(ServiceRegistration(KafkaInfrastructureConsumerFactory, messaging_config=MessagingProperties, infrastructure_config=InfrastructureProperties))
-            service_register.add_service(ServiceRegistration(KafkaLifecycleConsumerFactory, messaging_config=MessagingProperties, lifecycle_config=LifecycleProperties))
+            service_register.add_service(ServiceRegistration(KafkaInfrastructureConsumerFactory, infrastructure_config.request_queue, messaging_config=MessagingProperties))
+            service_register.add_service(ServiceRegistration(KafkaLifecycleConsumerFactory, lifecycle_config.request_queue, messaging_config=MessagingProperties))
             service_register.add_service(ServiceRegistration(KafkaRequestQueueService, messaging_config=MessagingProperties, infrastructure_config=InfrastructureProperties,
                 lifecycle_config=LifecycleProperties, postal_service=PostalCapability, script_file_manager=LifecycleScriptFileManagerCapability,
                 infrastructure_consumer_factory=InfrastructureConsumerFactoryCapability, lifecycle_consumer_factory=LifecycleConsumerFactoryCapability))
@@ -45,9 +51,13 @@ class RequestQueueConfigurator():
         safe_topic_name = safe_topic_name.replace(' ', '_')
 
         if infrastructure_request_queue_config.topic.name is None:
-            infrastructure_request_queue_config.topic.name = '{0}_infrastructure_request_queue'.format(safe_topic_name)
+            infrastructure_request_queue_config.topic.name = INFRASTRUCTURE_REQUEST_QUEUE_TOPIC.format(safe_topic_name)
+            infrastructure_request_queue_config.failed_topic.name = FAILED_REQUEST_QUEUE.format(infrastructure_request_queue_config.topic.name)
         if lifecycle_request_queue_config.topic.name is None:
-            lifecycle_request_queue_config.topic.name = '{0}_lifecycle_request_queue'.format(safe_topic_name)
+            lifecycle_request_queue_config.topic.name = LIFECYCLE_REQUEST_QUEUE_TOPIC.format(safe_topic_name)
+            lifecycle_request_queue_config.failed_topic.name = FAILED_REQUEST_QUEUE.format(lifecycle_request_queue_config.topic.name)
 
         self.topic_creator.create_topic_if_needed(messaging_config.connection_address, infrastructure_request_queue_config.topic)
         self.topic_creator.create_topic_if_needed(messaging_config.connection_address, lifecycle_request_queue_config.topic)
+        self.topic_creator.create_topic_if_needed(messaging_config.connection_address, infrastructure_request_queue_config.failed_topic)
+        self.topic_creator.create_topic_if_needed(messaging_config.connection_address, lifecycle_request_queue_config.failed_topic)

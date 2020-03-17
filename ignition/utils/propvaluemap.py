@@ -77,6 +77,9 @@ class PropValueMap(MutableMapping):
     def items_with_types(self):
         return ValueAndTypeIterator(self)
 
+    def to_dict(self):
+        return self.values
+
     """
     get properties, with "key" values obfuscated as "*****"
     """

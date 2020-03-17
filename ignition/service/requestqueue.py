@@ -5,6 +5,10 @@ from ignition.utils.propvaluemap import PropValueMap
 from kafka import KafkaConsumer
 import logging
 import uuid
+import threading
+import traceback
+import sys
+
 
 logger = logging.getLogger(__name__)
 
@@ -39,25 +43,49 @@ class LifecycleConsumerFactoryCapability(Capability):
         pass
 
 
+"""
+Abstract handler for driver request queue requests
+"""
 class KafkaRequestQueueHandler():
-    def __init__(self, kafka_consumer_factory):
+    def __init__(self, postal_service, request_queue_config, kafka_consumer_factory):
+        self.postal_service = postal_service
+        self.request_queue_config = request_queue_config
         self.requests_consumer = kafka_consumer_factory.create_consumer()
+        logger.info("abc-1 {0} {1} {2} {3}".format(self, kafka_consumer_factory.bootstrap_servers, kafka_consumer_factory.topic_name, kafka_consumer_factory.group_id))
 
+    """
+    Process a single request from the request queue. If processed successfully, the Kafka topic offsets are committed for the partition.
+    """
     def process_request(self):
         try:
             for topic_partition, messages in self.requests_consumer.poll(timeout_ms=200, max_records=1).items():
                 if len(messages) > 0:
                     request = JsonContent.read(messages[0].value.decode('utf-8')).dict_val
+                    logger.debug("Reading topic {0} partition {1} group {2}".format(topic_partition.topic, topic_partition.partition, self.request_queue_config.group_id))
+
+                    message = messages[0]
+                    if 'request_id' not in request or request['request_id'] is None:
+                        logger.warning('Request for partition {0} offset {1} is missing request_id. This request has been discarded'.format(topic_partition.partition, message.offset))
+                        return False
+
+                    request_id = request.get("request_id", None)
                     request["partition"] = topic_partition.partition
-                    request["offset"] = messages[0].offset
+                    request["offset"] = message.offset
                     if self.handle_request(request):
                         # If request handler returns with 'true' and without raising an error we are ok
                         # to commit topic offset and move on
+                        logger.debug("Committing request with id {0} on topic {1} for partition {2} offset {3}".format(request_id, topic_partition.topic, topic_partition.partition, message.offset))
                         self.requests_consumer.commit()
+                    else:
+                        logger.debug("Adding failed request {0} to failed topic".format(request_id))
+                        if request_id is not None:
+                            self.postal_service.post(Envelope(self.request_queue_config.failed_topic.name, Message(JsonContent(request).get())), key=request_id)
+                        else:
+                            self.postal_service.post(Envelope(self.request_queue_config.failed_topic.name, Message(JsonContent(request).get())))
         except Exception as e:
+            # Log the exception and terminate the app
             logger.exception('Lifecycle request queue for topic {0} is closing due to error {1}'.format(self.request_queue_config.topic.name, str(e)))
-            # re-raise after logging, should kill the app so it can be restarted
-            raise e
+            sys.exit(1)
 
     def close(self):
         self.requests_consumer.close()
@@ -65,10 +93,12 @@ class KafkaRequestQueueHandler():
     def handle_request(self, request):
         pass
 
-
+"""
+Handler for infrastructure driver request queue requests
+"""
 class KafkaInfrastructureRequestQueueHandler(KafkaRequestQueueHandler):
-    def __init__(self, kafka_consumer_factory, infrastructure_request_handler):
-        super(KafkaInfrastructureRequestQueueHandler, self).__init__(kafka_consumer_factory)
+    def __init__(self, postal_service, request_queue_config, kafka_consumer_factory, infrastructure_request_handler):
+        super(KafkaInfrastructureRequestQueueHandler, self).__init__(postal_service, request_queue_config, kafka_consumer_factory)
         self.infrastructure_request_handler = infrastructure_request_handler
 
     def handle_request(self, request):
@@ -100,14 +130,17 @@ class KafkaInfrastructureRequestQueueHandler(KafkaRequestQueueHandler):
 
             return self.infrastructure_request_handler.handle(request)
         except Exception as e:
-            logger.exception('Infrastructure request queue for topic {0} is closing due to error {1}'.format(self.request_queue_config.topic.name, str(e)))
+            request_id = request.get("request_id", None)
+            logger.exception('Caught exception processing infrastructure request {0} for topic {1}: {2}'.format(request_id, self.request_queue_config.topic.name, str(e)))
             # re-raise after logging, should kill the app so it can be restarted
             raise e
 
-
+"""
+Handler for lifecycle driver request queue requests
+"""
 class KafkaLifecycleRequestQueueHandler(KafkaRequestQueueHandler):
-    def __init__(self, kafka_consumer_factory, script_file_manager, lifecycle_request_handler):
-        super(KafkaLifecycleRequestQueueHandler, self).__init__(kafka_consumer_factory)
+    def __init__(self, postal_service, request_queue_config, kafka_consumer_factory, script_file_manager, lifecycle_request_handler):
+        super(KafkaLifecycleRequestQueueHandler, self).__init__(postal_service, request_queue_config, kafka_consumer_factory)
         self.script_file_manager = script_file_manager
         self.lifecycle_request_handler = lifecycle_request_handler
 
@@ -142,11 +175,15 @@ class KafkaLifecycleRequestQueueHandler(KafkaRequestQueueHandler):
 
             return self.lifecycle_request_handler.handle(request)
         except Exception as e:
-            logger.exception('Lifecycle request queue for topic {0} is closing due to error {1}'.format(self.request_queue_config.topic.name, str(e)))
+            request_id = request.get("request_id", None)
+            logger.exception('Caught exception processing lifecycle request {0} for topic {1}: {2}'.format(request_id, self.request_queue_config.topic.name, str(e)))
             # re-raise after logging, should kill the app so it can be restarted
             raise e
 
 
+"""
+Driver-specific handler for processing a single driver request
+"""
 class RequestHandler():
     def __init__(self):
         pass
@@ -158,38 +195,43 @@ class RequestHandler():
         pass
 
 
-class KafkaInfrastructureConsumerFactory(InfrastructureConsumerFactoryCapability):
-    def __init__(self, messaging_config, infrastructure_config):
+"""
+A factory for creating Kafka request queue consumers
+"""
+class KafkaConsumerFactory(Service):
+    def __init__(self, request_queue_config, messaging_config):
         if messaging_config.connection_address is None or messaging_config.connection_address == '':
             raise ValueError('messaging_config.connection_address cannot be null')
         self.bootstrap_servers = messaging_config.connection_address
-        if infrastructure_config.request_queue.topic.name is None or infrastructure_config.request_queue.topic.name == '':
-            raise ValueError('infrastructure_config.request_queue.topic.name cannot be null')
-        self.topic_name = infrastructure_config.request_queue.topic.name
-        if infrastructure_config.request_queue.group_id is None or infrastructure_config.request_queue.group_id == '':
-            raise ValueError('infrastructure_config.request_queue.group_id cannot be null')
-        self.group_id = infrastructure_config.request_queue.group_id
+        if request_queue_config.topic.name is None or request_queue_config.topic.name == '':
+            raise ValueError('request_queue_config.topic.name cannot be null')
+        self.topic_name = request_queue_config.topic.name
+        if request_queue_config.group_id is None or request_queue_config.group_id == '':
+            raise ValueError('request_queue_config.group_id cannot be null')
+        self.group_id = request_queue_config.group_id
 
-    def create_consumer(self):
-        return KafkaConsumer(self.topic_name, bootstrap_servers=self.bootstrap_servers, group_id=self.group_id, enable_auto_commit=False, max_poll_interval_ms=300000)
+    def create_consumer(self, max_poll_interval_ms=300000):
+        logger.debug("Creating Kafka consumer for bootstrap server {0} topic {1} group {2} max_poll_interval_ms {3}".format(self.bootstrap_servers, self.topic_name, self.group_id, max_poll_interval_ms))
+        return KafkaConsumer(self.topic_name, bootstrap_servers=self.bootstrap_servers, group_id=self.group_id, enable_auto_commit=False, max_poll_interval_ms=max_poll_interval_ms)
+
+"""
+A factory for creating Kafka infrastructure request queue consumers
+"""
+class KafkaInfrastructureConsumerFactory(KafkaConsumerFactory, InfrastructureConsumerFactoryCapability):
+    def __init__(self, request_queue_config, messaging_config):
+        super(KafkaInfrastructureConsumerFactory, self).__init__(request_queue_config, messaging_config)
+
+"""
+A factory for creating Kafka lifecycle request queue consumers
+"""
+class KafkaLifecycleConsumerFactory(KafkaConsumerFactory, LifecycleConsumerFactoryCapability):
+    def __init__(self, request_queue_config, messaging_config):
+        super(KafkaLifecycleConsumerFactory, self).__init__(request_queue_config, messaging_config)
 
 
-class KafkaLifecycleConsumerFactory(LifecycleConsumerFactoryCapability):
-    def __init__(self, messaging_config, lifecycle_config):
-        if messaging_config.connection_address is None or messaging_config.connection_address == '':
-            raise ValueError('messaging_config.connection_address cannot be null')
-        self.bootstrap_servers = messaging_config.connection_address
-        if lifecycle_config.request_queue.topic.name is None or lifecycle_config.request_queue.topic.name == '':
-            raise ValueError('lifecycle_config.request_queue.topic.name cannot be null')
-        self.topic_name = lifecycle_config.request_queue.topic.name
-        if lifecycle_config.request_queue.group_id is None or lifecycle_config.request_queue.group_id == '':
-            raise ValueError('lifecycle_config.request_queue.group_id cannot be null')
-        self.group_id = lifecycle_config.request_queue.group_id
-
-    def create_consumer(self):
-        return KafkaConsumer(self.topic_name, bootstrap_servers=self.bootstrap_servers, group_id=self.group_id, enable_auto_commit=False, max_poll_interval_ms=300000)
-
-
+"""
+A service for handling driver request queues for infrastructure and lifecycle drivers
+"""
 class KafkaRequestQueueService(Service, RequestQueueCapability):
 
     def __init__(self, **kwargs):
@@ -232,7 +274,7 @@ class KafkaRequestQueueService(Service, RequestQueueCapability):
         self.postal_service.post(Envelope(self.infrastructure_request_queue_config.topic.name, Message(JsonContent(request).get())), key=request['request_id'])
 
     def queue_lifecycle_request(self, request):
-        logger.debug('queue_lifecycle_request {0} on topic {1}'.format(str(request), self.lifecycle_request_queue_config.topic))
+        logger.debug('queue_lifecycle_request {0} on topic {1}'.format(request, self.lifecycle_request_queue_config.topic))
 
         if request is None:
             raise ValueError('Request must not be null')
@@ -243,10 +285,11 @@ class KafkaRequestQueueService(Service, RequestQueueCapability):
         self.postal_service.post(Envelope(self.lifecycle_request_queue_config.topic.name, Message(JsonContent(request).get())), key=request['request_id'])
 
     def get_infrastructure_request_queue(self, name, infrastructure_request_handler):
-        return KafkaInfrastructureRequestQueueHandler(self.infrastructure_consumer_factory, infrastructure_request_handler)
+        return KafkaInfrastructureRequestQueueHandler(self.postal_service, self.infrastructure_consumer_factory, infrastructure_request_handler)
 
     def get_lifecycle_request_queue(self, name, lifecycle_request_handler):
-        return KafkaLifecycleRequestQueueHandler(self.lifecycle_consumer_factory, self.script_file_manager, lifecycle_request_handler)
+        logger.info("get_lifecycle_request_queue {0} {1}".format(name, lifecycle_request_handler))
+        return KafkaLifecycleRequestQueueHandler(self.postal_service, self.lifecycle_request_queue_config, self.lifecycle_consumer_factory, self.script_file_manager, lifecycle_request_handler)
 
     def close(self):
         pass

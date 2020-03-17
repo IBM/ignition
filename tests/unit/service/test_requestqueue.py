@@ -54,14 +54,14 @@ class TestRequestQueueService(unittest.TestCase):
         messaging_conf.connection_address = None
         infrastructure_config = InfrastructureProperties()
         with self.assertRaises(ValueError) as context:
-            KafkaInfrastructureConsumerFactory(messaging_conf, infrastructure_config)
+            KafkaInfrastructureConsumerFactory(infrastructure_config, messaging_conf)
 
     def test_init_KafkaLifecycleConsumerFactory_fails_when_messaging_connection_address_not_set(self):
         messaging_conf = MessagingProperties()
         messaging_conf.connection_address = None
         lifecycle_config = LifecycleProperties()
         with self.assertRaises(ValueError) as context:
-            KafkaLifecycleConsumerFactory(messaging_conf, lifecycle_config)
+            KafkaLifecycleConsumerFactory(lifecycle_config, messaging_conf)
 
     def test_requestqueue_job_posts_message(self):
         requestqueue_service = KafkaRequestQueueService(postal_service=self.mock_postal_service, script_file_manager=self.mock_script_file_manager, infrastructure_config=self.infrastructure_config, lifecycle_config=self.lifecycle_config, messaging_config=self.mock_messaging_config, infrastructure_consumer_factory=MagicMock(), lifecycle_consumer_factory=MagicMock())

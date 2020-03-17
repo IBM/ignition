@@ -65,6 +65,7 @@ class InfrastructureRequestQueueProperties(ConfigurationPropertiesGroup, Service
         self.group_id = "request_queue_consumer"
         # name intentionally not set so that it can be constructed per-driver
         self.topic = TopicConfigProperties(auto_create=True, num_partitions=20, config={'retention.ms': 60000, 'message.timestamp.difference.max.ms': 60000, 'file.delete.delay.ms': 60000})
+        self.failed_topic = TopicConfigProperties(auto_create=True, num_partitions=1, config={})
 
 
 class InfrastructureDriverCapability(Capability):
@@ -221,8 +222,8 @@ class InfrastructureApiService(Service, InfrastructureApiCapability, BaseControl
             template = self.get_body_required_field(body, 'template')
             template_type = self.get_body_required_field(body, 'templateType')
             deployment_location = self.get_body_required_field(body, 'deploymentLocation')
-            properties = PropValueMap(self.get_body_field(body, 'properties', {}))
-            system_properties = PropValueMap(self.get_body_required_field(body, 'systemProperties'))
+            properties = self.get_body_field(body, 'properties', {})
+            system_properties = self.get_body_required_field(body, 'systemProperties')
             create_response = self.service.create_infrastructure(template, template_type, system_properties, properties, deployment_location)
             response = {'infrastructureId': create_response.infrastructure_id, 'requestId': create_response.request_id}
             return (response, 202)
@@ -309,7 +310,7 @@ class InfrastructureService(Service, InfrastructureServiceCapability):
                 'deployment_location': deployment_location
             })
         else:
-            create_response = self.driver.create_infrastructure(template, template_type, system_properties, properties, deployment_location)
+            create_response = self.driver.create_infrastructure(template, template_type, PropValueMap(system_properties), PropValueMap(properties), deployment_location)
             if self.async_enabled is True:
                 self.__async_infrastructure_task_completion(create_response.infrastructure_id, create_response.request_id, deployment_location)
 

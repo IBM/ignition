@@ -67,6 +67,7 @@ class LifecycleRequestQueueProperties(ConfigurationPropertiesGroup, Service, Cap
         self.group_id = "request_queue_consumer"
         # name intentionally not set so that it can be constructed per-driver
         self.topic = TopicConfigProperties(auto_create=True, num_partitions=20, config={'retention.ms': 60000, 'message.timestamp.difference.max.ms': 60000, 'file.delete.delay.ms': 60000})
+        self.failed_topic = TopicConfigProperties(auto_create=True, num_partitions=1, config={})
 
 
 class LifecycleDriverCapability(Capability):
@@ -162,8 +163,8 @@ class LifecycleApiService(Service, LifecycleApiCapability, BaseController):
             logger.debug('Handling lifecycle execution request with body %s', body)
             lifecycle_name = self.get_body_required_field(body, 'lifecycleName')
             lifecycle_scripts = self.get_body_required_field(body, 'lifecycleScripts')
-            system_properties = PropValueMap(self.get_body_required_field(body, 'systemProperties'))
-            properties = PropValueMap(self.get_body_field(body, 'properties', {}))
+            system_properties = self.get_body_required_field(body, 'systemProperties')
+            properties = self.get_body_field(body, 'properties', {})
             deployment_location = self.get_body_required_field(body, 'deploymentLocation')
             execute_response = self.service.execute_lifecycle(lifecycle_name, lifecycle_scripts, system_properties, properties, deployment_location)
             response = {'requestId': execute_response.request_id}

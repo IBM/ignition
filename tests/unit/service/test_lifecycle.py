@@ -39,7 +39,7 @@ class TestLifecycleApiService(unittest.TestCase):
         mock_service.execute_lifecycle.return_value = LifecycleExecuteResponse('123')
         controller = LifecycleApiService(service=mock_service)
         response, code = controller.execute(**{ 'body': { 'lifecycleName': 'start', 'systemProperties': self.__props_with_types({'resourceId': '1'}), 'properties': self.__props_with_types({'a': '2'}), 'lifecycleScripts': b'123', 'deploymentLocation': {'name': 'test'} } })
-        mock_service.execute_lifecycle.assert_called_once_with('start', b'123', self.__propvaluemap({'resourceId': '1'}), self.__propvaluemap({'a': '2'}), {'name': 'test'})
+        mock_service.execute_lifecycle.assert_called_once_with('start', b'123', {'resourceId': { 'type': 'string', 'value': '1'}}, {'a': { 'type': 'string', 'value': '2'}}, {'name': 'test'})
         self.assertEqual(response, {'requestId': '123'})
         self.assertEqual(code, 202)
         logging_context.set_from_headers.assert_called_once()
@@ -82,7 +82,7 @@ class TestLifecycleApiService(unittest.TestCase):
         mock_service.execute_lifecycle.return_value = LifecycleExecuteResponse('123')
         controller = LifecycleApiService(service=mock_service)
         response, code = controller.execute(**{ 'body': { 'lifecycleName': 'start', 'systemProperties': self.__props_with_types({'resourceId': '1'}), 'lifecycleScripts': b'123', 'deploymentLocation': {'name': 'test'} } })
-        mock_service.execute_lifecycle.assert_called_once_with('start', b'123', self.__propvaluemap({'resourceId': '1'}), {}, {'name': 'test'})
+        mock_service.execute_lifecycle.assert_called_once_with('start', b'123', {'resourceId': { 'type': 'string', 'value': '1'}}, {}, {'name': 'test'})
         self.assertEqual(response, {'requestId': '123'})
         self.assertEqual(code, 202)
 
@@ -150,7 +150,7 @@ class TestLifecycleService(unittest.TestCase):
         properties = self.__propvaluemap({'a': 1})
         deployment_location = {'name': 'TestDl'}
         result = service.execute_lifecycle(lifecycle_name, lifecycle_scripts, system_properties, properties, deployment_location)
-        mock_service_driver.execute_lifecycle.assert_called_once_with(lifecycle_name, mock_script_tree, system_properties, properties, deployment_location)
+        mock_service_driver.execute_lifecycle.assert_called_once_with(lifecycle_name, mock_script_tree, self.__propvaluemap(system_properties), self.__propvaluemap(properties), deployment_location)
         self.assertEqual(result, execute_response)
 
     def test_execute_uses_file_manager(self):
@@ -190,7 +190,7 @@ class TestLifecycleService(unittest.TestCase):
         system_properties = self.__propvaluemap({'resourceId': '999'})
         properties = self.__propvaluemap({'a': 1})
         deployment_location = {'name': 'TestDl'}
-        result = service.execute_lifecycle(lifecycle_name, lifecycle_scripts, system_properties, properties, deployment_location)
+        result = service.execute_lifecycle(lifecycle_name, lifecycle_scripts, self.__propvaluemap(system_properties), self.__propvaluemap(properties), deployment_location)
         mock_lifecycle_monitor_service.monitor_execution.assert_called_once_with('123', deployment_location)
 
 class TestLifecycleExecutionMonitoringService(unittest.TestCase):

@@ -30,7 +30,7 @@ class TestInfrastructureApiService(unittest.TestCase):
         mock_service.create_infrastructure.return_value = CreateInfrastructureResponse('123', '456')
         controller = InfrastructureApiService(service=mock_service)
         response, code = controller.create(**{ 'body': { 'template': 'template', 'templateType': 'TOSCA', 'systemProperties': self.__props_with_types({'resourceId': '1'}), 'properties': self.__props_with_types({'a': '1'}), 'deploymentLocation': {'name': 'test'} } })
-        mock_service.create_infrastructure.assert_called_once_with('template', 'TOSCA', self.__propvaluemap({'resourceId': '1'}), self.__propvaluemap({'a': '1'}), {'name': 'test'})
+        mock_service.create_infrastructure.assert_called_once_with('template', 'TOSCA', {'resourceId': { 'type': 'string', 'value': '1'}}, {'a': { 'type': 'string', 'value': '1'}}, {'name': 'test'})
         self.assertEqual(response, {'infrastructureId': '123', 'requestId': '456'})
         self.assertEqual(code, 202)
         logging_context.set_from_headers.assert_called_once()
@@ -72,8 +72,8 @@ class TestInfrastructureApiService(unittest.TestCase):
         mock_service = MagicMock()
         mock_service.create_infrastructure.return_value = CreateInfrastructureResponse('123', '456')
         controller = InfrastructureApiService(service=mock_service)
-        response, code = controller.create(**{ 'body': { 'template': 'template', 'templateType': 'TOSCA', 'systemProperties': self.__props_with_types({'resourceId': '1'}), 'deploymentLocation': {'name': 'test'} } })
-        mock_service.create_infrastructure.assert_called_once_with('template', 'TOSCA', self.__propvaluemap({'resourceId': '1'}), self.__propvaluemap({}), {'name': 'test'})
+        response, code = controller.create(**{ 'body': { 'template': 'template', 'templateType': 'TOSCA', 'systemProperties': {'resourceId': '1'}, 'deploymentLocation': {'name': 'test'} } })
+        mock_service.create_infrastructure.assert_called_once_with('template', 'TOSCA', {'resourceId': '1'}, {}, {'name': 'test'})
         self.assertEqual(response, {'infrastructureId': '123', 'requestId': '456'})
         self.assertEqual(code, 202)
 
@@ -260,7 +260,7 @@ class TestInfrastructureService(unittest.TestCase):
         properties = self.__propvaluemap({'propA': 'valueA'})
         deployment_location = {'name': 'TestDl'}
         result = service.create_infrastructure(template, template_type, system_properties, properties, deployment_location)
-        mock_service_driver.create_infrastructure.assert_called_once_with(template, template_type, system_properties, properties, deployment_location)
+        mock_service_driver.create_infrastructure.assert_called_once_with(template, template_type, self.__propvaluemap(system_properties), self.__propvaluemap(properties), deployment_location)
         self.assertEqual(result, create_response)
 
     def test_create_infrastructure_uses_monitor_when_async_enabled(self):
@@ -277,7 +277,7 @@ class TestInfrastructureService(unittest.TestCase):
         system_properties = self.__propvaluemap({'resourceId': '1'})
         properties = self.__propvaluemap({'propA': 'valueA'})
         deployment_location = {'name': 'TestDl'}
-        result = service.create_infrastructure(template, template_type, system_properties, properties, deployment_location)
+        result = service.create_infrastructure(template, template_type, self.__propvaluemap(system_properties), self.__propvaluemap(properties), deployment_location)
         mock_inf_monitor_service.monitor_task.assert_called_once_with('test', 'test_req', deployment_location)
 
     def test_get_infrastructure_task_uses_driver(self):
