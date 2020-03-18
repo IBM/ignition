@@ -43,6 +43,31 @@ class LifecycleConsumerFactoryCapability(Capability):
         pass
 
 
+class Request():
+    def __init__(self, message, topic, partition):
+        self.message = message
+        self.request_as_json = JsonContent.read(message.value.decode('utf-8'))
+        self.request_as_dict = self.request_as_json.dict_val
+        self.request_id = self.request_as_dict.get("request_id", None)
+        self.topic = topic
+        self.partition = partition
+        self.offset = message.offset
+        self.exception_as_str = None
+
+    def as_new_dict(self):
+        return JsonContent.read(self.message.value.decode('utf-8')).dict_val
+
+    def as_message(self):
+        return Message(self.request_as_json.get())
+
+    def set_failed(self, exc_info):
+        self.exception_as_str = ''.join(traceback.format_exception(*exc_info)) if exc_info else ''
+        self.request_as_dict['exception'] = self.exception_as_str
+
+    def __str__(self):
+        return 'request_id: {0.request_id} topic: {0.topic} partition: {0.partition} offset: {0.offset}'.format(self)
+
+
 """
 Abstract handler for driver request queue requests
 """
@@ -59,46 +84,59 @@ class KafkaRequestQueueHandler():
     """
     def process_request(self):
         try:
+            success = True
             for topic_partition, messages in self.requests_consumer.poll(timeout_ms=200, max_records=1).items():
                 if len(messages) > 0:
-                    request = JsonContent.read(messages[0].value.decode('utf-8')).dict_val
-                    logger.debug("Reading topic {0} partition {1} group {2}".format(topic_partition.topic, topic_partition.partition, self.request_queue_config.group_id))
                     message = messages[0]
-                    if 'request_id' not in request or request['request_id'] is None:
-                        logger.warning('Request for topic {0} partition {1} offset {2} is missing request_id. This request has been discarded.'.format(topic_partition.topic, topic_partition.partition, message.offset))
+                    request = Request(message, topic_partition.topic, topic_partition.partition)
+                    try:
+                        logger.debug("Read request {0}".format(request))
+                        if request.request_id is None:
+                            logger.warning('Request {0} is missing request_id. This request has been discarded.'.format(request))
+                            self.handle_failed_request(request)
+                            success = False
+                        else:
+                            if not self.handle_request(request):
+                                logger.warning("Adding failed request with id {0} to failed topic".format(request.request_id))
+                                self.handle_failed_request(request)
+                                success = False
+                    except Exception as e:
+                        logger.warning('Caught exception handling driver request {0} : {1}'.format(request, str(e)))
+                        request.set_failed(sys.exc_info())
                         self.handle_failed_request(request)
-                        return False
+                        self.send_failed_response(request.request_id, request.exception_as_str)
+                        success = False
 
-                    request_id = request.get("request_id", None)
-                    request["partition"] = topic_partition.partition
-                    request["offset"] = message.offset
-                    if self.handle_request(request):
-                        # If request handler returns with 'true' and without raising an error we are ok
-                        # to commit topic offset and move on
-                        logger.debug("Committing request with id {0} on topic {1} for partition {2} offset {3}".format(request_id, topic_partition.topic, topic_partition.partition, message.offset))
-                        self.requests_consumer.commit()
-                        return True
-                    else:
-                        logger.warn("Adding failed request with id {0} to failed topic".format(request_id))
-                        self.handle_failed_request(request)
-                        return False
+                    # always commit, even with a failed request
+                    self.commit(request)
+
+            return success
         except Exception as e:
-            # Log the exception and terminate the app
-            logger.exception('Lifecycle request queue for topic {0} is closing due to error {1}'.format(self.request_queue_config.topic.name, str(e)))
-            sys.exit(1)
+            # just log this because we don't know enough about the failed request to call handle_failed_request
+            logger.exception('Caught exception handling driver request for topic {0} : {1}'.format(self.request_queue_config.topic.name, str(e)))
+            # always commit, even with a failed request
+            self.commit()
+            return False
+
+    def commit(self, request=None):
+        if request is not None:
+            logger.debug("Committing request {0}".format(request))
+        self.requests_consumer.commit()
 
     def close(self):
         self.requests_consumer.close()
 
+    def handle_failed_request(self, request):
+        if request.request_id is not None:
+            self.postal_service.post(Envelope(self.request_queue_config.failed_topic.name, request.as_message()), key=request.request_id)
+        else:
+            self.postal_service.post(Envelope(self.request_queue_config.failed_topic.name, request.as_message()))
+
     def handle_request(self, request):
         pass
 
-    def handle_failed_request(self, request):
-        request_id = request.get("request_id", None)
-        if request_id is not None:
-            self.postal_service.post(Envelope(self.request_queue_config.failed_topic.name, Message(JsonContent(request).get())), key=request_id)
-        else:
-            self.postal_service.post(Envelope(self.request_queue_config.failed_topic.name, Message(JsonContent(request).get())))
+    def send_failed_response(self, request_id, msg):
+        pass
 
 """
 Handler for infrastructure driver request queue requests
@@ -109,44 +147,36 @@ class KafkaInfrastructureRequestQueueHandler(KafkaRequestQueueHandler):
         self.infrastructure_request_handler = infrastructure_request_handler
 
     def handle_request(self, request):
-        try:
-            partition = request.get("partition", None)
-            offset = request.get("offset", None)
+        partition = request.partition
+        offset = request.offset
+        request_as_dict = request.as_new_dict()
 
-            if 'request_id' not in request or request['request_id'] is None:
-                logger.warning('Infrastructure request for partition {0} offset {1} is missing request_id. This request has been discarded'.format(partition, offset))
-                self.handle_failed_request(request)
-                return False
-            if 'template' not in request or request['template'] is None:
-                logger.warning('Infrastructure request for partition {0} offset {1} is missing template. This request has been discarded'.format(partition, offset))
-                self.handle_failed_request(request)
-                return False
-            if 'template_type' not in request or request['template_type'] is None:
-                logger.warning('Infrastructure request for partition {0} offset {1} is missing template_type. This request has been discarded'.format(partition, offset))
-                self.handle_failed_request(request)
-                return False
-            if 'properties' not in request or request['properties'] is None:
-                logger.warning('Infrastructure request for partition {0} offset {1} is missing properties. This request has been discarded'.format(partition, offset))
-                self.handle_failed_request(request)
-                return False
-            if 'system_properties' not in request or request['system_properties'] is None:
-                logger.warning('Infrastructure request for partition {0} offset {1} is missing system_properties. This request has been discarded'.format(partition, offset))
-                self.handle_failed_request(request)
-                return False
-            if 'deployment_location' not in request or request['deployment_location'] is None:
-                logger.warning('Infrastructure request for partition {0} offset {1} is missing deployment_location. This request has been discarded'.format(partition, offset))
-                self.handle_failed_request(request)
-                return False
+        if 'request_id' not in request_as_dict or request_as_dict['request_id'] is None:
+            logger.warning('Infrastructure request for partition {0} offset {1} is missing request_id. This request has been discarded'.format(partition, offset))
+            return False
+        if 'template' not in request_as_dict or request_as_dict['template'] is None:
+            logger.warning('Infrastructure request for partition {0} offset {1} is missing template. This request has been discarded'.format(partition, offset))
+            return False
+        if 'template_type' not in request_as_dict or request_as_dict['template_type'] is None:
+            logger.warning('Infrastructure request for partition {0} offset {1} is missing template_type. This request has been discarded'.format(partition, offset))
+            return False
+        if 'properties' not in request_as_dict or request_as_dict['properties'] is None:
+            logger.warning('Infrastructure request for partition {0} offset {1} is missing properties. This request has been discarded'.format(partition, offset))
+            return False
+        if 'system_properties' not in request_as_dict or request_as_dict['system_properties'] is None:
+            logger.warning('Infrastructure request for partition {0} offset {1} is missing system_properties. This request has been discarded'.format(partition, offset))
+            return False
+        if 'deployment_location' not in request_as_dict or request_as_dict['deployment_location'] is None:
+            logger.warning('Infrastructure request for partition {0} offset {1} is missing deployment_location. This request has been discarded'.format(partition, offset))
+            return False
 
-            request['properties'] = PropValueMap(request['properties'])
-            request['system_properties'] = PropValueMap(request['system_properties'])
+        request_as_dict['properties'] = PropValueMap(request_as_dict['properties'])
+        request_as_dict['system_properties'] = PropValueMap(request_as_dict['system_properties'])
 
-            return self.infrastructure_request_handler.handle_request(request)
-        except Exception as e:
-            request_id = request.get("request_id", None)
-            logger.exception('Caught exception processing infrastructure request {0} for topic {1}: {2}'.format(request_id, self.request_queue_config.topic.name, str(e)))
-            # re-raise after logging, should kill the app so it can be restarted
-            raise e
+        return self.infrastructure_request_handler.handle_request(request_as_dict)
+
+    def send_failed_response(self, request_id, msg):
+        self.messaging_service.send_infrastructure_task(InfrastructureTask(None, request_id, STATUS_FAILED, FailureDetails(FAILURE_CODE_INTERNAL_ERROR, msg), {}))
 
 """
 Handler for lifecycle driver request queue requests
@@ -158,47 +188,38 @@ class KafkaLifecycleRequestQueueHandler(KafkaRequestQueueHandler):
         self.lifecycle_request_handler = lifecycle_request_handler
 
     def handle_request(self, request):
-        try:
-            partition = request.get("partition", None)
-            offset = request.get("offset", None)
+        partition = request.partition
+        offset = request.offset
+        request_as_dict = request.as_new_dict()
 
-            if 'request_id' not in request or request['request_id'] is None:
-                logger.warning('Lifecycle request for partition {0} offset {1} is missing request_id. This request has been discarded'.format(partition, offset))
-                self.handle_failed_request(request)
-                return False
-            if 'lifecycle_name' not in request or request['lifecycle_name'] is None:
-                logger.warning('Lifecycle request for partition {0} offset {1} is missing lifecycle_name. This request has been discarded'.format(partition, offset))
-                self.handle_failed_request(request)
-                return False
-            if 'lifecycle_scripts' not in request or request['lifecycle_scripts'] is None:
-                logger.warning('Lifecycle request for partition {0} offset {1} is missing lifecycle_scripts. This request has been discarded'.format(partition, offset))
-                self.handle_failed_request(request)
-                return False
-            if 'system_properties' not in request or request['system_properties'] is None:
-                logger.warning('Lifecycle request for partition {0} offset {1} is missing system_properties. This request has been discarded'.format(partition, offset))
-                self.handle_failed_request(request)
-                return False
-            if 'properties' not in request or request['properties'] is None:
-                logger.warning('Lifecycle request for partition {0} offset {1} is missing properties. This request has been discarded'.format(partition, offset))
-                self.handle_failed_request(request)
-                return False
-            if 'deployment_location' not in request or request['deployment_location'] is None:
-                logger.warning('Lifecycle request for partition {0} offset {1} is missing deployment_location. This request has been discarded'.format(partition, offset))
-                self.handle_failed_request(request)
-                return False
+        if 'request_id' not in request_as_dict or request_as_dict['request_id'] is None:
+            logger.warning('Lifecycle request for partition {0} offset {1} is missing request_id. This request has been discarded'.format(partition, offset))
+            return False
+        if 'lifecycle_name' not in request_as_dict or request_as_dict['lifecycle_name'] is None:
+            logger.warning('Lifecycle request for partition {0} offset {1} is missing lifecycle_name. This request has been discarded'.format(partition, offset))
+            return False
+        if 'lifecycle_scripts' not in request_as_dict or request_as_dict['lifecycle_scripts'] is None:
+            logger.warning('Lifecycle request for partition {0} offset {1} is missing lifecycle_scripts. This request has been discarded'.format(partition, offset))
+            return False
+        if 'system_properties' not in request_as_dict or request_as_dict['system_properties'] is None:
+            logger.warning('Lifecycle request for partition {0} offset {1} is missing system_properties. This request has been discarded'.format(partition, offset))
+            return False
+        if 'properties' not in request_as_dict or request_as_dict['properties'] is None:
+            logger.warning('Lifecycle request for partition {0} offset {1} is missing properties. This request has been discarded'.format(partition, offset))
+            return False
+        if 'deployment_location' not in request_as_dict or request_as_dict['deployment_location'] is None:
+            logger.warning('Lifecycle request for partition {0} offset {1} is missing deployment_location. This request has been discarded'.format(partition, offset))
+            return False
 
-            file_name = '{0}'.format(str(uuid.uuid4()))
-            request['lifecycle_path'] = self.script_file_manager.build_tree(file_name, request['lifecycle_scripts'])
-            request['properties'] = PropValueMap(request['properties'])
-            request['system_properties'] = PropValueMap(request['system_properties'])
+        file_name = '{0}'.format(str(uuid.uuid4()))
+        request_as_dict['lifecycle_path'] = self.script_file_manager.build_tree(file_name, request_as_dict['lifecycle_scripts'])
+        request_as_dict['properties'] = PropValueMap(request_as_dict['properties'])
+        request_as_dict['system_properties'] = PropValueMap(request_as_dict['system_properties'])
 
-            return self.lifecycle_request_handler.handle_request(request)
-        except Exception as e:
-            request_id = request.get("request_id", None)
-            logger.exception('Caught exception processing lifecycle request {0} for topic {1}: {2}'.format(request_id, self.request_queue_config.topic.name, str(e)))
-            # re-raise after logging, should kill the app so it can be restarted
-            raise e
+        return self.lifecycle_request_handler.handle_request(request_as_dict)
 
+    def send_failed_response(self, request_id, msg):
+        self.messaging_service.send_lifecycle_execution(LifecycleExecution(request_id, STATUS_FAILED, FailureDetails(FAILURE_CODE_INTERNAL_ERROR, msg), {}))
 
 """
 Driver-specific handler for processing a single driver request
