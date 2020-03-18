@@ -51,10 +51,11 @@ class KafkaRequestQueueHandler():
         self.postal_service = postal_service
         self.request_queue_config = request_queue_config
         self.requests_consumer = kafka_consumer_factory.create_consumer()
-        logger.info("abc-1 {0} {1} {2} {3}".format(self, kafka_consumer_factory.bootstrap_servers, kafka_consumer_factory.topic_name, kafka_consumer_factory.group_id))
 
     """
-    Process a single request from the request queue. If processed successfully, the Kafka topic offsets are committed for the partition.
+    Process a single request from the request queue. If processed successfully, the Kafka topic offsets
+    are committed for the partition and True is retirned. Otherwise the Kafka offsets are not committed
+    and False is returned.
     """
     def process_request(self):
         try:
@@ -62,10 +63,10 @@ class KafkaRequestQueueHandler():
                 if len(messages) > 0:
                     request = JsonContent.read(messages[0].value.decode('utf-8')).dict_val
                     logger.debug("Reading topic {0} partition {1} group {2}".format(topic_partition.topic, topic_partition.partition, self.request_queue_config.group_id))
-
                     message = messages[0]
                     if 'request_id' not in request or request['request_id'] is None:
-                        logger.warning('Request for partition {0} offset {1} is missing request_id. This request has been discarded'.format(topic_partition.partition, message.offset))
+                        logger.warning('Request for topic {0} partition {1} offset {2} is missing request_id. This request has been discarded.'.format(topic_partition.topic, topic_partition.partition, message.offset))
+                        self.handle_failed_request(request)
                         return False
 
                     request_id = request.get("request_id", None)
@@ -76,12 +77,11 @@ class KafkaRequestQueueHandler():
                         # to commit topic offset and move on
                         logger.debug("Committing request with id {0} on topic {1} for partition {2} offset {3}".format(request_id, topic_partition.topic, topic_partition.partition, message.offset))
                         self.requests_consumer.commit()
+                        return True
                     else:
-                        logger.debug("Adding failed request {0} to failed topic".format(request_id))
-                        if request_id is not None:
-                            self.postal_service.post(Envelope(self.request_queue_config.failed_topic.name, Message(JsonContent(request).get())), key=request_id)
-                        else:
-                            self.postal_service.post(Envelope(self.request_queue_config.failed_topic.name, Message(JsonContent(request).get())))
+                        logger.warn("Adding failed request with id {0} to failed topic".format(request_id))
+                        self.handle_failed_request(request)
+                        return False
         except Exception as e:
             # Log the exception and terminate the app
             logger.exception('Lifecycle request queue for topic {0} is closing due to error {1}'.format(self.request_queue_config.topic.name, str(e)))
@@ -92,6 +92,13 @@ class KafkaRequestQueueHandler():
 
     def handle_request(self, request):
         pass
+
+    def handle_failed_request(self, request):
+        request_id = request.get("request_id", None)
+        if request_id is not None:
+            self.postal_service.post(Envelope(self.request_queue_config.failed_topic.name, Message(JsonContent(request).get())), key=request_id)
+        else:
+            self.postal_service.post(Envelope(self.request_queue_config.failed_topic.name, Message(JsonContent(request).get())))
 
 """
 Handler for infrastructure driver request queue requests
@@ -108,27 +115,33 @@ class KafkaInfrastructureRequestQueueHandler(KafkaRequestQueueHandler):
 
             if 'request_id' not in request or request['request_id'] is None:
                 logger.warning('Infrastructure request for partition {0} offset {1} is missing request_id. This request has been discarded'.format(partition, offset))
+                self.handle_failed_request(request)
                 return False
             if 'template' not in request or request['template'] is None:
                 logger.warning('Infrastructure request for partition {0} offset {1} is missing template. This request has been discarded'.format(partition, offset))
+                self.handle_failed_request(request)
                 return False
             if 'template_type' not in request or request['template_type'] is None:
                 logger.warning('Infrastructure request for partition {0} offset {1} is missing template_type. This request has been discarded'.format(partition, offset))
+                self.handle_failed_request(request)
                 return False
             if 'properties' not in request or request['properties'] is None:
                 logger.warning('Infrastructure request for partition {0} offset {1} is missing properties. This request has been discarded'.format(partition, offset))
+                self.handle_failed_request(request)
                 return False
             if 'system_properties' not in request or request['system_properties'] is None:
                 logger.warning('Infrastructure request for partition {0} offset {1} is missing system_properties. This request has been discarded'.format(partition, offset))
+                self.handle_failed_request(request)
                 return False
             if 'deployment_location' not in request or request['deployment_location'] is None:
                 logger.warning('Infrastructure request for partition {0} offset {1} is missing deployment_location. This request has been discarded'.format(partition, offset))
+                self.handle_failed_request(request)
                 return False
 
             request['properties'] = PropValueMap(request['properties'])
             request['system_properties'] = PropValueMap(request['system_properties'])
 
-            return self.infrastructure_request_handler.handle(request)
+            return self.infrastructure_request_handler.handle_request(request)
         except Exception as e:
             request_id = request.get("request_id", None)
             logger.exception('Caught exception processing infrastructure request {0} for topic {1}: {2}'.format(request_id, self.request_queue_config.topic.name, str(e)))
@@ -151,21 +164,27 @@ class KafkaLifecycleRequestQueueHandler(KafkaRequestQueueHandler):
 
             if 'request_id' not in request or request['request_id'] is None:
                 logger.warning('Lifecycle request for partition {0} offset {1} is missing request_id. This request has been discarded'.format(partition, offset))
+                self.handle_failed_request(request)
                 return False
             if 'lifecycle_name' not in request or request['lifecycle_name'] is None:
                 logger.warning('Lifecycle request for partition {0} offset {1} is missing lifecycle_name. This request has been discarded'.format(partition, offset))
+                self.handle_failed_request(request)
                 return False
             if 'lifecycle_scripts' not in request or request['lifecycle_scripts'] is None:
                 logger.warning('Lifecycle request for partition {0} offset {1} is missing lifecycle_scripts. This request has been discarded'.format(partition, offset))
+                self.handle_failed_request(request)
                 return False
             if 'system_properties' not in request or request['system_properties'] is None:
                 logger.warning('Lifecycle request for partition {0} offset {1} is missing system_properties. This request has been discarded'.format(partition, offset))
+                self.handle_failed_request(request)
                 return False
             if 'properties' not in request or request['properties'] is None:
                 logger.warning('Lifecycle request for partition {0} offset {1} is missing properties. This request has been discarded'.format(partition, offset))
+                self.handle_failed_request(request)
                 return False
             if 'deployment_location' not in request or request['deployment_location'] is None:
                 logger.warning('Lifecycle request for partition {0} offset {1} is missing deployment_location. This request has been discarded'.format(partition, offset))
+                self.handle_failed_request(request)
                 return False
 
             file_name = '{0}'.format(str(uuid.uuid4()))
@@ -173,7 +192,7 @@ class KafkaLifecycleRequestQueueHandler(KafkaRequestQueueHandler):
             request['properties'] = PropValueMap(request['properties'])
             request['system_properties'] = PropValueMap(request['system_properties'])
 
-            return self.lifecycle_request_handler.handle(request)
+            return self.lifecycle_request_handler.handle_request(request)
         except Exception as e:
             request_id = request.get("request_id", None)
             logger.exception('Caught exception processing lifecycle request {0} for topic {1}: {2}'.format(request_id, self.request_queue_config.topic.name, str(e)))
@@ -191,7 +210,7 @@ class RequestHandler():
     """
     returns True if successful, False otherwise
     """
-    def handle(self, request):
+    def handle_request(self, request):
         pass
 
 
@@ -267,8 +286,8 @@ class KafkaRequestQueueService(Service, RequestQueueCapability):
 
         if request is None:
             raise ValueError('Request must not be null')
-        if request['request_id'] is None:
-            raise ValueError('Infrastructure request must have a request_id')
+        if 'request_id' not in request or request['request_id'] is None:
+            raise ValueError('Request must have a request_id')
 
         # note: key the messages by request_id to ensure correct partitioning
         self.postal_service.post(Envelope(self.infrastructure_request_queue_config.topic.name, Message(JsonContent(request).get())), key=request['request_id'])
@@ -278,14 +297,14 @@ class KafkaRequestQueueService(Service, RequestQueueCapability):
 
         if request is None:
             raise ValueError('Request must not be null')
-        if request['request_id'] is None:
-            raise ValueError('Infrastructure request must have a request_id')
+        if 'request_id' not in request or request['request_id'] is None:
+            raise ValueError('Request must have a request_id')
 
         # note: key the messages by request_id to ensure correct partitioning
         self.postal_service.post(Envelope(self.lifecycle_request_queue_config.topic.name, Message(JsonContent(request).get())), key=request['request_id'])
 
     def get_infrastructure_request_queue(self, name, infrastructure_request_handler):
-        return KafkaInfrastructureRequestQueueHandler(self.postal_service, self.infrastructure_consumer_factory, infrastructure_request_handler)
+        return KafkaInfrastructureRequestQueueHandler(self.postal_service, self.infrastructure_request_queue_config, self.infrastructure_consumer_factory, infrastructure_request_handler)
 
     def get_lifecycle_request_queue(self, name, lifecycle_request_handler):
         logger.info("get_lifecycle_request_queue {0} {1}".format(name, lifecycle_request_handler))
