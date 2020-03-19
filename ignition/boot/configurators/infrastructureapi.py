@@ -6,7 +6,7 @@ from ignition.service.messaging import PostalCapability, TopicsProperties, Messa
 from ignition.service.queue import JobQueueCapability
 from ignition.service.infrastructure import InfrastructureProperties, InfrastructureApiCapability, InfrastructureServiceCapability, InfrastructureDriverCapability, InfrastructureTaskMonitoringCapability, InfrastructureMessagingCapability, InfrastructureApiService, InfrastructureService, InfrastructureTaskMonitoringService, InfrastructureMessagingService
 from ignition.boot.configurators.utils import validate_no_service_with_capability_exists
-from ignition.service.requestqueue import RequestQueueCapability
+from ignition.service.requestqueue import InfrastructureRequestQueueCapability
 
 logger = logging.getLogger(__name__)
 
@@ -71,7 +71,7 @@ class InfrastructureServicesConfigurator():
                 required_capabilities['inf_monitor_service'] = InfrastructureTaskMonitoringCapability
 
             if infrastructure_config.request_queue.enabled is True:
-                required_capabilities['request_queue'] = RequestQueueCapability
+                required_capabilities['request_queue'] = InfrastructureRequestQueueCapability
 
             service_register.add_service(ServiceRegistration(InfrastructureService, **required_capabilities))
         else:

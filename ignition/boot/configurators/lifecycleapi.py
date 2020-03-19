@@ -4,7 +4,7 @@ from ignition.boot.connexionutils import build_resolver_to_instance
 from ignition.service.framework import ServiceRegistration
 from ignition.service.messaging import PostalCapability, TopicsProperties, TopicCreator, MessagingProperties
 from ignition.service.queue import JobQueueCapability
-from ignition.service.requestqueue import RequestQueueCapability
+from ignition.service.requestqueue import LifecycleRequestQueueCapability
 from ignition.service.lifecycle import LifecycleProperties, LifecycleApiCapability, LifecycleServiceCapability, LifecycleDriverCapability, LifecycleExecutionMonitoringCapability, LifecycleMessagingCapability, LifecycleScriptFileManagerCapability, LifecycleApiService, LifecycleService, LifecycleExecutionMonitoringService, LifecycleMessagingService, LifecycleScriptFileManagerService
 from ignition.boot.configurators.utils import validate_no_service_with_capability_exists
 
@@ -86,7 +86,7 @@ class LifecycleServicesConfigurator():
             required_capabilities['script_file_manager'] = LifecycleScriptFileManagerCapability
 
             if lifecycle_config.request_queue.enabled is True:
-                required_capabilities['request_queue'] = RequestQueueCapability
+                required_capabilities['request_queue'] = LifecycleRequestQueueCapability
 
             service_register.add_service(ServiceRegistration(LifecycleService, **required_capabilities))
         else:

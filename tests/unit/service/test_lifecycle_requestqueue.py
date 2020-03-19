@@ -2,27 +2,27 @@ import unittest
 import uuid
 import collections
 import json
-#import pytest
+import logging
 from unittest.mock import patch, MagicMock
-from ignition.service.infrastructure import InfrastructureProperties
-from ignition.service.lifecycle import LifecycleProperties
-from ignition.service.requestqueue import KafkaRequestQueueService, RequestHandler, KafkaInfrastructureConsumerFactory, KafkaLifecycleConsumerFactory, KafkaRequestQueueHandler
+from ignition.model.failure import FailureDetails, FAILURE_CODE_INTERNAL_ERROR
+from ignition.model.lifecycle import LifecycleExecution, STATUS_FAILED
+from ignition.service.lifecycle import LifecycleProperties, LifecycleMessagingCapability
+from ignition.service.requestqueue import KafkaLifecycleRequestQueueService, RequestHandler, KafkaLifecycleConsumerFactory, KafkaRequestQueueHandler
 from ignition.service.messaging import Envelope, TopicsProperties, MessagingProperties, TopicConfigProperties
 from kafka.structs import TopicPartition
 from kafka import KafkaConsumer
 
 MockRecord = collections.namedtuple('MockRecord', ['value', 'offset'])
+logger = logging.getLogger(__name__)
 
-class TestRequestQueueService(unittest.TestCase):
+class TestLifecycleRequestQueueService(unittest.TestCase):
 
     def setUp(self):
-        self.infrastructure_config = InfrastructureProperties()
-        self.infrastructure_config.request_queue.topic.name = "inf_request_queue"
-        self.infrastructure_config.request_queue.failed_topic.name = "inf_request_queue_failed"
         self.lifecycle_config = LifecycleProperties()
         self.lifecycle_config.request_queue.topic.name = "lifecycle_request_queue"
         self.lifecycle_config.request_queue.failed_topic.name = "lifecycle_request_queue_failed"
         self.mock_postal_service = MagicMock()
+        self.mock_lifecycle_messaging_service = MagicMock()
         self.mock_script_file_manager = MagicMock()
         self.mock_messaging_config = MagicMock(connection_address='test:9092')
 
@@ -32,40 +32,50 @@ class TestRequestQueueService(unittest.TestCase):
         self.assertEqual(len(args), 1)
         envelope_arg = args[0]
         self.assertIsInstance(envelope_arg, Envelope)
+        logger.info('envelope_arg.address {0} topic {1}'.format(envelope_arg.address, topic))
         self.assertEqual(envelope_arg.address, topic)
         self.assertEqual(envelope_arg.message.content, json.dumps(request).encode())
 
+    def assert_lifecycle_execution_equal(self, lifecycle_execution, expected_lifecycle_execution):
+        self.assertEqual(lifecycle_execution.request_id, expected_lifecycle_execution.request_id)
+        self.assertEqual(lifecycle_execution.status, expected_lifecycle_execution.status)
+        self.assertEqual(lifecycle_execution.outputs, expected_lifecycle_execution.outputs)
+        if expected_lifecycle_execution.failure_details is not None:
+            self.assertEqual(lifecycle_execution.failure_details.failure_code, expected_lifecycle_execution.failure_details.failure_code)
+            self.assertEqual(lifecycle_execution.failure_details.description, expected_lifecycle_execution.failure_details.description)
+
+    def assert_lifecycle_execution_response_posted(self, expected_lifecycle_execution):
+        self.mock_lifecycle_messaging_service.send_lifecycle_execution.assert_called_once()
+        args, kwargs = self.mock_lifecycle_messaging_service.send_lifecycle_execution.call_args
+        self.assertEqual(len(args), 1)
+        lifecycle_execution = args[0]
+        self.assertIsInstance(lifecycle_execution, LifecycleExecution)
+        self.assert_lifecycle_execution_equal(lifecycle_execution, expected_lifecycle_execution)
+
+    def test_init_without_lifecycle_messaging_service_throws_error(self):
+        with self.assertRaises(ValueError) as context:
+            KafkaLifecycleRequestQueueService(script_file_manager=self.mock_script_file_manager, postal_service=self.mock_postal_service, lifecycle_config=LifecycleProperties(), messaging_config=self.mock_messaging_config)
+        self.assertEqual(str(context.exception), 'lifecycle_messaging_service argument not provided')
+
     def test_init_without_script_file_manager_throws_error(self):
         with self.assertRaises(ValueError) as context:
-            KafkaRequestQueueService(postal_service=self.mock_postal_service, infrastructure_config=InfrastructureProperties(), lifecycle_config=LifecycleProperties(), messaging_config=self.mock_messaging_config)
+            KafkaLifecycleRequestQueueService(lifecycle_messaging_service=self.mock_lifecycle_messaging_service, postal_service=self.mock_postal_service, lifecycle_config=LifecycleProperties(), messaging_config=self.mock_messaging_config)
         self.assertEqual(str(context.exception), 'script_file_manager argument not provided')
 
     def test_init_without_messaging_config_throws_error(self):
         with self.assertRaises(ValueError) as context:
-            KafkaRequestQueueService(script_file_manager=self.mock_script_file_manager, postal_service=self.mock_postal_service, infrastructure_config=InfrastructureProperties(), lifecycle_config=LifecycleProperties())
+            KafkaLifecycleRequestQueueService(lifecycle_messaging_service=self.mock_lifecycle_messaging_service, script_file_manager=self.mock_script_file_manager, postal_service=self.mock_postal_service, lifecycle_config=LifecycleProperties())
         self.assertEqual(str(context.exception), 'messaging_config argument not provided')
-
-    def test_init_without_infrastructure_config_throws_error(self):
-        with self.assertRaises(ValueError) as context:
-            KafkaRequestQueueService(script_file_manager=self.mock_script_file_manager, postal_service=self.mock_postal_service, lifecycle_config=LifecycleProperties(), messaging_config=self.mock_messaging_config)
-        self.assertEqual(str(context.exception), 'infrastructure_config argument not provided')
 
     def test_init_without_lifecycle_config_throws_error(self):
         with self.assertRaises(ValueError) as context:
-            KafkaRequestQueueService(script_file_manager=self.mock_script_file_manager, postal_service=self.mock_postal_service, infrastructure_config=InfrastructureProperties(), messaging_config=self.mock_messaging_config)
+            KafkaLifecycleRequestQueueService(lifecycle_messaging_service=self.mock_lifecycle_messaging_service, script_file_manager=self.mock_script_file_manager, postal_service=self.mock_postal_service, messaging_config=self.mock_messaging_config)
         self.assertEqual(str(context.exception), 'lifecycle_config argument not provided')
 
     def test_init_without_postal_service_throws_error(self):
         with self.assertRaises(ValueError) as context:
-            KafkaRequestQueueService(script_file_manager=self.mock_script_file_manager, infrastructure_config=InfrastructureProperties(), lifecycle_config=LifecycleProperties(), messaging_config=self.mock_messaging_config)
+            KafkaLifecycleRequestQueueService(lifecycle_messaging_service=self.mock_lifecycle_messaging_service, script_file_manager=self.mock_script_file_manager, lifecycle_config=LifecycleProperties(), messaging_config=self.mock_messaging_config)
         self.assertEqual(str(context.exception), 'postal_service argument not provided')
-
-    def test_init_KafkaInfrastructureConsumerFactory_fails_when_messaging_connection_address_not_set(self):
-        messaging_conf = MessagingProperties()
-        messaging_conf.connection_address = None
-        infrastructure_config = InfrastructureProperties()
-        with self.assertRaises(ValueError) as context:
-            KafkaInfrastructureConsumerFactory(infrastructure_config, messaging_conf)
 
     def test_init_KafkaLifecycleConsumerFactory_fails_when_messaging_connection_address_not_set(self):
         messaging_conf = MessagingProperties()
@@ -74,116 +84,8 @@ class TestRequestQueueService(unittest.TestCase):
         with self.assertRaises(ValueError) as context:
             KafkaLifecycleConsumerFactory(lifecycle_config, messaging_conf)
 
-    def test_queue_infrastructure_request_posts_message(self):
-        requestqueue_service = KafkaRequestQueueService(postal_service=self.mock_postal_service, script_file_manager=self.mock_script_file_manager, infrastructure_config=self.infrastructure_config, lifecycle_config=self.lifecycle_config, messaging_config=self.mock_messaging_config, infrastructure_consumer_factory=MagicMock(), lifecycle_consumer_factory=MagicMock())
-
-        request = {
-            "request_id": "112",
-            "template": "template",
-            "template_type": "test",
-            "properties": {
-                "prop1": "value1"
-            },
-            "system_properties": {
-            },
-            'deployment_location': {
-                "name": "dl1",
-                "type": "Openstack",
-                "properties": {
-                    "prop1": "value1"
-                }
-            }
-        }
-
-        requestqueue_service.queue_infrastructure_request(request)
-        self.assert_request_posted(self.infrastructure_config.request_queue.topic.name, request)
-
-    def test_queue_infrastructure_request_missing_request_id(self):
-        requestqueue_service = KafkaRequestQueueService(postal_service=self.mock_postal_service, script_file_manager=self.mock_script_file_manager, infrastructure_config=self.infrastructure_config, lifecycle_config=self.lifecycle_config, messaging_config=self.mock_messaging_config, infrastructure_consumer_factory=MagicMock(), lifecycle_consumer_factory=MagicMock())
-
-        request = {
-            "template": "template",
-            "template_type": "test",
-            "properties": {
-                "prop1": "value1"
-            },
-            "system_properties": {
-                "prop1": "value1"
-            },
-            'deployment_location': {
-                "name": "dl1",
-                "type": "Openstack",
-                "properties": {
-                    "prop1": "value1"
-                }
-            }
-        }
-
-        with self.assertRaises(ValueError) as context:
-            requestqueue_service.queue_infrastructure_request(request)
-        self.assertEqual(str(context.exception), 'Request must have a request_id')
-        self.mock_postal_service.post.assert_not_called()
-
-    def test_queue_infrastructure_request_null_request_id(self):
-        requestqueue_service = KafkaRequestQueueService(postal_service=self.mock_postal_service, script_file_manager=self.mock_script_file_manager, infrastructure_config=self.infrastructure_config, lifecycle_config=self.lifecycle_config, messaging_config=self.mock_messaging_config, infrastructure_consumer_factory=MagicMock(), lifecycle_consumer_factory=MagicMock())
-
-        request = {
-            "request_id": None,
-            "template": "template",
-            "template_type": "test",
-            "properties": {
-                "prop1": "value1"
-            },
-            "system_properties": {
-                "prop1": "value1"
-            },
-            'deployment_location': {
-                "name": "dl1",
-                "type": "Openstack",
-                "properties": {
-                    "prop1": "value1"
-                }
-            }
-        }
-
-        with self.assertRaises(ValueError) as context:
-            requestqueue_service.queue_infrastructure_request(request)
-        self.assertEqual(str(context.exception), 'Request must have a request_id')
-        self.mock_postal_service.post.assert_not_called()
-
-    def test_queue_infrastructure_request_posts_message(self):
-        requestqueue_service = KafkaRequestQueueService(postal_service=self.mock_postal_service, script_file_manager=self.mock_script_file_manager, infrastructure_config=self.infrastructure_config, lifecycle_config=self.lifecycle_config, messaging_config=self.mock_messaging_config, infrastructure_consumer_factory=MagicMock(), lifecycle_consumer_factory=MagicMock())
-
-        request = {
-            "request_id": "112",
-            "template": "template",
-            "template_type": "test",
-            "properties": {
-                "prop1": "value1"
-            },
-            "system_properties": {
-
-            },
-            'deployment_location': {
-                "name": "dl1",
-                "type": "Openstack",
-                "properties": {
-                    "prop1": "value1"
-                }
-            }
-        }
-
-        requestqueue_service.queue_infrastructure_request(request)
-        self.mock_postal_service.post.assert_called_once()
-        args, kwargs = self.mock_postal_service.post.call_args
-        self.assertEqual(len(args), 1)
-        envelope_arg = args[0]
-        self.assertIsInstance(envelope_arg, Envelope)
-        self.assertEqual(envelope_arg.address, self.infrastructure_config.request_queue.topic.name)
-        self.assertEqual(envelope_arg.message.content, json.dumps(request).encode())
-
     def test_queue_lifecycle_request_missing_request_id(self):
-        requestqueue_service = KafkaRequestQueueService(postal_service=self.mock_postal_service, script_file_manager=self.mock_script_file_manager, infrastructure_config=self.infrastructure_config, lifecycle_config=self.lifecycle_config, messaging_config=self.mock_messaging_config, infrastructure_consumer_factory=MagicMock(), lifecycle_consumer_factory=MagicMock())
+        requestqueue_service = KafkaLifecycleRequestQueueService(lifecycle_messaging_service=self.mock_lifecycle_messaging_service, postal_service=self.mock_postal_service, script_file_manager=self.mock_script_file_manager, lifecycle_config=self.lifecycle_config, messaging_config=self.mock_messaging_config, lifecycle_consumer_factory=MagicMock())
 
         request = {
             "template": "template",
@@ -208,7 +110,7 @@ class TestRequestQueueService(unittest.TestCase):
         self.mock_postal_service.post.assert_not_called()
 
     def test_queue_lifecycle_request_null_request_id(self):
-        requestqueue_service = KafkaRequestQueueService(postal_service=self.mock_postal_service, script_file_manager=self.mock_script_file_manager, infrastructure_config=self.infrastructure_config, lifecycle_config=self.lifecycle_config, messaging_config=self.mock_messaging_config, infrastructure_consumer_factory=MagicMock(), lifecycle_consumer_factory=MagicMock())
+        requestqueue_service = KafkaLifecycleRequestQueueService(lifecycle_messaging_service=self.mock_lifecycle_messaging_service, postal_service=self.mock_postal_service, script_file_manager=self.mock_script_file_manager, lifecycle_config=self.lifecycle_config, messaging_config=self.mock_messaging_config, lifecycle_consumer_factory=MagicMock())
 
         request = {
             "request_id": None,
@@ -233,139 +135,12 @@ class TestRequestQueueService(unittest.TestCase):
         self.assertEqual(str(context.exception), 'Request must have a request_id')
         self.mock_postal_service.post.assert_not_called()
 
-    def test_infrastructure_requestqueue_process_request(self):
-        mock_postal_service = MagicMock()
-        mock_request_queue_config = MagicMock()
-        mock_request_queue_config.group_id = "1"
-        mock_request_queue_config.failed_topic = TopicConfigProperties(auto_create=True, num_partitions=1, config={})
-        mock_request_queue_config.failed_topic.name = "test_failed"
-        mock_kafka_infrastructure_consumer = MagicMock()
-        mock_kafka_infrastructure_consumer_factory = MagicMock()
-        mock_kafka_infrastructure_consumer_factory.create_consumer.return_value = mock_kafka_infrastructure_consumer
-
-        request_queue_service = KafkaRequestQueueService(postal_service=self.mock_postal_service, script_file_manager=self.mock_script_file_manager, infrastructure_config=self.infrastructure_config, lifecycle_config=self.lifecycle_config, messaging_config=self.mock_messaging_config, infrastructure_consumer_factory=mock_kafka_infrastructure_consumer_factory, lifecycle_consumer_factory=MagicMock())
-
-        mock_kafka_infrastructure_consumer.poll.return_value = {
-            TopicPartition('infrastructure_request_queue', 0): [
-                MockRecord(offset=0, value=json.JSONEncoder().encode({
-                   "request_id": "a61dec25-fcdc-4281-b067-fa18681d65a7",
-                   "template": "123",
-                   "template_type": "test",
-                   "system_properties": {
-                      "resourceManagerId": {
-                         "type": "string",
-                         "value": "brent"
-                      },
-                      "resourceId": {
-                         "type": "string",
-                         "value": "ea21dd57-2664-4fb1-a8ac-c1fa77431ec7"
-                      },
-                      "infrastructureId": {
-                         "type": "string",
-                         "value": "91d11950-4787-44ed-a225-002d468e1135"
-                      },
-                      "metricKey": {
-                         "type": "string",
-                         "value": "7e6b7293-3a23-420c-9ff6-59323ca1e0b0"
-                      },
-                      "requestId": {
-                         "type": "string",
-                         "value": "af269525-0f10-4192-bb85-55516787bb74"
-                      },
-                      "resourceName": {
-                         "type": "string",
-                         "value": "apache20__hw-apache1"
-                      },
-                      "deploymentLocation": {
-                         "type": "string",
-                         "value": "core1"
-                      },
-                      "resourceType": {
-                         "type": "string",
-                         "value": "resource::hw-apache-vnfc-apache-demo::1.0"
-                      }
-                   },
-                   "properties": {
-                      "site_name": {
-                         "type": "string",
-                         "value": "hw"
-                      },
-                      "server1_internal_ip": {
-                         "type": "string",
-                         "value": "10.10.10.152"
-                      },
-                      "flavor": {
-                         "type": "string",
-                         "value": "m1.small"
-                      },
-                   },
-                   "deployment_location": {
-                      "resourceManager": "brent",
-                      "name": "core1",
-                      "type": "Openstack",
-                      "properties": {
-                      }
-                   }
-                }).encode())]
-        }
-
-        request_handler = TestRequestHandler()
-        request_queue = request_queue_service.get_infrastructure_request_queue('test', request_handler)
-        self.assertTrue(request_queue.process_request())
-
-        self.assertEqual(len(request_handler.failed_requests), 0)
-        self.assertEqual(len(request_handler.requests), 1)
-        request = request_handler.requests[0]
-        self.assertIsInstance(request, dict)
-        self.assertEqual(request["request_id"], "a61dec25-fcdc-4281-b067-fa18681d65a7")
-        mock_kafka_infrastructure_consumer.commit.assert_called_once()
-
-    def test_infrastructure_requestqueue_process_missing_request_id(self):
-        self.infrastructure_config.request_queue = MagicMock()
-        self.infrastructure_config.request_queue.group_id = "1"
-        self.infrastructure_config.request_queue.failed_topic = TopicConfigProperties(auto_create=True, num_partitions=1, config={})
-        self.infrastructure_config.request_queue.failed_topic.name = "test_failed"
-
-        mock_kafka_infrastructure_consumer = MagicMock()
-        mock_kafka_infrastructure_consumer_factory = MagicMock()
-        mock_kafka_infrastructure_consumer_factory.create_consumer.return_value = mock_kafka_infrastructure_consumer
-
-        request_queue_service = KafkaRequestQueueService(postal_service=self.mock_postal_service, script_file_manager=self.mock_script_file_manager, infrastructure_config=self.infrastructure_config, lifecycle_config=self.lifecycle_config, messaging_config=self.mock_messaging_config, infrastructure_consumer_factory=mock_kafka_infrastructure_consumer_factory, lifecycle_consumer_factory=MagicMock())
-
-        request = {
-           "template": "123",
-           "template_type": "test",
-           "system_properties": {
-           },
-           "properties": {
-           },
-           "deployment_location": {
-           }
-        }
-
-        mock_kafka_infrastructure_consumer.poll.return_value = {
-            TopicPartition('infrastructure_request_queue', 0): [
-                MockRecord(offset=0, value=json.JSONEncoder().encode(request).encode())]
-        }
-
-        request_handler = TestRequestHandler()
-        request_queue = request_queue_service.get_infrastructure_request_queue('test', request_handler)
-        self.assertFalse(request_queue.process_request())
-        mock_kafka_infrastructure_consumer.commit.assert_called_once()
-        self.mock_postal_service.post.assert_called_once()
-        args, kwargs = self.mock_postal_service.post.call_args
-        self.assertEqual(len(args), 1)
-        envelope_arg = args[0]
-        self.assertIsInstance(envelope_arg, Envelope)
-        self.assertEqual(envelope_arg.address, "test_failed")
-        self.assertEqual(envelope_arg.message.content, json.dumps(request).encode())
-
     def test_lifecycle_requestqueue_process_request(self):
         mock_kafka_lifecycle_consumer = MagicMock()
         mock_kafka_lifecycle_consumer_factory = MagicMock()
         mock_kafka_lifecycle_consumer_factory.create_consumer.return_value = mock_kafka_lifecycle_consumer
 
-        request_queue_service = KafkaRequestQueueService(postal_service=self.mock_postal_service, script_file_manager=self.mock_script_file_manager, infrastructure_config=self.infrastructure_config, lifecycle_config=self.lifecycle_config, messaging_config=self.mock_messaging_config, infrastructure_consumer_factory=MagicMock(), lifecycle_consumer_factory=mock_kafka_lifecycle_consumer_factory)
+        request_queue_service = KafkaLifecycleRequestQueueService(lifecycle_messaging_service=self.mock_lifecycle_messaging_service, postal_service=self.mock_postal_service, script_file_manager=self.mock_script_file_manager, lifecycle_config=self.lifecycle_config, messaging_config=self.mock_messaging_config, lifecycle_consumer_factory=mock_kafka_lifecycle_consumer_factory)
 
         mock_kafka_lifecycle_consumer.poll.return_value = {
             TopicPartition('lifecycle_request_queue', 0): [
@@ -433,7 +208,7 @@ class TestRequestQueueService(unittest.TestCase):
 
         request_handler = MagicMock(RequestHandler)
         request_queue = request_queue_service.get_lifecycle_request_queue('test', request_handler)
-        self.assertTrue(request_queue.process_request())
+        request_queue.process_request()
 
         request_handler.handle_request.assert_called_once()
         args, kwargs = request_handler.handle_request.call_args
@@ -448,7 +223,7 @@ class TestRequestQueueService(unittest.TestCase):
         mock_kafka_lifecycle_consumer_factory = MagicMock()
         mock_kafka_lifecycle_consumer_factory.create_consumer.return_value = mock_kafka_lifecycle_consumer
 
-        request_queue_service = KafkaRequestQueueService(postal_service=self.mock_postal_service, script_file_manager=self.mock_script_file_manager, infrastructure_config=self.infrastructure_config, lifecycle_config=self.lifecycle_config, messaging_config=self.mock_messaging_config, infrastructure_consumer_factory=MagicMock(), lifecycle_consumer_factory=mock_kafka_lifecycle_consumer_factory)
+        request_queue_service = KafkaLifecycleRequestQueueService(lifecycle_messaging_service=self.mock_lifecycle_messaging_service, postal_service=self.mock_postal_service, script_file_manager=self.mock_script_file_manager, lifecycle_config=self.lifecycle_config, messaging_config=self.mock_messaging_config, lifecycle_consumer_factory=mock_kafka_lifecycle_consumer_factory)
 
         request = {
            "lifecycle_name": "Configure",
@@ -479,7 +254,7 @@ class TestRequestQueueService(unittest.TestCase):
         mock_kafka_lifecycle_consumer_factory = MagicMock()
         mock_kafka_lifecycle_consumer_factory.create_consumer.return_value = mock_kafka_lifecycle_consumer
 
-        request_queue_service = KafkaRequestQueueService(postal_service=self.mock_postal_service, script_file_manager=self.mock_script_file_manager, infrastructure_config=self.infrastructure_config, lifecycle_config=self.lifecycle_config, messaging_config=self.mock_messaging_config, infrastructure_consumer_factory=MagicMock(), lifecycle_consumer_factory=mock_kafka_lifecycle_consumer_factory)
+        request_queue_service = KafkaLifecycleRequestQueueService(lifecycle_messaging_service=self.mock_lifecycle_messaging_service, postal_service=self.mock_postal_service, script_file_manager=self.mock_script_file_manager, lifecycle_config=self.lifecycle_config, messaging_config=self.mock_messaging_config, lifecycle_consumer_factory=mock_kafka_lifecycle_consumer_factory)
 
         request = {
            "request_id": "123",
@@ -503,14 +278,15 @@ class TestRequestQueueService(unittest.TestCase):
 
         request_handler.handle_request.assert_not_called()
         mock_kafka_lifecycle_consumer.commit.assert_called_once()
-        self.assert_request_posted(self.lifecycle_config.request_queue.failed_topic.name, request)
+        self.assert_lifecycle_execution_response_posted(LifecycleExecution('123', STATUS_FAILED, FailureDetails(FAILURE_CODE_INTERNAL_ERROR,
+            'Lifecycle request for partition 0 offset 0 is missing lifecycle_name.'), {}))
 
     def test_lifecycle_requestqueue_process_missing_lifecycle_scripts(self):
         mock_kafka_lifecycle_consumer = MagicMock()
         mock_kafka_lifecycle_consumer_factory = MagicMock()
         mock_kafka_lifecycle_consumer_factory.create_consumer.return_value = mock_kafka_lifecycle_consumer
 
-        request_queue_service = KafkaRequestQueueService(postal_service=self.mock_postal_service, script_file_manager=self.mock_script_file_manager, infrastructure_config=self.infrastructure_config, lifecycle_config=self.lifecycle_config, messaging_config=self.mock_messaging_config, infrastructure_consumer_factory=MagicMock(), lifecycle_consumer_factory=mock_kafka_lifecycle_consumer_factory)
+        request_queue_service = KafkaLifecycleRequestQueueService(lifecycle_messaging_service=self.mock_lifecycle_messaging_service, postal_service=self.mock_postal_service, script_file_manager=self.mock_script_file_manager, lifecycle_config=self.lifecycle_config, messaging_config=self.mock_messaging_config, lifecycle_consumer_factory=mock_kafka_lifecycle_consumer_factory)
 
         request = {
            "request_id": "123",
@@ -534,14 +310,16 @@ class TestRequestQueueService(unittest.TestCase):
 
         request_handler.handle_request.assert_not_called()
         mock_kafka_lifecycle_consumer.commit.assert_called_once()
-        self.assert_request_posted(self.lifecycle_config.request_queue.failed_topic.name, request)
+
+        self.assert_lifecycle_execution_response_posted(LifecycleExecution('123', STATUS_FAILED, FailureDetails(FAILURE_CODE_INTERNAL_ERROR,
+            'Lifecycle request for partition 0 offset 0 is missing lifecycle_scripts.'), {}))
 
     def test_lifecycle_requestqueue_process_missing_deployment_location(self):
         mock_kafka_lifecycle_consumer = MagicMock()
         mock_kafka_lifecycle_consumer_factory = MagicMock()
         mock_kafka_lifecycle_consumer_factory.create_consumer.return_value = mock_kafka_lifecycle_consumer
 
-        request_queue_service = KafkaRequestQueueService(postal_service=self.mock_postal_service, script_file_manager=self.mock_script_file_manager, infrastructure_config=self.infrastructure_config, lifecycle_config=self.lifecycle_config, messaging_config=self.mock_messaging_config, infrastructure_consumer_factory=MagicMock(), lifecycle_consumer_factory=mock_kafka_lifecycle_consumer_factory)
+        request_queue_service = KafkaLifecycleRequestQueueService(lifecycle_messaging_service=self.mock_lifecycle_messaging_service, postal_service=self.mock_postal_service, script_file_manager=self.mock_script_file_manager, lifecycle_config=self.lifecycle_config, messaging_config=self.mock_messaging_config, lifecycle_consumer_factory=mock_kafka_lifecycle_consumer_factory)
 
         request = {
            "request_id": "123",
@@ -563,9 +341,12 @@ class TestRequestQueueService(unittest.TestCase):
 
         request_handler.handle_request.assert_not_called()
         mock_kafka_lifecycle_consumer.commit.assert_called_once()
-        self.assert_request_posted(self.lifecycle_config.request_queue.failed_topic.name, request)
+
+        self.assert_lifecycle_execution_response_posted(LifecycleExecution('123', STATUS_FAILED, FailureDetails(FAILURE_CODE_INTERNAL_ERROR,
+            'Lifecycle request for partition 0 offset 0 is missing deployment_location.'), {}))
 
     def test_kafka_request_queue_handler_null_request_id(self):
+        mock_messaging_service = MagicMock()
         mock_postal_service = MagicMock()
         mock_request_queue_config = MagicMock()
         mock_request_queue_config.group_id = "1"
@@ -638,12 +419,13 @@ class TestRequestQueueService(unittest.TestCase):
                 }).encode())]
         }
 
-        request_queue_handler = TestRequestQueueHandler(mock_postal_service, mock_request_queue_config, mock_kafka_consumer_factory)
+        request_queue_handler = TestRequestQueueHandler(mock_messaging_service, mock_postal_service, mock_request_queue_config, mock_kafka_consumer_factory)
         self.assertEqual(len(request_queue_handler.failed_requests), 0)
         self.assertFalse(request_queue_handler.process_request())
         self.assertEqual(len(request_queue_handler.failed_requests), 1)
 
     def test_kafka_request_queue_handler_failed_request(self):
+        mock_messaging_service = MagicMock()
         mock_postal_service = MagicMock()
         mock_request_queue_config = MagicMock()
         mock_kafka_consumer_factory = MagicMock()
@@ -718,15 +500,15 @@ class TestRequestQueueService(unittest.TestCase):
                 }).encode())]
         }
 
-        request_queue_handler = TestRequestQueueHandler(mock_postal_service, mock_request_queue_config, mock_kafka_consumer_factory)
+        request_queue_handler = TestRequestQueueHandler(mock_messaging_service, mock_postal_service, mock_request_queue_config, mock_kafka_consumer_factory)
         request_queue_handler.set_failed_request(True)
         self.assertEqual(len(request_queue_handler.failed_requests), 0)
-        self.assertFalse(request_queue_handler.process_request())
+        request_queue_handler.process_request()
         self.assertEqual(len(request_queue_handler.failed_requests), 1)
 
 class TestRequestQueueHandler(KafkaRequestQueueHandler):
-    def __init__(self, postal_service, request_queue_config, kafka_consumer_factory):
-        super(TestRequestQueueHandler, self).__init__(postal_service, request_queue_config, kafka_consumer_factory)
+    def __init__(self, messaging_service, postal_service, request_queue_config, kafka_consumer_factory):
+        super(TestRequestQueueHandler, self).__init__(messaging_service, postal_service, request_queue_config, kafka_consumer_factory)
         self.requests = []
         self.failed_requests = []
         self.is_failed = False
@@ -738,8 +520,9 @@ class TestRequestQueueHandler(KafkaRequestQueueHandler):
         self.is_failed = is_failed
 
     def handle_request(self, request):
+        if self.is_failed:
+            raise ValueError("Exception")
         self.requests.append(request)
-        return not self.is_failed
 
 class TestRequestHandler(RequestHandler):
     def __init__(self):

@@ -4,11 +4,14 @@ from ignition.boot.config import BootstrapApplicationConfiguration, BootProperti
 from ignition.boot.configurators.requestqueue import RequestQueueConfigurator
 from ignition.service.messaging import MessagingProperties, DeliveryCapability, PostalCapability, KafkaDeliveryService, PostalService, KafkaInboxService, TopicConfigProperties
 from ignition.service.framework import ServiceRegistration, ServiceRegister
-from ignition.service.infrastructure import InfrastructureProperties, InfrastructureRequestQueueProperties
-from ignition.service.lifecycle import LifecycleProperties, LifecycleScriptFileManagerCapability, LifecycleRequestQueueProperties
-from ignition.service.requestqueue import InfrastructureConsumerFactoryCapability, LifecycleConsumerFactoryCapability, KafkaRequestQueueService
+from ignition.service.infrastructure import InfrastructureProperties, InfrastructureRequestQueueProperties, InfrastructureMessagingCapability
+from ignition.service.lifecycle import LifecycleProperties, LifecycleScriptFileManagerCapability, LifecycleRequestQueueProperties, LifecycleMessagingCapability
+from ignition.service.requestqueue import InfrastructureConsumerFactoryCapability, LifecycleConsumerFactoryCapability, KafkaInfrastructureRequestQueueService, KafkaLifecycleRequestQueueService
+
 
 class TestRequestQueueConfigurator(ConfiguratorTestCase):
+
+    maxDiff = None
 
     def __bootstrap_config(self):
         configuration = BootstrapApplicationConfiguration()
@@ -18,7 +21,8 @@ class TestRequestQueueConfigurator(ConfiguratorTestCase):
         messaging_conf = MessagingProperties()
         messaging_conf.connection_address = "kafka"
         configuration.property_groups.add_property_group(messaging_conf)
-
+        self.mock_infrastructure_messaging_service = MagicMock()
+        self.mock_lifecycle_messaging_service = MagicMock()
         infrastructure_conf = InfrastructureProperties()
         configuration.property_groups.add_property_group(infrastructure_conf)
         lifecycle_conf = LifecycleProperties()
@@ -31,6 +35,8 @@ class TestRequestQueueConfigurator(ConfiguratorTestCase):
     def test_configure_nothing_when_disabled(self):
         configuration = self.__bootstrap_config()
         configuration.property_groups.get_property_group(BootProperties).request_queue.enabled = False
+        configuration.property_groups.get_property_group(BootProperties).lifecycle.api_enabled = True
+        configuration.property_groups.get_property_group(BootProperties).infrastructure.api_enabled = True
         RequestQueueConfigurator(self.mock_topic_creator).configure(configuration, self.mock_service_register)
         self.mock_service_register.add_service.assert_not_called()
         self.mock_topic_creator.create_topic_if_needed.assert_not_called()
@@ -39,18 +45,25 @@ class TestRequestQueueConfigurator(ConfiguratorTestCase):
         service_register = ServiceRegister()
         configuration = self.__bootstrap_config()
         configuration.property_groups.get_property_group(BootProperties).request_queue.enabled = True
+        configuration.property_groups.get_property_group(BootProperties).lifecycle.api_enabled = True
+        configuration.property_groups.get_property_group(BootProperties).infrastructure.api_enabled = True
         RequestQueueConfigurator(self.mock_topic_creator).configure(configuration, service_register)
 
     def test_configure_request_queue_service(self):
         configuration = self.__bootstrap_config()
         configuration.property_groups.get_property_group(BootProperties).request_queue.enabled = True
+        configuration.property_groups.get_property_group(BootProperties).lifecycle.api_enabled = True
+        configuration.property_groups.get_property_group(BootProperties).infrastructure.api_enabled = True
+
         self.mock_service_register.get_service_offering_capability.return_value = None
         RequestQueueConfigurator(self.mock_topic_creator).configure(configuration, self.mock_service_register)
-        registered_service = self.assert_services_registered(3)
+        registered_service = self.assert_services_registered(4)
 
-        self.assert_service_registration_equal(registered_service[2], ServiceRegistration(KafkaRequestQueueService, messaging_config=MessagingProperties, infrastructure_config=InfrastructureProperties,
+        self.assert_service_registration_equal(registered_service[1], ServiceRegistration(KafkaLifecycleRequestQueueService, lifecycle_messaging_service=LifecycleMessagingCapability, messaging_config=MessagingProperties,
                 lifecycle_config=LifecycleProperties, postal_service=PostalCapability, script_file_manager=LifecycleScriptFileManagerCapability,
-                infrastructure_consumer_factory=InfrastructureConsumerFactoryCapability, lifecycle_consumer_factory=LifecycleConsumerFactoryCapability))
+                lifecycle_consumer_factory=LifecycleConsumerFactoryCapability))
+        self.assert_service_registration_equal(registered_service[3], ServiceRegistration(KafkaInfrastructureRequestQueueService, infrastructure_messaging_service=InfrastructureMessagingCapability, messaging_config=MessagingProperties,
+                infrastructure_config=InfrastructureProperties, postal_service=PostalCapability, infrastructure_consumer_factory=InfrastructureConsumerFactoryCapability))
 
         self.mock_topic_creator.create_topic_if_needed.assert_called()
         service_calls = self.mock_topic_creator.create_topic_if_needed.call_args_list
@@ -88,10 +101,22 @@ class TestRequestQueueConfigurator(ConfiguratorTestCase):
         topic_config_properties = service_call_args[1]
         self.assertIsInstance(topic_config_properties, TopicConfigProperties)
 
-    def test_configure_request_queue_service_fails_when_already_registered(self):
+    def test_configure_infrastructure_request_queue_service_fails_when_already_registered(self):
         configuration = self.__bootstrap_config()
         configuration.property_groups.get_property_group(BootProperties).request_queue.enabled = True
+        configuration.property_groups.get_property_group(BootProperties).lifecycle.api_enabled = False
+        configuration.property_groups.get_property_group(BootProperties).infrastructure.api_enabled = True
         self.mock_service_register.get_service_offering_capability.return_value = MagicMock()
         with self.assertRaises(ValueError) as context:
             RequestQueueConfigurator(self.mock_topic_creator).configure(configuration, self.mock_service_register)
-        self.assertEqual(str(context.exception), 'An existing service has been registered to serve the Request Queue capability but bootstrap.request_queue.enabled has not been disabled')
+        self.assertEqual(str(context.exception), 'An existing service has been registered to serve the Infrastructure Request Queue capability but bootstrap.request_queue.enabled has not been disabled')
+
+    def test_configure_lifecycle_request_queue_service_fails_when_already_registered(self):
+        configuration = self.__bootstrap_config()
+        configuration.property_groups.get_property_group(BootProperties).request_queue.enabled = True
+        configuration.property_groups.get_property_group(BootProperties).lifecycle.api_enabled = True
+        configuration.property_groups.get_property_group(BootProperties).infrastructure.api_enabled = False
+        self.mock_service_register.get_service_offering_capability.return_value = MagicMock()
+        with self.assertRaises(ValueError) as context:
+            RequestQueueConfigurator(self.mock_topic_creator).configure(configuration, self.mock_service_register)
+        self.assertEqual(str(context.exception), 'An existing service has been registered to serve the Lifecycle Request Queue capability but bootstrap.request_queue.enabled has not been disabled')
