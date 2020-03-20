@@ -8,3 +8,4 @@ Each API/Service can be enabled or disabled. Services can then later be replaced
 * [Job Queue](./job_queue.md)
 * [Lifecycle](./lifecycle.md)
 * [Messaging](./messaging.md)
+* [Request Queue](./request_queue.md)
