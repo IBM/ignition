@@ -57,9 +57,38 @@ The `group_id` should be the same for all replicas of a driver installation, tho
 
 Requests are added to the request queue automatically by Ignition if the request queue is enabled (i.e. `infrastructure.request_queue.enabled` is True for infrastructure API calls, `lifecycle.request_queue.enabled` is True for lifecycle API calls).
 
-### Handling Requests
+### Handling Requests from a Request Queue
 
-To make the Request Queue Services re-usable, they have no knowledge of how to handle requests, only how to receive them. The handling of each request is covered by a request handler that must be implemented by the driver, and is created as follows:
+When handling requests when the request queue is enabled, the driver implementation looks different.
+
+The Infrastructure/VIM Driver API implementation for `create_infrastructure` is now a noop (Ignition handles putting API requests on the Infrastructure Request Queue before they get to the driver).
+
+```
+from ignition.service.framework import Service
+from ignition.service.infrastructure import InfrastructureDriverCapability
+
+class TestInfrastructureDriver(Service, InfrastructureDriverCapability):
+    ...
+
+    def create_infrastructure(self, template, template_type, system_properties, properties, deployment_location):
+        pass
+```
+
+The Lifecycle Driver API implementation for `execute_lifecycle` is now a noop (Ignition handles putting API requests on the Lifecycle Request Queue before they get to the driver).
+
+
+```
+from ignition.service.framework import Service
+from ignition.service.lifecycle import LifecycleDriverCapability
+
+class TestLifecycleDriver(Service, LifecycleDriverCapability):
+    ...
+
+    def execute_lifecycle(self, lifecycle_name, lifecycle_scripts_tree, system_properties, properties, deployment_location):
+        pass
+```
+
+To make the Request Queue Services re-usable, they have no knowledge of how to handle requests, only how to receive them. The handling of each request is covered by a request handler that must be implemented by the driver, as follows:
 
 ```
 # Lifecycle request queue handler
@@ -72,6 +101,7 @@ Here is the skeleton implementation of the Lifecycle request queue handler:
 ```
 from ignition.model.lifecycle import LifecycleExecution
 from ignition.model.failure import FailureDetails, FAILURE_CODE_INTERNAL_ERROR
+from ignition.service.requestqueue import RequestHandler
 
 class TestLifecycleRequestHandler(RequestHandler):
     def __init__(self, messaging_service):
@@ -106,6 +136,7 @@ Here is the skeleton implementation of the Infrastructure request queue handler:
 ```
 from ignition.model.infrastructure import InfrastructureTask
 from ignition.model.failure import FailureDetails, FAILURE_CODE_INTERNAL_ERROR
+from ignition.service.requestqueue import RequestHandler
 
 class TestInfrastructureRequestHandler(RequestHandler):
     def __init__(self, messaging_service):
