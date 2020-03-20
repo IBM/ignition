@@ -49,18 +49,26 @@ class LifecycleConsumerFactoryCapability(Capability):
 
 
 class Request():
-    def __init__(self, message, topic, partition):
-        self.message = message
-        self.request_as_json = JsonContent.read(message.value.decode('utf-8'))
+    @staticmethod
+    def from_str_message(message_as_str, topic, partition, offset):
+        return Request(message_as_str, topic, partition, offset)
+
+    @staticmethod
+    def from_kafka_message(message, topic, partition):
+        return Request(message.value.decode('utf-8'), topic, partition, message.offset)
+
+    def __init__(self, message_as_str, topic, partition, offset):
+        self.message_as_str = message_as_str
+        self.request_as_json = JsonContent.read(message_as_str)
         self.request_as_dict = self.request_as_json.dict_val
         self.request_id = self.request_as_dict.get("request_id", None)
         self.topic = topic
         self.partition = partition
-        self.offset = message.offset
+        self.offset = offset
         self.exception_as_str = None
 
     def as_new_dict(self):
-        return JsonContent.read(self.message.value.decode('utf-8')).dict_val
+        return JsonContent.read(self.message_as_str).dict_val
 
     def as_message(self):
         return Message(self.request_as_json.get())
@@ -91,8 +99,7 @@ class KafkaRequestQueueHandler():
         try:
             for topic_partition, messages in self.requests_consumer.poll(timeout_ms=200, max_records=1).items():
                 if len(messages) > 0:
-                    message = messages[0]
-                    request = Request(message, topic_partition.topic, topic_partition.partition)
+                    request = Request.from_kafka_message(messages[0], topic_partition.topic, topic_partition.partition)
                     try:
                         logger.debug("Read request {0}".format(request))
                         if request.request_id is None:
@@ -103,9 +110,13 @@ class KafkaRequestQueueHandler():
                     except Exception as e:
                         # subclasses should handle any exceptions in their own way, this is just to catch any exceptions
                         # not handled by subclasses.
-                        logger.warning('Caught exception handling driver request {0} : {1}'.format(request, str(e)))
-                        request.set_failed(sys.exc_info())
-                        self.handle_failed_request(request)
+                        try:
+                            logger.warning('Caught exception handling driver request {0} : {1}'.format(request, str(e)))
+                            request.set_failed(sys.exc_info())
+                            self.handle_failed_request(request)
+                        except Exception as e:
+                            # just log this and carry on
+                            logger.exception('Caught exception handling failed driver request {0} for topic {1} : {2}'.format(request.request_id, self.request_queue_config.topic.name, str(e)))
 
                     # always commit, even with a failed request
                     self.commit(request)
@@ -130,6 +141,7 @@ class KafkaRequestQueueHandler():
     Handle a failed request by adding it to a failed requests topic specific to the driver
     """
     def handle_failed_request(self, request):
+        logger.info("handle_failed_request topic {0} request {1}".format(self.request_queue_config.failed_topic.name, type(request.request_as_json.get())))
         if request.request_id is not None:
             self.postal_service.post(Envelope(self.request_queue_config.failed_topic.name, request.as_message()), key=request.request_id)
         else:
@@ -147,41 +159,48 @@ class KafkaInfrastructureRequestQueueHandler(KafkaRequestQueueHandler):
         self.infrastructure_request_handler = infrastructure_request_handler
 
     def handle_request(self, request):
-        partition = request.partition
-        offset = request.offset
-        request_as_dict = request.as_new_dict()
-        request_id = request_as_dict.get('request_id', None)
+        try:
+            partition = request.partition
+            offset = request.offset
+            request_as_dict = request.as_new_dict()
+            request_id = request_as_dict.get('request_id', None)
 
-        if 'template' not in request_as_dict or request_as_dict['template'] is None:
-            msg = 'Infrastructure request for partition {0} offset {1} is missing template.'.format(partition, offset)
-            logger.warning(msg)
-            self.messaging_service.send_infrastructure_task(InfrastructureTask(None, request_id, STATUS_FAILED, FailureDetails(FAILURE_CODE_INTERNAL_ERROR, msg), {}))
-            return
-        if 'template_type' not in request_as_dict or request_as_dict['template_type'] is None:
-            msg = 'Infrastructure request for partition {0} offset {1} is missing template_type.'.format(partition, offset)
-            logger.warning(msg)
-            self.messaging_service.send_infrastructure_task(InfrastructureTask(None, request_id, STATUS_FAILED, FailureDetails(FAILURE_CODE_INTERNAL_ERROR, msg), {}))
-            return
-        if 'properties' not in request_as_dict or request_as_dict['properties'] is None:
-            msg = 'Infrastructure request for partition {0} offset {1} is missing properties.'.format(partition, offset)
-            logger.warning(msg)
-            self.messaging_service.send_infrastructure_task(InfrastructureTask(None, request_id, STATUS_FAILED, FailureDetails(FAILURE_CODE_INTERNAL_ERROR, msg), {}))
-            return
-        if 'system_properties' not in request_as_dict or request_as_dict['system_properties'] is None:
-            msg = 'Infrastructure request for partition {0} offset {1} is missing system_properties.'.format(partition, offset)
-            logger.warning(msg)
-            self.messaging_service.send_infrastructure_task(InfrastructureTask(None, request_id, STATUS_FAILED, FailureDetails(FAILURE_CODE_INTERNAL_ERROR, msg), {}))
-            return
-        if 'deployment_location' not in request_as_dict or request_as_dict['deployment_location'] is None:
-            msg = 'Infrastructure request for partition {0} offset {1} is missing deployment_location.'.format(partition, offset)
-            logger.warning(msg)
-            self.messaging_service.send_infrastructure_task(InfrastructureTask(None, request_id, STATUS_FAILED, FailureDetails(FAILURE_CODE_INTERNAL_ERROR, msg), {}))
-            return
+            if 'template' not in request_as_dict or request_as_dict['template'] is None:
+                msg = 'Infrastructure request for partition {0} offset {1} is missing template.'.format(partition, offset)
+                logger.warning(msg)
+                self.messaging_service.send_infrastructure_task(InfrastructureTask(None, request_id, STATUS_FAILED, FailureDetails(FAILURE_CODE_INTERNAL_ERROR, msg), {}))
+                return
+            if 'template_type' not in request_as_dict or request_as_dict['template_type'] is None:
+                msg = 'Infrastructure request for partition {0} offset {1} is missing template_type.'.format(partition, offset)
+                logger.warning(msg)
+                self.messaging_service.send_infrastructure_task(InfrastructureTask(None, request_id, STATUS_FAILED, FailureDetails(FAILURE_CODE_INTERNAL_ERROR, msg), {}))
+                return
+            if 'properties' not in request_as_dict or request_as_dict['properties'] is None:
+                msg = 'Infrastructure request for partition {0} offset {1} is missing properties.'.format(partition, offset)
+                logger.warning(msg)
+                self.messaging_service.send_infrastructure_task(InfrastructureTask(None, request_id, STATUS_FAILED, FailureDetails(FAILURE_CODE_INTERNAL_ERROR, msg), {}))
+                return
+            if 'system_properties' not in request_as_dict or request_as_dict['system_properties'] is None:
+                msg = 'Infrastructure request for partition {0} offset {1} is missing system_properties.'.format(partition, offset)
+                logger.warning(msg)
+                self.messaging_service.send_infrastructure_task(InfrastructureTask(None, request_id, STATUS_FAILED, FailureDetails(FAILURE_CODE_INTERNAL_ERROR, msg), {}))
+                return
+            if 'deployment_location' not in request_as_dict or request_as_dict['deployment_location'] is None:
+                msg = 'Infrastructure request for partition {0} offset {1} is missing deployment_location.'.format(partition, offset)
+                logger.warning(msg)
+                self.messaging_service.send_infrastructure_task(InfrastructureTask(None, request_id, STATUS_FAILED, FailureDetails(FAILURE_CODE_INTERNAL_ERROR, msg), {}))
+                return
 
-        request_as_dict['properties'] = PropValueMap(request_as_dict['properties'])
-        request_as_dict['system_properties'] = PropValueMap(request_as_dict['system_properties'])
+            request_as_dict['properties'] = PropValueMap(request_as_dict['properties'])
+            request_as_dict['system_properties'] = PropValueMap(request_as_dict['system_properties'])
 
-        self.infrastructure_request_handler.handle_request(request_as_dict)
+            self.infrastructure_request_handler.handle_request(request_as_dict)
+        except Exception as e:
+            try:
+                self.messaging_service.send_infrastructure_task(InfrastructureTask(None, request.request_id, STATUS_FAILED, FailureDetails(FAILURE_CODE_INTERNAL_ERROR, str(e)), {}))
+            except Exception as e:
+                # just log this and carry on
+                logger.exception('Caught exception sending infrastructure response for driver request {0} for topic {1} : {2}'.format(request.request_id, self.request_queue_config.topic.name, str(e)))
 
 """
 Handler for lifecycle driver request queue requests
@@ -193,43 +212,50 @@ class KafkaLifecycleRequestQueueHandler(KafkaRequestQueueHandler):
         self.lifecycle_request_handler = lifecycle_request_handler
 
     def handle_request(self, request):
-        partition = request.partition
-        offset = request.offset
-        request_as_dict = request.as_new_dict()
-        request_id = request_as_dict.get('request_id', None)
+        try:
+            partition = request.partition
+            offset = request.offset
+            request_as_dict = request.as_new_dict()
+            request_id = request_as_dict.get('request_id', None)
 
-        if 'lifecycle_name' not in request_as_dict or request_as_dict['lifecycle_name'] is None:
-            msg = 'Lifecycle request for partition {0} offset {1} is missing lifecycle_name.'.format(partition, offset)
-            logger.warning(msg)
-            self.messaging_service.send_lifecycle_execution(LifecycleExecution(request_id, STATUS_FAILED, FailureDetails(FAILURE_CODE_INTERNAL_ERROR, msg), {}))
-            return
-        if 'lifecycle_scripts' not in request_as_dict or request_as_dict['lifecycle_scripts'] is None:
-            msg = 'Lifecycle request for partition {0} offset {1} is missing lifecycle_scripts.'.format(partition, offset)
-            logger.warning(msg)
-            self.messaging_service.send_lifecycle_execution(LifecycleExecution(request_id, STATUS_FAILED, FailureDetails(FAILURE_CODE_INTERNAL_ERROR, msg), {}))
-            return
-        if 'system_properties' not in request_as_dict or request_as_dict['system_properties'] is None:
-            msg = 'Lifecycle request for partition {0} offset {1} is missing system_properties.'.format(partition, offset)
-            logger.warning(msg)
-            self.messaging_service.send_lifecycle_execution(LifecycleExecution(request_id, STATUS_FAILED, FailureDetails(FAILURE_CODE_INTERNAL_ERROR, msg), {}))
-            return
-        if 'properties' not in request_as_dict or request_as_dict['properties'] is None:
-            msg = 'Lifecycle request for partition {0} offset {1} is missing properties.'.format(partition, offset)
-            logger.warning(msg)
-            self.messaging_service.send_lifecycle_execution(LifecycleExecution(request_id, STATUS_FAILED, FailureDetails(FAILURE_CODE_INTERNAL_ERROR, msg), {}))
-            return
-        if 'deployment_location' not in request_as_dict or request_as_dict['deployment_location'] is None:
-            msg = 'Lifecycle request for partition {0} offset {1} is missing deployment_location.'.format(partition, offset)
-            logger.warning(msg)
-            self.messaging_service.send_lifecycle_execution(LifecycleExecution(request_id, STATUS_FAILED, FailureDetails(FAILURE_CODE_INTERNAL_ERROR, msg), {}))
-            return
+            if 'lifecycle_name' not in request_as_dict or request_as_dict['lifecycle_name'] is None:
+                msg = 'Lifecycle request for partition {0} offset {1} is missing lifecycle_name.'.format(partition, offset)
+                logger.warning(msg)
+                self.messaging_service.send_lifecycle_execution(LifecycleExecution(request_id, STATUS_FAILED, FailureDetails(FAILURE_CODE_INTERNAL_ERROR, msg), {}))
+                return
+            if 'lifecycle_scripts' not in request_as_dict or request_as_dict['lifecycle_scripts'] is None:
+                msg = 'Lifecycle request for partition {0} offset {1} is missing lifecycle_scripts.'.format(partition, offset)
+                logger.warning(msg)
+                self.messaging_service.send_lifecycle_execution(LifecycleExecution(request_id, STATUS_FAILED, FailureDetails(FAILURE_CODE_INTERNAL_ERROR, msg), {}))
+                return
+            if 'system_properties' not in request_as_dict or request_as_dict['system_properties'] is None:
+                msg = 'Lifecycle request for partition {0} offset {1} is missing system_properties.'.format(partition, offset)
+                logger.warning(msg)
+                self.messaging_service.send_lifecycle_execution(LifecycleExecution(request_id, STATUS_FAILED, FailureDetails(FAILURE_CODE_INTERNAL_ERROR, msg), {}))
+                return
+            if 'properties' not in request_as_dict or request_as_dict['properties'] is None:
+                msg = 'Lifecycle request for partition {0} offset {1} is missing properties.'.format(partition, offset)
+                logger.warning(msg)
+                self.messaging_service.send_lifecycle_execution(LifecycleExecution(request_id, STATUS_FAILED, FailureDetails(FAILURE_CODE_INTERNAL_ERROR, msg), {}))
+                return
+            if 'deployment_location' not in request_as_dict or request_as_dict['deployment_location'] is None:
+                msg = 'Lifecycle request for partition {0} offset {1} is missing deployment_location.'.format(partition, offset)
+                logger.warning(msg)
+                self.messaging_service.send_lifecycle_execution(LifecycleExecution(request_id, STATUS_FAILED, FailureDetails(FAILURE_CODE_INTERNAL_ERROR, msg), {}))
+                return
 
-        file_name = '{0}'.format(str(uuid.uuid4()))
-        request_as_dict['lifecycle_path'] = self.script_file_manager.build_tree(file_name, request_as_dict['lifecycle_scripts'])
-        request_as_dict['properties'] = PropValueMap(request_as_dict['properties'])
-        request_as_dict['system_properties'] = PropValueMap(request_as_dict['system_properties'])
+            file_name = '{0}'.format(str(uuid.uuid4()))
+            request_as_dict['lifecycle_path'] = self.script_file_manager.build_tree(file_name, request_as_dict['lifecycle_scripts'])
+            request_as_dict['properties'] = PropValueMap(request_as_dict['properties'])
+            request_as_dict['system_properties'] = PropValueMap(request_as_dict['system_properties'])
 
-        self.lifecycle_request_handler.handle_request(request_as_dict)
+            self.lifecycle_request_handler.handle_request(request_as_dict)
+        except Exception as e:
+            try:
+                self.messaging_service.send_lifecycle_execution(LifecycleExecution(request.request_id, STATUS_FAILED, FailureDetails(FAILURE_CODE_INTERNAL_ERROR, str(e)), {}))
+            except Exception as e:
+                # just log this and carry on
+                logger.exception('Caught exception sending lifecycle response for driver request {0} for topic {1} : {2}'.format(request.request_id, self.request_queue_config.topic.name, str(e)))
 
 """
 Driver-specific handler for processing a single driver request
@@ -250,6 +276,8 @@ A factory for creating Kafka request queue consumers
 """
 class KafkaConsumerFactory(Service):
     def __init__(self, request_queue_config, messaging_config):
+        if messaging_config is None:
+            raise ValueError('messaging_config cannot be null')
         if messaging_config.connection_address is None or messaging_config.connection_address == '':
             raise ValueError('messaging_config.connection_address cannot be null')
         self.bootstrap_servers = messaging_config.connection_address

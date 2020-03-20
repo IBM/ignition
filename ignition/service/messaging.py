@@ -122,6 +122,14 @@ class Envelope():
         self.address = address
         self.message = message
 
+    def __str__(self):
+        return 'Envelope[address: {0.address} message: {0.message}]'.format(self)
+
+    def __eq__(self, other):
+        if not other:
+            return False
+
+        return self.address == other.address and self.message.content == other.message.content
 
 class Message():
 

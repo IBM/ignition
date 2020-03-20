@@ -7,13 +7,23 @@ from unittest.mock import patch, MagicMock
 from ignition.model.failure import FailureDetails, FAILURE_CODE_INTERNAL_ERROR
 from ignition.model.infrastructure import InfrastructureTask, STATUS_FAILED
 from ignition.service.infrastructure import InfrastructureProperties, InfrastructureMessagingCapability
-from ignition.service.requestqueue import KafkaInfrastructureRequestQueueService, RequestHandler, KafkaInfrastructureConsumerFactory, KafkaRequestQueueHandler
+from ignition.service.requestqueue import Request, KafkaInfrastructureRequestQueueService, RequestHandler, KafkaInfrastructureConsumerFactory, KafkaRequestQueueHandler
 from ignition.service.messaging import Envelope, TopicsProperties, MessagingProperties, TopicConfigProperties
 from kafka.structs import TopicPartition
 from kafka import KafkaConsumer
 
 MockRecord = collections.namedtuple('MockRecord', ['value', 'offset'])
 logger = logging.getLogger(__name__)
+
+# assert_not_called_with.from https://stackoverflow.com/a/54838760
+def assert_not_called_with(self, *args, **kwargs):
+    try:
+        self.assert_called_with(*args, **kwargs)
+    except AssertionError as e:
+        return
+    raise AssertionError('Expected %s to not have been called.' % self._format_mock_call_signature(args, kwargs))
+
+MagicMock.assert_not_called_with = assert_not_called_with
 
 class TestInfrastructureRequestQueueService(unittest.TestCase):
 
@@ -25,6 +35,26 @@ class TestInfrastructureRequestQueueService(unittest.TestCase):
         self.mock_infrastructure_consumer_factory = MagicMock()
         self.mock_postal_service = MagicMock()
         self.mock_messaging_config = MagicMock(connection_address='test:9092')
+
+    def assert_request_failed_not_posted(self, request_as_dict):
+        request = Request.from_str_message(json.dumps(request_as_dict), self.infrastructure_config.request_queue.failed_topic.name, 0, 0)
+        self.mock_postal_service.post.assert_not_called_with(Envelope(self.infrastructure_config.request_queue.failed_topic.name, request.as_message()), key=request_as_dict["request_id"])
+
+    def assert_infrastructure_task_equal(self, infrastructure_task, expected_infrastructure_task):
+        self.assertEqual(infrastructure_task.request_id, expected_infrastructure_task.request_id)
+        self.assertEqual(infrastructure_task.status, expected_infrastructure_task.status)
+        self.assertEqual(infrastructure_task.outputs, expected_infrastructure_task.outputs)
+        if expected_infrastructure_task.failure_details is not None:
+            self.assertEqual(infrastructure_task.failure_details.failure_code, expected_infrastructure_task.failure_details.failure_code)
+            self.assertEqual(infrastructure_task.failure_details.description, expected_infrastructure_task.failure_details.description)
+
+    def assert_infrastructure_response_posted(self, expected_infrastructure_task):
+        self.mock_infrastructure_messaging_service.send_infrastructure_task.assert_called_once()
+        args, kwargs = self.mock_infrastructure_messaging_service.send_infrastructure_task.call_args
+        self.assertEqual(len(args), 1)
+        infrastructure_task = args[0]
+        self.assertIsInstance(infrastructure_task, InfrastructureTask)
+        self.assert_infrastructure_task_equal(infrastructure_task, expected_infrastructure_task)
 
     def test_init_without_infrastructure_messaging_service_throws_error(self):
         with self.assertRaises(ValueError) as context:
@@ -278,7 +308,7 @@ class TestInfrastructureRequestQueueService(unittest.TestCase):
 
         request_handler = TestRequestHandler()
         request_queue = request_queue_service.get_infrastructure_request_queue('test', request_handler)
-        self.assertFalse(request_queue.process_request())
+        request_queue.process_request()
         mock_kafka_infrastructure_consumer.commit.assert_called_once()
         self.mock_postal_service.post.assert_called_once()
         args, kwargs = self.mock_postal_service.post.call_args
@@ -287,6 +317,193 @@ class TestInfrastructureRequestQueueService(unittest.TestCase):
         self.assertIsInstance(envelope_arg, Envelope)
         self.assertEqual(envelope_arg.address, "test_failed")
         self.assertEqual(envelope_arg.message.content, json.dumps(request).encode())
+
+    def test_infrastructure_requestqueue_process_missing_template(self):
+        self.infrastructure_config.request_queue = MagicMock()
+        self.infrastructure_config.request_queue.group_id = "1"
+        self.infrastructure_config.request_queue.failed_topic = TopicConfigProperties(auto_create=True, num_partitions=1, config={})
+        self.infrastructure_config.request_queue.failed_topic.name = "test_failed"
+
+        mock_kafka_infrastructure_consumer = MagicMock()
+        mock_kafka_infrastructure_consumer_factory = MagicMock()
+        mock_kafka_infrastructure_consumer_factory.create_consumer.return_value = mock_kafka_infrastructure_consumer
+
+        request_queue_service = KafkaInfrastructureRequestQueueService(infrastructure_messaging_service=self.mock_infrastructure_messaging_service, postal_service=self.mock_postal_service, infrastructure_config=self.infrastructure_config, messaging_config=self.mock_messaging_config, infrastructure_consumer_factory=mock_kafka_infrastructure_consumer_factory)
+
+        request = {
+           "request_id": "123",
+           "template_type": "test",
+           "system_properties": {
+           },
+           "properties": {
+           },
+           "deployment_location": {
+           }
+        }
+
+        mock_kafka_infrastructure_consumer.poll.return_value = {
+            TopicPartition('infrastructure_request_queue', 0): [
+                MockRecord(offset=0, value=json.JSONEncoder().encode(request).encode())]
+        }
+
+        request_handler = MagicMock(RequestHandler)
+        request_queue = request_queue_service.get_infrastructure_request_queue('test', request_handler)
+        request_queue.process_request()
+
+        request_handler.handle_request.assert_not_called()
+        mock_kafka_infrastructure_consumer.commit.assert_called_once()
+        self.assert_infrastructure_response_posted(InfrastructureTask(None, '123', STATUS_FAILED, FailureDetails(FAILURE_CODE_INTERNAL_ERROR,
+            'Infrastructure request for partition 0 offset 0 is missing template.'), {}))
+        self.assert_request_failed_not_posted(request)
+
+    def test_infrastructure_requestqueue_process_missing_template_type(self):
+        self.infrastructure_config.request_queue = MagicMock()
+        self.infrastructure_config.request_queue.group_id = "1"
+        self.infrastructure_config.request_queue.failed_topic = TopicConfigProperties(auto_create=True, num_partitions=1, config={})
+        self.infrastructure_config.request_queue.failed_topic.name = "test_failed"
+
+        mock_kafka_infrastructure_consumer = MagicMock()
+        mock_kafka_infrastructure_consumer_factory = MagicMock()
+        mock_kafka_infrastructure_consumer_factory.create_consumer.return_value = mock_kafka_infrastructure_consumer
+
+        request_queue_service = KafkaInfrastructureRequestQueueService(infrastructure_messaging_service=self.mock_infrastructure_messaging_service, postal_service=self.mock_postal_service, infrastructure_config=self.infrastructure_config, messaging_config=self.mock_messaging_config, infrastructure_consumer_factory=mock_kafka_infrastructure_consumer_factory)
+
+        request = {
+           "request_id": "123",
+           "template": "test",
+           "system_properties": {
+           },
+           "properties": {
+           },
+           "deployment_location": {
+           }
+        }
+
+        mock_kafka_infrastructure_consumer.poll.return_value = {
+            TopicPartition('infrastructure_request_queue', 0): [
+                MockRecord(offset=0, value=json.JSONEncoder().encode(request).encode())]
+        }
+
+        request_handler = MagicMock(RequestHandler)
+        request_queue = request_queue_service.get_infrastructure_request_queue('test', request_handler)
+        request_queue.process_request()
+
+        request_handler.handle_request.assert_not_called()
+        mock_kafka_infrastructure_consumer.commit.assert_called_once()
+        self.assert_infrastructure_response_posted(InfrastructureTask(None, '123', STATUS_FAILED, FailureDetails(FAILURE_CODE_INTERNAL_ERROR,
+            'Infrastructure request for partition 0 offset 0 is missing template_type.'), {}))
+        self.assert_request_failed_not_posted(request)
+
+    def test_infrastructure_requestqueue_process_missing_properties(self):
+        self.infrastructure_config.request_queue = MagicMock()
+        self.infrastructure_config.request_queue.group_id = "1"
+        self.infrastructure_config.request_queue.failed_topic = TopicConfigProperties(auto_create=True, num_partitions=1, config={})
+        self.infrastructure_config.request_queue.failed_topic.name = "test_failed"
+
+        mock_kafka_infrastructure_consumer = MagicMock()
+        mock_kafka_infrastructure_consumer_factory = MagicMock()
+        mock_kafka_infrastructure_consumer_factory.create_consumer.return_value = mock_kafka_infrastructure_consumer
+
+        request_queue_service = KafkaInfrastructureRequestQueueService(infrastructure_messaging_service=self.mock_infrastructure_messaging_service, postal_service=self.mock_postal_service, infrastructure_config=self.infrastructure_config, messaging_config=self.mock_messaging_config, infrastructure_consumer_factory=mock_kafka_infrastructure_consumer_factory)
+
+        request = {
+           "request_id": "123",
+           "template": "test",
+           "template_type": "test",
+           "system_properties": {
+           },
+           "deployment_location": {
+           }
+        }
+
+        mock_kafka_infrastructure_consumer.poll.return_value = {
+            TopicPartition('infrastructure_request_queue', 0): [
+                MockRecord(offset=0, value=json.JSONEncoder().encode(request).encode())]
+        }
+
+        request_handler = MagicMock(RequestHandler)
+        request_queue = request_queue_service.get_infrastructure_request_queue('test', request_handler)
+        request_queue.process_request()
+
+        request_handler.handle_request.assert_not_called()
+        mock_kafka_infrastructure_consumer.commit.assert_called_once()
+        self.assert_infrastructure_response_posted(InfrastructureTask(None, '123', STATUS_FAILED, FailureDetails(FAILURE_CODE_INTERNAL_ERROR,
+            'Infrastructure request for partition 0 offset 0 is missing properties.'), {}))
+        self.assert_request_failed_not_posted(request)
+
+    def test_infrastructure_requestqueue_process_missing_system_properties(self):
+        self.infrastructure_config.request_queue = MagicMock()
+        self.infrastructure_config.request_queue.group_id = "1"
+        self.infrastructure_config.request_queue.failed_topic = TopicConfigProperties(auto_create=True, num_partitions=1, config={})
+        self.infrastructure_config.request_queue.failed_topic.name = "test_failed"
+
+        mock_kafka_infrastructure_consumer = MagicMock()
+        mock_kafka_infrastructure_consumer_factory = MagicMock()
+        mock_kafka_infrastructure_consumer_factory.create_consumer.return_value = mock_kafka_infrastructure_consumer
+
+        request_queue_service = KafkaInfrastructureRequestQueueService(infrastructure_messaging_service=self.mock_infrastructure_messaging_service, postal_service=self.mock_postal_service, infrastructure_config=self.infrastructure_config, messaging_config=self.mock_messaging_config, infrastructure_consumer_factory=mock_kafka_infrastructure_consumer_factory)
+
+        request = {
+           "request_id": "123",
+           "template": "test",
+           "template_type": "test",
+           "properties": {
+           },
+           "deployment_location": {
+           }
+        }
+
+        mock_kafka_infrastructure_consumer.poll.return_value = {
+            TopicPartition('infrastructure_request_queue', 0): [
+                MockRecord(offset=0, value=json.JSONEncoder().encode(request).encode())]
+        }
+
+        request_handler = MagicMock(RequestHandler)
+        request_queue = request_queue_service.get_infrastructure_request_queue('test', request_handler)
+        request_queue.process_request()
+
+        request_handler.handle_request.assert_not_called()
+        mock_kafka_infrastructure_consumer.commit.assert_called_once()
+        self.assert_infrastructure_response_posted(InfrastructureTask(None, '123', STATUS_FAILED, FailureDetails(FAILURE_CODE_INTERNAL_ERROR,
+            'Infrastructure request for partition 0 offset 0 is missing system_properties.'), {}))
+        self.assert_request_failed_not_posted(request)
+
+    def test_infrastructure_requestqueue_process_missing_deployment_location(self):
+        self.infrastructure_config.request_queue = MagicMock()
+        self.infrastructure_config.request_queue.group_id = "1"
+        self.infrastructure_config.request_queue.failed_topic = TopicConfigProperties(auto_create=True, num_partitions=1, config={})
+        self.infrastructure_config.request_queue.failed_topic.name = "test_failed"
+
+        mock_kafka_infrastructure_consumer = MagicMock()
+        mock_kafka_infrastructure_consumer_factory = MagicMock()
+        mock_kafka_infrastructure_consumer_factory.create_consumer.return_value = mock_kafka_infrastructure_consumer
+
+        request_queue_service = KafkaInfrastructureRequestQueueService(infrastructure_messaging_service=self.mock_infrastructure_messaging_service, postal_service=self.mock_postal_service, infrastructure_config=self.infrastructure_config, messaging_config=self.mock_messaging_config, infrastructure_consumer_factory=mock_kafka_infrastructure_consumer_factory)
+
+        request = {
+           "request_id": "123",
+           "template": "test",
+           "template_type": "test",
+           "properties": {
+           },
+           "system_properties": {
+           },
+        }
+
+        mock_kafka_infrastructure_consumer.poll.return_value = {
+            TopicPartition('infrastructure_request_queue', 0): [
+                MockRecord(offset=0, value=json.JSONEncoder().encode(request).encode())]
+        }
+
+        request_handler = MagicMock(RequestHandler)
+        request_queue = request_queue_service.get_infrastructure_request_queue('test', request_handler)
+        request_queue.process_request()
+
+        request_handler.handle_request.assert_not_called()
+        mock_kafka_infrastructure_consumer.commit.assert_called_once()
+        self.assert_infrastructure_response_posted(InfrastructureTask(None, '123', STATUS_FAILED, FailureDetails(FAILURE_CODE_INTERNAL_ERROR,
+            'Infrastructure request for partition 0 offset 0 is missing deployment_location.'), {}))
+        self.assert_request_failed_not_posted(request)
 
 class TestRequestHandler(RequestHandler):
     def __init__(self):
