@@ -1,7 +1,7 @@
 from ignition.service.framework import Capability, Service, interface
 from ignition.service.config import ConfigurationPropertiesGroup
 from ignition.service.api import BaseController
-from ignition.model.infrastructure import InfrastructureTask, infrastructure_task_dict, infrastructure_find_response_dict, STATUS_COMPLETE, STATUS_FAILED
+from ignition.model.infrastructure import CreateInfrastructureResponse, InfrastructureTask, infrastructure_task_dict, infrastructure_find_response_dict, STATUS_COMPLETE, STATUS_FAILED
 from ignition.service.messaging import Message, Envelope, JsonContent, TopicCreator, TopicConfigProperties
 from ignition.api.exceptions import ApiException
 from ignition.service.logging import logging_context
@@ -9,6 +9,7 @@ from ignition.utils.propvaluemap import PropValueMap
 import logging
 import pathlib
 import os
+import uuid
 import ignition.openapi as openapi
 
 logger = logging.getLogger(__name__)
@@ -300,15 +301,18 @@ class InfrastructureService(Service, InfrastructureServiceCapability):
 
     def create_infrastructure(self, template, template_type, system_properties, properties, deployment_location):
         if self.async_requests_enabled:
+            infrastructure_id = str(uuid.uuid4())
+            request_id = str(uuid.uuid4())
             self.request_queue.queue_infrastructure_request({
-                # 'infrastructure_id': create_response.infrastructure_id,
-                'request_id': str(uuid.uuid4()),
+                'infrastructure_id': infrastructure_id,
+                'request_id': request_id,
                 'template': template,
                 'template_type': template_type,
                 'properties': properties,
                 'system_properties': system_properties,
                 'deployment_location': deployment_location
             })
+            create_response = CreateInfrastructureResponse(infrastructure_id, request_id)
         else:
             create_response = self.driver.create_infrastructure(template, template_type, PropValueMap(system_properties), PropValueMap(properties), deployment_location)
             if self.async_enabled is True:

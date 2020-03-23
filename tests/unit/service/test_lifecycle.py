@@ -94,6 +94,43 @@ class TestLifecycleService(unittest.TestCase):
             props[k] = {'type': 'string', 'value': v}
         return PropValueMap(props)
 
+    def assert_requests_equal(self, actual_request, expected_request):
+        expected_request_id = expected_request.get('request_id', None)
+        expected_lifecycle_name = expected_request.get('lifecycle_name', None)
+        expected_lifecycle_scripts = expected_request.get('lifecycle_scripts', None)
+        expected_properties = expected_request.get('properties', None)
+        expected_system_properties = expected_request.get('system_properties', None)
+        expected_deployment_location = expected_request.get('deployment_location', None)
+        if expected_request_id is not None:
+            actual_request_id = actual_request.get('request_id', None)
+            self.assertIsNotNone(actual_request_id)
+            self.assertEqual(expected_request_id, actual_request_id)
+
+        if expected_lifecycle_name is not None:
+            actual_lifecycle_name = actual_request.get('lifecycle_name', None)
+            self.assertIsNotNone(actual_lifecycle_name)
+            self.assertEqual(expected_lifecycle_name, actual_lifecycle_name)
+
+        if expected_lifecycle_scripts is not None:
+            actual_lifecycle_scripts = actual_request.get('lifecycle_scripts', None)
+            self.assertIsNotNone(actual_lifecycle_scripts)
+            self.assertEqual(expected_lifecycle_scripts, actual_lifecycle_scripts)
+
+        if expected_deployment_location is not None:
+            actual_deployment_location = actual_request.get('deployment_location', None)
+            self.assertIsNotNone(actual_deployment_location)
+            self.assertDictEqual(expected_deployment_location, actual_deployment_location)
+
+        if expected_properties is not None:
+            actual_properties = actual_request.get('properties', None)
+            self.assertIsNotNone(actual_properties)
+            self.assertDictEqual(expected_properties, actual_properties)
+
+        if expected_system_properties is not None:
+            actual_system_properties = actual_request.get('system_properties', None)
+            self.assertIsNotNone(actual_system_properties)
+            self.assertDictEqual(expected_system_properties, actual_system_properties)
+
     def test_init_without_driver_throws_error(self):
         mock_lifecycle_config = MagicMock()
         mock_script_file_manager = MagicMock()
@@ -133,6 +170,34 @@ class TestLifecycleService(unittest.TestCase):
         with self.assertRaises(ValueError) as context:
             LifecycleService(driver=mock_service_driver, lifecycle_config=mock_lifecycle_config, script_file_manager=mock_script_file_manager)
         self.assertEqual(str(context.exception), 'request_queue argument not provided (required when async_requests_enabled is True)')
+
+    def test_execute_with_request_queue(self):
+        mock_service_driver = MagicMock()
+        mock_request_queue = MagicMock()
+        mock_script_file_manager = MagicMock()
+        mock_lifecycle_config = MagicMock()
+        mock_lifecycle_config.async_messaging_enabled = False
+        mock_lifecycle_config.request_queue.enabled = True
+        service = LifecycleService(driver=mock_service_driver, lifecycle_config=mock_lifecycle_config, script_file_manager=mock_script_file_manager, request_queue=mock_request_queue)
+        lifecycle_name = 'Install'
+        lifecycle_scripts = '123'
+        system_properties = {'resourceId': '1'}
+        properties = {'propA': 'valueA'}
+        deployment_location = {'name': 'TestDl'}
+        result = service.execute_lifecycle(lifecycle_name, lifecycle_scripts, system_properties, properties, deployment_location)
+        self.assertIsNotNone(result.request_id)
+        mock_service_driver.execute_lifecycle.assert_not_called()
+        mock_request_queue.queue_lifecycle_request.assert_called_once()
+        name, args, kwargs = mock_request_queue.queue_lifecycle_request.mock_calls[0]
+        request = args[0]
+        self.assert_requests_equal(request, {
+            'request_id': result.request_id,
+            'lifecycle_name': 'Install',
+            'lifecycle_scripts': '123',
+            'properties': properties,
+            'system_properties': system_properties,
+            'deployment_location': deployment_location
+        })
 
     def test_execute_uses_driver(self):
         mock_service_driver = MagicMock()

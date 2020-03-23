@@ -196,7 +196,7 @@ class ServiceRegister():
 
     def __register_service_requirements(self, service_class, required_capabilities):
         for requirement_name, required_capability_class in required_capabilities.items():
-            if required_capability_class is not None and not issubclass(required_capability_class, Capability):
+            if not issubclass(required_capability_class, Capability):
                 raise RequirementNotACapabilityException('Service \'{0}\' not allowed requirement to class \'{1}\' as it does not subclass Capability'.format(
                     service_class, required_capability_class), service_class, required_capability_class)
             if self.__get_opt_capability_node(required_capability_class) is None:

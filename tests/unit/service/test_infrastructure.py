@@ -217,6 +217,49 @@ class TestInfrastructureService(unittest.TestCase):
     def __propvaluemap(self, orig_props):
         return PropValueMap(self.__props_with_types(orig_props))
 
+    def assert_requests_equal(self, actual_request, expected_request):
+        expected_request_id = expected_request.get('request_id', None)
+        expected_infrastructure_id = expected_request.get('infrastructure_id', None)
+        expected_template = expected_request.get('template', None)
+        expected_template_type = expected_request.get('template_type', None)
+        expected_properties = expected_request.get('properties', None)
+        expected_system_properties = expected_request.get('system_properties', None)
+        expected_deployment_location = expected_request.get('deployment_location', None)
+        if expected_request_id is not None:
+            actual_request_id = actual_request.get('request_id', None)
+            self.assertIsNotNone(actual_request_id)
+            self.assertEqual(expected_request_id, actual_request_id)
+
+        if expected_infrastructure_id is not None:
+            actual_infrastructure_id = actual_request.get('infrastructure_id', None)
+            self.assertIsNotNone(actual_infrastructure_id)
+            self.assertEqual(expected_infrastructure_id, actual_infrastructure_id)
+
+        if expected_template is not None:
+            actual_template = actual_request.get('template', None)
+            self.assertIsNotNone(actual_template)
+            self.assertEqual(expected_template, actual_template)
+
+        if expected_template_type is not None:
+            actual_template_type = actual_request.get('template_type', None)
+            self.assertIsNotNone(actual_template_type)
+            self.assertEqual(expected_template_type, actual_template_type)
+
+        if expected_deployment_location is not None:
+            actual_deployment_location = actual_request.get('deployment_location', None)
+            self.assertIsNotNone(actual_deployment_location)
+            self.assertDictEqual(expected_deployment_location, actual_deployment_location)
+
+        if expected_properties is not None:
+            actual_properties = actual_request.get('properties', None)
+            self.assertIsNotNone(actual_properties)
+            self.assertDictEqual(expected_properties, actual_properties)
+
+        if expected_system_properties is not None:
+            actual_system_properties = actual_request.get('system_properties', None)
+            self.assertIsNotNone(actual_system_properties)
+            self.assertDictEqual(expected_system_properties, actual_system_properties)
+
     def test_init_without_driver_throws_error(self):
         mock_infrastructure_config = MagicMock()
         with self.assertRaises(ValueError) as context:
@@ -245,6 +288,35 @@ class TestInfrastructureService(unittest.TestCase):
         with self.assertRaises(ValueError) as context:
             InfrastructureService(driver=mock_service_driver, infrastructure_config=mock_infrastructure_config)
         self.assertEqual(str(context.exception), 'request_queue argument not provided (required when async_requests_enabled is True)')
+
+    def test_create_with_request_queue(self):
+        mock_service_driver = MagicMock()
+        mock_request_queue = MagicMock()
+        mock_infrastructure_config = MagicMock()
+        mock_infrastructure_config.async_messaging_enabled = False
+        mock_infrastructure_config.request_queue.enabled = True
+        service = InfrastructureService(driver=mock_service_driver, infrastructure_config=mock_infrastructure_config, request_queue=mock_request_queue)
+        template = 'template'
+        template_type = 'TOSCA'
+        system_properties = {'resourceId': '1'}
+        properties = {'propA': 'valueA'}
+        deployment_location = {'name': 'TestDl'}
+        result = service.create_infrastructure(template, template_type, system_properties, properties, deployment_location)
+        self.assertIsNotNone(result.infrastructure_id)
+        self.assertIsNotNone(result.request_id)
+        mock_service_driver.create_infrastructure.assert_not_called()
+        mock_request_queue.queue_infrastructure_request.assert_called_once()
+        name, args, kwargs = mock_request_queue.queue_infrastructure_request.mock_calls[0]
+        request = args[0]
+        self.assert_requests_equal(request, {
+            'infrastructure_id': result.infrastructure_id,
+            'request_id': result.request_id,
+            'template': template,
+            'template_type': template_type,
+            'properties': properties,
+            'system_properties': system_properties,
+            'deployment_location': deployment_location
+        })
 
     def test_create_infrastructure_uses_driver(self):
         mock_service_driver = MagicMock()
