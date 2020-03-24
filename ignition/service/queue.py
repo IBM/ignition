@@ -32,6 +32,30 @@ class JobQueueCapability(Capability):
     def register_job_handler(self, job_type, handler_func):
         pass
 
+
+class RequestQueueProperties(ConfigurationPropertiesGroup, Service, Capability):
+    """
+    Configuration related to job queue
+
+    Attributes:
+    - consumer_group_id:
+            the ID of the consumer group to join on the job queue topic
+                (required: when job_queue.service_enabled is enabled)
+    """
+    def __init__(self):
+        super().__init__('job_queue')
+        self.consumer_group_id = 'job_queue_consumer'
+
+class JobQueueCapability(Capability):
+    
+    @interface
+    def queue_job(self, job):
+        pass
+    
+    @interface
+    def register_job_handler(self, job_type, handler_func):
+        pass
+
 class MessagingJobQueueService(Service, JobQueueCapability):
 
     JOB_TYPE_KEY = 'job_type'

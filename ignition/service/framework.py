@@ -1,5 +1,8 @@
+import logging
 from abc import ABC, abstractmethod
 import networkx as nx
+
+logger = logging.getLogger(__name__)
 
 interface = abstractmethod
 
@@ -389,6 +392,7 @@ class ServiceInitialiser():
                 raise NoServiceInstanceException('No instance of service \'{0}\' has been created, required by \'{1}\''.format(required_service, service_class), required_service, service_class)
             capability_instances_args[requirement_name] = instance_of_required_service
         service_args = self.service_register.get_service_args(service_class)
+        logger.debug("Instantiating service class {0} with args {1}".format(service_class, capability_instances_args))
         service_instance = service_class(*service_args, **capability_instances_args)
         self.service_instances.add_instance_of(service_instance, service_class)
 

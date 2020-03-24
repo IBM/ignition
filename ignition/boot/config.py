@@ -12,6 +12,7 @@ class BootProperties(ConfigurationPropertiesGroup):
         self.job_queue = BootJobQueueProperties()
         self.lifecycle = BootLifecycleProperties()
         self.management = BootManagementProperties()
+        self.request_queue = BootRequestQueueProperties()
 
 class BootManagementProperties(ConfigurationProperties):
 
@@ -25,6 +26,13 @@ class BootManagementHealthProperties(ConfigurationProperties):
 
     def __init__(self):
         self.service_enabled = True
+
+
+class BootRequestQueueProperties(ConfigurationProperties):
+
+    def __init__(self):
+        self.enabled = False
+
 
 class BootInfrastructureProperties(ConfigurationProperties):
 
@@ -77,6 +85,14 @@ class ApplicationProperties(ConfigurationPropertiesGroup, Service, Capability):
         self.port = None
         self.connexion_init_props = {}
         self.connexion_runtime_props = {}
+        self.ssl = SSLProperties()
+
+
+class SSLProperties(ConfigurationPropertiesGroup):
+
+    def __init__(self):
+        self.enabled = False
+        self.cert_dir = None
 
 
 class PropertyGroupError(Exception):

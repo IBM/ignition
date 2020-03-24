@@ -39,7 +39,7 @@ class TestLifecycleApiService(unittest.TestCase):
         mock_service.execute_lifecycle.return_value = LifecycleExecuteResponse('123')
         controller = LifecycleApiService(service=mock_service)
         response, code = controller.execute(**{ 'body': { 'lifecycleName': 'start', 'systemProperties': self.__props_with_types({'resourceId': '1'}), 'properties': self.__props_with_types({'a': '2'}), 'lifecycleScripts': b'123', 'deploymentLocation': {'name': 'test'} } })
-        mock_service.execute_lifecycle.assert_called_once_with('start', b'123', self.__propvaluemap({'resourceId': '1'}), self.__propvaluemap({'a': '2'}), {'name': 'test'})
+        mock_service.execute_lifecycle.assert_called_once_with('start', b'123', {'resourceId': { 'type': 'string', 'value': '1'}}, {'a': { 'type': 'string', 'value': '2'}}, {'name': 'test'})
         self.assertEqual(response, {'requestId': '123'})
         self.assertEqual(code, 202)
         logging_context.set_from_headers.assert_called_once()
@@ -82,7 +82,7 @@ class TestLifecycleApiService(unittest.TestCase):
         mock_service.execute_lifecycle.return_value = LifecycleExecuteResponse('123')
         controller = LifecycleApiService(service=mock_service)
         response, code = controller.execute(**{ 'body': { 'lifecycleName': 'start', 'systemProperties': self.__props_with_types({'resourceId': '1'}), 'lifecycleScripts': b'123', 'deploymentLocation': {'name': 'test'} } })
-        mock_service.execute_lifecycle.assert_called_once_with('start', b'123', {'resourceId': '1'}, {}, {'name': 'test'})
+        mock_service.execute_lifecycle.assert_called_once_with('start', b'123', {'resourceId': { 'type': 'string', 'value': '1'}}, {}, {'name': 'test'})
         self.assertEqual(response, {'requestId': '123'})
         self.assertEqual(code, 202)
 
@@ -93,6 +93,43 @@ class TestLifecycleService(unittest.TestCase):
         for k, v in orig_props.items():
             props[k] = {'type': 'string', 'value': v}
         return PropValueMap(props)
+
+    def assert_requests_equal(self, actual_request, expected_request):
+        expected_request_id = expected_request.get('request_id', None)
+        expected_lifecycle_name = expected_request.get('lifecycle_name', None)
+        expected_lifecycle_scripts = expected_request.get('lifecycle_scripts', None)
+        expected_properties = expected_request.get('properties', None)
+        expected_system_properties = expected_request.get('system_properties', None)
+        expected_deployment_location = expected_request.get('deployment_location', None)
+        if expected_request_id is not None:
+            actual_request_id = actual_request.get('request_id', None)
+            self.assertIsNotNone(actual_request_id)
+            self.assertEqual(expected_request_id, actual_request_id)
+
+        if expected_lifecycle_name is not None:
+            actual_lifecycle_name = actual_request.get('lifecycle_name', None)
+            self.assertIsNotNone(actual_lifecycle_name)
+            self.assertEqual(expected_lifecycle_name, actual_lifecycle_name)
+
+        if expected_lifecycle_scripts is not None:
+            actual_lifecycle_scripts = actual_request.get('lifecycle_scripts', None)
+            self.assertIsNotNone(actual_lifecycle_scripts)
+            self.assertEqual(expected_lifecycle_scripts, actual_lifecycle_scripts)
+
+        if expected_deployment_location is not None:
+            actual_deployment_location = actual_request.get('deployment_location', None)
+            self.assertIsNotNone(actual_deployment_location)
+            self.assertDictEqual(expected_deployment_location, actual_deployment_location)
+
+        if expected_properties is not None:
+            actual_properties = actual_request.get('properties', None)
+            self.assertIsNotNone(actual_properties)
+            self.assertDictEqual(expected_properties, actual_properties)
+
+        if expected_system_properties is not None:
+            actual_system_properties = actual_request.get('system_properties', None)
+            self.assertIsNotNone(actual_system_properties)
+            self.assertDictEqual(expected_system_properties, actual_system_properties)
 
     def test_init_without_driver_throws_error(self):
         mock_lifecycle_config = MagicMock()
@@ -124,6 +161,44 @@ class TestLifecycleService(unittest.TestCase):
             LifecycleService(driver=mock_service_driver, lifecycle_config=mock_lifecycle_config, script_file_manager=mock_script_file_manager)
         self.assertEqual(str(context.exception), 'lifecycle_monitor_service argument not provided (required when async_messaging_enabled is True)')
 
+    def test_init_without_request_queue_service_when_async_requests_enabled_throws_error(self):
+        mock_service_driver = MagicMock()
+        mock_script_file_manager = MagicMock()
+        mock_lifecycle_config = MagicMock()
+        mock_lifecycle_config.async_messaging_enabled = False
+        mock_lifecycle_config.request_queue.enabled = True
+        with self.assertRaises(ValueError) as context:
+            LifecycleService(driver=mock_service_driver, lifecycle_config=mock_lifecycle_config, script_file_manager=mock_script_file_manager)
+        self.assertEqual(str(context.exception), 'request_queue argument not provided (required when async_requests_enabled is True)')
+
+    def test_execute_with_request_queue(self):
+        mock_service_driver = MagicMock()
+        mock_request_queue = MagicMock()
+        mock_script_file_manager = MagicMock()
+        mock_lifecycle_config = MagicMock()
+        mock_lifecycle_config.async_messaging_enabled = False
+        mock_lifecycle_config.request_queue.enabled = True
+        service = LifecycleService(driver=mock_service_driver, lifecycle_config=mock_lifecycle_config, script_file_manager=mock_script_file_manager, request_queue=mock_request_queue)
+        lifecycle_name = 'Install'
+        lifecycle_scripts = '123'
+        system_properties = {'resourceId': '1'}
+        properties = {'propA': 'valueA'}
+        deployment_location = {'name': 'TestDl'}
+        result = service.execute_lifecycle(lifecycle_name, lifecycle_scripts, system_properties, properties, deployment_location)
+        self.assertIsNotNone(result.request_id)
+        mock_service_driver.execute_lifecycle.assert_not_called()
+        mock_request_queue.queue_lifecycle_request.assert_called_once()
+        name, args, kwargs = mock_request_queue.queue_lifecycle_request.mock_calls[0]
+        request = args[0]
+        self.assert_requests_equal(request, {
+            'request_id': result.request_id,
+            'lifecycle_name': 'Install',
+            'lifecycle_scripts': '123',
+            'properties': properties,
+            'system_properties': system_properties,
+            'deployment_location': deployment_location
+        })
+
     def test_execute_uses_driver(self):
         mock_service_driver = MagicMock()
         execute_response = LifecycleExecuteResponse('123')
@@ -132,6 +207,7 @@ class TestLifecycleService(unittest.TestCase):
         mock_script_tree = MagicMock()
         mock_script_file_manager.build_tree.return_value = mock_script_tree
         mock_lifecycle_config = MagicMock()
+        mock_lifecycle_config.request_queue.enabled = False
         service = LifecycleService(driver=mock_service_driver, lifecycle_config=mock_lifecycle_config, script_file_manager=mock_script_file_manager)
         lifecycle_name = 'start'
         lifecycle_scripts = b'123'
@@ -139,7 +215,7 @@ class TestLifecycleService(unittest.TestCase):
         properties = self.__propvaluemap({'a': 1})
         deployment_location = {'name': 'TestDl'}
         result = service.execute_lifecycle(lifecycle_name, lifecycle_scripts, system_properties, properties, deployment_location)
-        mock_service_driver.execute_lifecycle.assert_called_once_with(lifecycle_name, mock_script_tree, system_properties, properties, deployment_location)
+        mock_service_driver.execute_lifecycle.assert_called_once_with(lifecycle_name, mock_script_tree, self.__propvaluemap(system_properties), self.__propvaluemap(properties), deployment_location)
         self.assertEqual(result, execute_response)
 
     def test_execute_uses_file_manager(self):
@@ -150,6 +226,7 @@ class TestLifecycleService(unittest.TestCase):
         mock_script_tree = MagicMock()
         mock_script_file_manager.build_tree.return_value = mock_script_tree
         mock_lifecycle_config = MagicMock()
+        mock_lifecycle_config.request_queue.enabled = False
         service = LifecycleService(driver=mock_service_driver, lifecycle_config=mock_lifecycle_config, script_file_manager=mock_script_file_manager)
         lifecycle_name = 'start'
         lifecycle_scripts = b'123'
@@ -170,6 +247,7 @@ class TestLifecycleService(unittest.TestCase):
         mock_script_file_manager.build_pointer.return_value = mock_pointer
         mock_lifecycle_config = MagicMock()
         mock_lifecycle_config.async_messaging_enabled = True
+        mock_lifecycle_config.request_queue.enabled = False
         mock_lifecycle_monitor_service = MagicMock()
         service = LifecycleService(driver=mock_service_driver, lifecycle_config=mock_lifecycle_config, script_file_manager=mock_script_file_manager, lifecycle_monitor_service=mock_lifecycle_monitor_service)
         lifecycle_name = 'start'
@@ -177,7 +255,7 @@ class TestLifecycleService(unittest.TestCase):
         system_properties = self.__propvaluemap({'resourceId': '999'})
         properties = self.__propvaluemap({'a': 1})
         deployment_location = {'name': 'TestDl'}
-        result = service.execute_lifecycle(lifecycle_name, lifecycle_scripts, system_properties, properties, deployment_location)
+        result = service.execute_lifecycle(lifecycle_name, lifecycle_scripts, self.__propvaluemap(system_properties), self.__propvaluemap(properties), deployment_location)
         mock_lifecycle_monitor_service.monitor_execution.assert_called_once_with('123', deployment_location)
 
 class TestLifecycleExecutionMonitoringService(unittest.TestCase):

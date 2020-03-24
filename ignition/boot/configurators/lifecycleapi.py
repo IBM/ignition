@@ -4,6 +4,7 @@ from ignition.boot.connexionutils import build_resolver_to_instance
 from ignition.service.framework import ServiceRegistration
 from ignition.service.messaging import PostalCapability, TopicsProperties, TopicCreator, MessagingProperties
 from ignition.service.queue import JobQueueCapability
+from ignition.service.requestqueue import LifecycleRequestQueueCapability
 from ignition.service.lifecycle import LifecycleProperties, LifecycleApiCapability, LifecycleServiceCapability, LifecycleDriverCapability, LifecycleExecutionMonitoringCapability, LifecycleMessagingCapability, LifecycleScriptFileManagerCapability, LifecycleApiService, LifecycleService, LifecycleExecutionMonitoringService, LifecycleMessagingService, LifecycleScriptFileManagerService
 from ignition.boot.configurators.utils import validate_no_service_with_capability_exists
 
@@ -75,14 +76,18 @@ class LifecycleServicesConfigurator():
             logger.debug('Bootstrapping Lifecycle Service')
             # Check if a user has enabled the auto configuration of the Lifecycle service but has also added their own
             validate_no_service_with_capability_exists(service_register, LifecycleServiceCapability, 'Lifecycle Service', 'bootstrap.lifecycle.service_enabled')
-            required_capabilities = {
-                'driver': LifecycleDriverCapability,
-                'lifecycle_config': LifecycleProperties,
-                'script_file_manager': LifecycleScriptFileManagerCapability
-            }
             lifecycle_config = configuration.property_groups.get_property_group(LifecycleProperties)
+
+            required_capabilities = {}
             if lifecycle_config.async_messaging_enabled is True:
                 required_capabilities['lifecycle_monitor_service'] = LifecycleExecutionMonitoringCapability
+            required_capabilities['driver'] = LifecycleDriverCapability
+            required_capabilities['lifecycle_config'] = LifecycleProperties
+            required_capabilities['script_file_manager'] = LifecycleScriptFileManagerCapability
+
+            if lifecycle_config.request_queue.enabled is True:
+                required_capabilities['request_queue'] = LifecycleRequestQueueCapability
+
             service_register.add_service(ServiceRegistration(LifecycleService, **required_capabilities))
         else:
             logger.debug('Disabled: bootstrapped Lifecycle Service')

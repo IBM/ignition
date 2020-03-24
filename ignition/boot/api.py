@@ -1,3 +1,4 @@
+import logging
 from ignition.boot.config import BootProperties, ApplicationProperties, ApiProperties, DynamicServiceConfigurator, DynamicApiConfigurator, PropertyGroups, BootstrapApplicationConfiguration
 from ignition.boot.app import BootstrapRunner
 from ignition.api.exceptions import ErrorResponseConverter, validation_error_handler
@@ -6,19 +7,21 @@ from ignition.boot.configurators.infrastructureapi import InfrastructureApiConfi
 from ignition.boot.configurators.lifecycleapi import LifecycleApiConfigurator, LifecycleServicesConfigurator
 from ignition.boot.configurators.messaging import MessagingConfigurator
 from ignition.boot.configurators.jobqueue import JobQueueConfigurator
-from ignition.boot.configurators.management import ManagementApiConfigurator, ManagmentServicesConfigurator
-from ignition.service.infrastructure import InfrastructureProperties
-from ignition.service.lifecycle import LifecycleProperties
-from ignition.service.messaging import MessagingProperties
+from ignition.boot.configurators.requestqueue import RequestQueueConfigurator
+from ignition.boot.configurators.management import ManagmentServicesConfigurator, ManagementApiConfigurator
+from ignition.service.infrastructure import InfrastructureProperties, InfrastructureRequestQueueProperties
+from ignition.service.lifecycle import LifecycleProperties, LifecycleRequestQueueProperties
+from ignition.service.messaging import MessagingProperties, TopicCreator
 from ignition.service.queue import JobQueueProperties
 from ignition.service.management import ManagementProperties
 from jsonschema import ValidationError
 
-SERVICE_CONFIGURATORS = [InfrastructureServicesConfigurator(), LifecycleServicesConfigurator(), MessagingConfigurator(), JobQueueConfigurator(), ManagmentServicesConfigurator()]
+SERVICE_CONFIGURATORS = [RequestQueueConfigurator(TopicCreator()), InfrastructureServicesConfigurator(), LifecycleServicesConfigurator(), MessagingConfigurator(), JobQueueConfigurator(), ManagmentServicesConfigurator()]
 API_CONFIGURATORS = [InfrastructureApiConfigurator(), LifecycleApiConfigurator(), ManagementApiConfigurator()]
 MANDATORY_PROPERTY_GROUPS = [ApplicationProperties, ApiProperties]
 ADDITIONAL_PROPERTY_GROUPS = [BootProperties, InfrastructureProperties, LifecycleProperties, MessagingProperties, JobQueueProperties, ManagementProperties]
 
+logger = logging.getLogger(__name__)
 
 def build_driver(app_name, vim=False, lifecycle=False):
     builder = build_app(app_name)
@@ -42,6 +45,7 @@ def configure_vim_driver(builder):
     boot_config.messaging.postal_enabled = True
     boot_config.messaging.delivery_enabled = True
     boot_config.messaging.inbox_enabled = True
+    boot_config.request_queue.enabled = False
     boot_config.job_queue.service_enabled = True
     return builder
 
@@ -60,6 +64,7 @@ def configure_lifecycle_driver(builder):
     boot_config.messaging.postal_enabled = True
     boot_config.messaging.delivery_enabled = True
     boot_config.messaging.inbox_enabled = True
+    boot_config.request_queue.enabled = False
     boot_config.job_queue.service_enabled = True
     return builder
 
