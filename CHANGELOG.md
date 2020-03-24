@@ -1,5 +1,11 @@
 # Change Log
 
+## [1.1.0](https://github.com/accanto-systems/ignition/tree/1.1.0) (2020-03-24)
+[Full Changelog](https://github.com/accanto-systems/ignition/compare/1.0.0...1.1.0)
+
+**Fixed bugs:**
+- Add support for a Request Queue [\#46](https://github.com/accanto-systems/ignition/issues/46)
+
 ## [1.0.0](https://github.com/accanto-systems/ignition/tree/1.0.0) (2020-02-20)
 [Full Changelog](https://github.com/accanto-systems/ignition/compare/0.9.0...1.0.0)
 
