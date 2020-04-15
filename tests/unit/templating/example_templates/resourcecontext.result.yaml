@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: Test-123
+data:
+  propA: A Prop
+  dlType: Kubernetes
+  dlPropA: A DL Prop

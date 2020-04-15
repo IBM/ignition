@@ -20,6 +20,8 @@ lifecycle:
 
 In Ignition a request queue is implemented using a message bus, rather than in-memory, to maintain high availability. API requests are queued on the message bus, and each instance of the VIM/Lifecycle driver will take jobs from the queue, then either complete them or requeue them by posting them back to the bus.
 
+## Services
+
 The following request queue services are auto-configured when enabled:
 
 | Name                     | Capability         | Required Capabilities             | Bootstrap Enable/Disable flag       | Topic Name   | Failed Request Topic Name |Description                                                                                                                                     |

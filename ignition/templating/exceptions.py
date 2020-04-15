@@ -1,0 +1,3 @@
+
+class TemplatingError(Exception):
+    pass

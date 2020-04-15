@@ -13,6 +13,7 @@ class BootProperties(ConfigurationPropertiesGroup):
         self.lifecycle = BootLifecycleProperties()
         self.management = BootManagementProperties()
         self.request_queue = BootRequestQueueProperties()
+        self.templating = BootTemplatingProperties()
 
 class BootManagementProperties(ConfigurationProperties):
 
@@ -69,6 +70,12 @@ class BootJobQueueProperties(ConfigurationProperties):
 
     def __init__(self):
         self.service_enabled = False
+
+class BootTemplatingProperties(ConfigurationProperties):
+
+    def __init__(self):
+        self.service_enabled = False
+        self.resource_context_service_enabled = False
 
 
 class ApiProperties(ConfigurationPropertiesGroup, Service, Capability):
