@@ -45,7 +45,7 @@ class KubernetesDeploymentLocation:
             try:
                 client_config = yaml.safe_load(client_config)
             except yaml.YAMLError as e:
-                raise InvalidDeploymentLocationError(f'Deployment location property value for \'{KubernetesDeploymentLocation.CONFIG_PROP}/{KubernetesDeploymentLocation.CONFIG_ALT2_PROP}\' is in invalid, YAML parsing error: {str(e)}') from e
+                raise InvalidDeploymentLocationError(f'Deployment location property value for \'{KubernetesDeploymentLocation.CONFIG_PROP}/{KubernetesDeploymentLocation.CONFIG_ALT2_PROP}\' is invalid, YAML parsing error: {str(e)}') from e
         elif type(client_config) != dict:
             raise InvalidDeploymentLocationError(f'Deployment location property value for \'{KubernetesDeploymentLocation.CONFIG_PROP}/{KubernetesDeploymentLocation.CONFIG_ALT2_PROP}\' is invalid, expected a YAML string or dictionary but got {type(client_config)}')
         kwargs = {}

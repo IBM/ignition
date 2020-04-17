@@ -97,7 +97,7 @@ class TestKubernetesDeploymentLocation(unittest.TestCase):
         try:
             yaml.safe_load(dl_dict['properties']['client_config'])
         except yaml.YAMLError as e:
-            expected_error = InvalidDeploymentLocationError(f'Deployment location property value for \'clientConfig/client_config\' is in invalid, YAML parsing error: {str(e)}')
+            expected_error = InvalidDeploymentLocationError(f'Deployment location property value for \'clientConfig/client_config\' is invalid, YAML parsing error: {str(e)}')
         self.assertEqual(str(context.exception), str(expected_error))
 
     def test_from_dict_invalid_client_config_type_raises_error(self):
