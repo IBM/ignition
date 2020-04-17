@@ -36,4 +36,4 @@ class JobQueueConfigurator():
             TopicCreator().create_topic_if_needed(messaging_config.connection_address, messaging_config.topics.job_queue)
             service_register.add_service(ServiceRegistration(MessagingJobQueueService, job_queue_config=JobQueueProperties, postal_service=PostalCapability, inbox_service=InboxCapability, topics_config=TopicsProperties, messaging_config=MessagingProperties))
         else:
-            logger.debug('Disabled: bootstrapped Job Queue API')
+            logger.debug('Disabled: bootstrapped Job Queue Service')

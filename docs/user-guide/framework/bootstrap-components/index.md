@@ -9,3 +9,4 @@ Each API/Service can be enabled or disabled. Services can then later be replaced
 * [Lifecycle](./lifecycle.md)
 * [Messaging](./messaging.md)
 * [Request Queue](./request_queue.md)
+* [Templating](./templating.md)

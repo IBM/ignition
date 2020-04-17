@@ -45,8 +45,9 @@ def configure_vim_driver(builder):
     boot_config.messaging.postal_enabled = True
     boot_config.messaging.delivery_enabled = True
     boot_config.messaging.inbox_enabled = True
-    boot_config.request_queue.enabled = False
     boot_config.job_queue.service_enabled = True
+    boot_config.templating.service_enabled = True
+    boot_config.templating.resource_props_service_enabled = True
     return builder
 
 def build_lifecycle_driver(app_name):
@@ -64,8 +65,9 @@ def configure_lifecycle_driver(builder):
     boot_config.messaging.postal_enabled = True
     boot_config.messaging.delivery_enabled = True
     boot_config.messaging.inbox_enabled = True
-    boot_config.request_queue.enabled = False
     boot_config.job_queue.service_enabled = True
+    boot_config.templating.service_enabled = True
+    boot_config.templating.resource_props_service_enabled = True
     return builder
 
 def build_vnfc_driver(app_name):

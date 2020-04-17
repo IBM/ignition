@@ -29,6 +29,9 @@ class InfrastructureNotFoundError(InfrastructureError):
 class InfrastructureRequestNotFoundError(InfrastructureError):
     status_code = 400
 
+class InvalidInfrastructureRequestError(InfrastructureError):
+    status_code = 400
+
 class InvalidInfrastructureTemplateError(InfrastructureError):
     status_code = 400
 

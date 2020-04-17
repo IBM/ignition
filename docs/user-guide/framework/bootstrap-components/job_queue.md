@@ -4,6 +4,8 @@ A Job Queue is a core feature required by many of the Services expected in a VIM
 
 In Ignition a job queue is implemented using a message bus, rather than in-memory, to maintain high availability. Jobs are queued on the message bus, each instance of the VIM/Lifecycle driver will take jobs from the queue, then either complete them or requeue them by posting them back to the bus.
 
+## Services
+
 The following service is auto-configured when enabled:
 
 | Name                     | Capability         | Required Capabilities             | Bootstrap Enable/Disable flag       | Description                                                                                                                                     |
