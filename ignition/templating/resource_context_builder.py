@@ -81,6 +81,10 @@ class ResourceContextBuilder:
         Returns:
             this builder
         """
+        if key == SYSTEM_PROPERTIES_KEY:
+            raise ValueError(f'property with name \'{SYSTEM_PROPERTIES_KEY}\' cannot be used as this is a reserved word')
+        if key == DEPLOYMENT_LOCATION_KEY:
+            raise ValueError(f'property with name \'{DEPLOYMENT_LOCATION_KEY}\' cannot be used as this is a reserved word')
         self.result[key] = value 
         return self
 

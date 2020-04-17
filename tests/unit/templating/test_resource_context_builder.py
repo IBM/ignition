@@ -184,6 +184,34 @@ class TestResourceContextBuilder(unittest.TestCase):
             }
         })
 
+    def test_add_properties_with_reserved_system_property_keyword(self):
+        system_properties, properties, deployment_location = self.__example_values()
+        builder = ResourceContextBuilder(system_properties, properties, deployment_location)
+        with self.assertRaises(ValueError) as context:
+            builder.add_properties({'systemProperties': 'ThisPropertyIsNotAllowed'})
+        self.assertEqual(str(context.exception), 'property with name \'systemProperties\' cannot be used as this is a reserved word')
+
+    def test_add_properties_with_reserved_deployment_location_inst_keyword(self):
+        system_properties, properties, deployment_location = self.__example_values()
+        builder = ResourceContextBuilder(system_properties, properties, deployment_location)
+        with self.assertRaises(ValueError) as context:
+            builder.add_properties({'deploymentLocationInst': 'ThisPropertyIsNotAllowed'})
+        self.assertEqual(str(context.exception), 'property with name \'deploymentLocationInst\' cannot be used as this is a reserved word')
+
+    def test_add_property_with_reserved_system_property_keyword(self):
+        system_properties, properties, deployment_location = self.__example_values()
+        builder = ResourceContextBuilder(system_properties, properties, deployment_location)
+        with self.assertRaises(ValueError) as context:
+            builder.add_property('systemProperties', 'ThisPropertyIsNotAllowed')
+        self.assertEqual(str(context.exception), 'property with name \'systemProperties\' cannot be used as this is a reserved word')
+
+    def test_add_property_with_reserved_deployment_location_inst_keyword(self):
+        system_properties, properties, deployment_location = self.__example_values()
+        builder = ResourceContextBuilder(system_properties, properties, deployment_location)
+        with self.assertRaises(ValueError) as context:
+            builder.add_property('deploymentLocationInst', 'ThisPropertyIsNotAllowed')
+        self.assertEqual(str(context.exception), 'property with name \'deploymentLocationInst\' cannot be used as this is a reserved word')
+
     def test_set_deployment_location(self):
         system_properties, properties, deployment_location = self.__example_values()
         builder = ResourceContextBuilder(system_properties, properties, deployment_location)

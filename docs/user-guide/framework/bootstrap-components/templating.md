@@ -30,7 +30,7 @@ The following services are auto-configured when enabled:
 
 | Name                     | Capability         | Required Capabilities             | Bootstrap Enable/Disable flag       | Description                                                                                                                                     |
 | ------------------------ | ------------------ | --------------------------------- | ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| Jinja2TemplatingService | JobQueTemplatingCapabilityueCapability | - | bootstrap.templating.service_enabled | Handles rendering templates |
+| Jinja2TemplatingService | TemplatingCapability | - | bootstrap.templating.service_enabled | Handles rendering templates |
 | ResourceTemplateContextService | ResourceTemplateContextCapability | - | bootstrap.templating.resource_context_service_enabled | Builds up a dictionary context to use in templates, based on common infrastructure/lifecycle request inputs. Using this service provides consistent property language for template developers across drivers |
 
 ## Usage

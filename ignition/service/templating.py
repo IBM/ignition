@@ -25,12 +25,8 @@ class Jinja2TemplatingService(Service, TemplatingCapability):
     Implementation of the TemplatingCapability based on Jinja2
     """
 
-    def __build(self, content):
-        return JinjaTemplate(content)
-
     def render(self, content, context):
-        template = self.__build(content)
-        return template.render(context)
+        return JinjaTemplate(content).render(context)
 
 class ResourceTemplateContextCapability(Capability):
     """
