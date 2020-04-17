@@ -34,15 +34,20 @@ class KubernetesDeploymentLocation:
         Returns:
             a KubernetesDeploymentLocation instance
         """
-        name = dl_data.get(KubernetesDeploymentLocation.NAME, None)
+        name = dl_data.get(KubernetesDeploymentLocation.NAME)
         if name is None:
-            raise InvalidDeploymentLocationError('Deployment location missing \'{0}\' value'.format(KubernetesDeploymentLocation.NAME))
-        properties = dl_data.get(KubernetesDeploymentLocation.PROPERTIES, None)
+            raise InvalidDeploymentLocationError(f'Deployment location missing \'{KubernetesDeploymentLocation.NAME}\' value')
+        properties = dl_data.get(KubernetesDeploymentLocation.PROPERTIES)
         if properties is None:
-            raise InvalidDeploymentLocationError('Deployment location missing \'{0}\' value'.format(KubernetesDeploymentLocation.PROPERTIES))
+            raise InvalidDeploymentLocationError(f'Deployment location missing \'{KubernetesDeploymentLocation.PROPERTIES}\' value')
         client_config = get_property_or_default(properties, KubernetesDeploymentLocation.CONFIG_PROP, KubernetesDeploymentLocation.CONFIG_ALT2_PROP, error_if_not_found=True)
         if type(client_config) is str:
-            client_config = yaml.safe_load(client_config)
+            try:
+                client_config = yaml.safe_load(client_config)
+            except yaml.YAMLError as e:
+                raise InvalidDeploymentLocationError(f'Deployment location property value for \'{KubernetesDeploymentLocation.CONFIG_PROP}/{KubernetesDeploymentLocation.CONFIG_ALT2_PROP}\' is in invalid, YAML parsing error: {str(e)}') from e
+        elif type(client_config) != dict:
+            raise InvalidDeploymentLocationError(f'Deployment location property value for \'{KubernetesDeploymentLocation.CONFIG_PROP}/{KubernetesDeploymentLocation.CONFIG_ALT2_PROP}\' is invalid, expected a YAML string or dictionary but got {type(client_config)}')
         kwargs = {}
         default_object_namespace = get_property_or_default(properties, KubernetesDeploymentLocation.DEFAULT_OBJECT_NAMESPACE_PROP, KubernetesDeploymentLocation.DEFAULT_OBJECT_NAMESPACE_ALT2_PROP)
         if default_object_namespace is not None:
@@ -148,7 +153,7 @@ class KubernetesSingleConfigValidator:
     def __validate_context_is_for_cluster(self, context, cluster):
         context_name = context.get('name')
         context_details = context.get('context')
-        context_cluster = context_details.get('cluster', None)
+        context_cluster = context_details.get('cluster')
         cluster_name = cluster.get('name')
         if context_cluster != cluster_name:
             raise KubernetesConfigValidationError(f'Config context \'{context_name}\' should have a cluster value of \'{cluster_name}\' but was \'{context_cluster}\'')
@@ -156,13 +161,13 @@ class KubernetesSingleConfigValidator:
     def __validate_context_is_for_user(self, context, user):
         context_name = context.get('name')
         context_details = context.get('context')
-        context_user = context_details.get('user', None)
+        context_user = context_details.get('user')
         username = user.get('name')
         if context_user != username:
             raise KubernetesConfigValidationError(f'Config context \'{context_name}\' should have a user value of \'{username}\' but was \'{context_user}\'')
         
     def __validate_context_is_current(self, context):
-        current_context = self.config.get('current-context', None)
+        current_context = self.config.get('current-context')
         context_name = context.get('name')
         if current_context != context_name:
             raise KubernetesConfigValidationError(f'Config current-context should be \'{context_name}\' but was \'{current_context}\'')

@@ -3,6 +3,7 @@ import os
 import yaml
 import copy
 from unittest.mock import patch
+from ignition.locations.exceptions import InvalidDeploymentLocationError
 from ignition.locations.kubernetes import KubernetesDeploymentLocation, KubernetesSingleConfigValidator, KubernetesConfigValidationError
 
 EXAMPLE_CONFIG = {
@@ -55,6 +56,60 @@ class TestKubernetesDeploymentLocation(unittest.TestCase):
         self.assertEqual(location.name, 'TestKube')
         self.assertEqual(location.client_config, EXAMPLE_CONFIG)
         self.assertEqual(location.default_object_namespace, 'alternative')
+
+    def test_from_dict_missing_name_raises_error(self):
+        dl_dict = {
+            'properties': {
+                'clientConfig': EXAMPLE_CONFIG,
+                'defaultObjectNamespace': 'alternative'
+            }
+        }
+        with self.assertRaises(InvalidDeploymentLocationError) as context:
+            KubernetesDeploymentLocation.from_dict(dl_dict)
+        self.assertEqual(str(context.exception), 'Deployment location missing \'name\' value')
+    
+    def test_from_dict_missing_properties_raises_error(self):
+        dl_dict = {
+            'name': 'Test'
+        }
+        with self.assertRaises(InvalidDeploymentLocationError) as context:
+            KubernetesDeploymentLocation.from_dict(dl_dict)
+        self.assertEqual(str(context.exception), 'Deployment location missing \'properties\' value')
+    
+    def test_from_dict_missing_client_config_raises_error(self):
+        dl_dict = {
+            'name': 'Test',
+            'properties': {}
+        }
+        with self.assertRaises(InvalidDeploymentLocationError) as context:
+            KubernetesDeploymentLocation.from_dict(dl_dict)
+        self.assertEqual(str(context.exception), 'Deployment location properties missing value for property \'clientConfig\' (or: \'client_config\')')
+
+    def test_from_dict_invalid_client_config_yaml_raises_error(self):
+        dl_dict = {
+            'name': 'Test',
+            'properties': {
+                'client_config': 'not valid: YAML; : '
+            }
+        }
+        with self.assertRaises(InvalidDeploymentLocationError) as context:
+            KubernetesDeploymentLocation.from_dict(dl_dict)
+        try:
+            yaml.safe_load(dl_dict['properties']['client_config'])
+        except yaml.YAMLError as e:
+            expected_error = InvalidDeploymentLocationError(f'Deployment location property value for \'clientConfig/client_config\' is in invalid, YAML parsing error: {str(e)}')
+        self.assertEqual(str(context.exception), str(expected_error))
+
+    def test_from_dict_invalid_client_config_type_raises_error(self):
+        dl_dict = {
+            'name': 'Test',
+            'properties': {
+                'client_config': 123
+            }
+        }
+        with self.assertRaises(InvalidDeploymentLocationError) as context:
+            KubernetesDeploymentLocation.from_dict(dl_dict)
+        self.assertEqual(str(context.exception), 'Deployment location property value for \'clientConfig/client_config\' is invalid, expected a YAML string or dictionary but got <class \'int\'>')
 
     def test_write_config_file(self):
         location = KubernetesDeploymentLocation('TestKube', EXAMPLE_CONFIG)

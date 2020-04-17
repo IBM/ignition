@@ -25,9 +25,15 @@ def get_property_or_default(properties, *keys, default_provider=None, error_if_n
     # Can't base this on value being not None as it may have been set to None deliberately
     if not value_found:
         if error_if_not_found:
-            error_msg = 'Deployment location properties missing value for property \'{0}\''.format(keys[0])
+            error_msg = f'Deployment location properties missing value for property \'{keys[0]}\''
             if len(keys) > 1:
-                error_msg += ' (or: {0})'.format(keys[1:])
+                error_msg += ' (or: '
+                for idx, k in enumerate(keys):
+                    if idx != 0:
+                        if idx != 1:
+                            error_msg += ', '
+                        error_msg += f'\'{k}\''
+                error_msg += ')'
             raise InvalidDeploymentLocationError(error_msg)
         if callable(default_provider):
             return default_provider()
