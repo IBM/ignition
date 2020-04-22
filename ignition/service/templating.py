@@ -34,7 +34,7 @@ class ResourceTemplateContextCapability(Capability):
     """
 
     @interface
-    def build(self, system_properties, properties, deployment_location):
+    def build(self, system_properties, properties, request_properties, deployment_location):
         """
         Builds a dictionary context, suitable for rendering templates, based on the properties of a request.
         The structure of the context depends on the chosen implementation
@@ -42,6 +42,7 @@ class ResourceTemplateContextCapability(Capability):
         Args:
             system_properties (dict or PropValueMap): dictionary of system_properties to include
             properties (dict or PropValueMap): dictionary of properties to include
+            request_properties (dict or PropValueMap): dictionary of request properties to include
             deployment_location (dict): dictionary representing the deployment location details
 
         Returns:
@@ -54,7 +55,7 @@ class ResourceTemplateContextService(Service, ResourceTemplateContextCapability)
     Implementation of the ResourceTemplateContextCapability which uses the ignition.templating.ResourceContextBuilder class 
     """
 
-    def build(self, system_properties, properties, deployment_location):
+    def build(self, system_properties, properties, request_properties, deployment_location):
         """
         Builds a dictionary context, suitable for rendering templates, based on the properties of a request.
         Uses the ignition.templating.ResourceContextBuilder class, so consult it's documentation for details on the structure of the result.
@@ -71,18 +72,19 @@ class ResourceTemplateContextService(Service, ResourceTemplateContextCapability)
         Args:
             system_properties (dict or PropValueMap): dictionary of system_properties to include
             properties (dict or PropValueMap): dictionary of properties to include
+            request_properties (dict or PropValueMap): dictionary of request properties to include
             deployment_location (dict): dictionary representing the deployment location details
 
         Returns:
             the context (dict)
         """
-        builder = self._initiate_builder(system_properties, properties, deployment_location)
-        self._configure_additional_props(builder, system_properties, properties, deployment_location)
+        builder = self._initiate_builder(system_properties, properties, request_properties, deployment_location)
+        self._configure_additional_props(builder, system_properties, properties, request_properties, deployment_location)
         return builder.result
 
-    def _initiate_builder(self, system_properties, properties, deployment_location):
-        return ResourceContextBuilder(system_properties, properties, deployment_location)
+    def _initiate_builder(self, system_properties, properties, request_properties, deployment_location):
+        return ResourceContextBuilder(system_properties, properties, request_properties, deployment_location)
     
-    def _configure_additional_props(self, builder, system_properties, properties, deployment_location):
+    def _configure_additional_props(self, builder, system_properties, properties, request_properties, deployment_location):
         #Room for extensions
         pass
