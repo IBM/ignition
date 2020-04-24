@@ -12,6 +12,9 @@ class TestResourceContextBuilder(unittest.TestCase):
         properties = {
             'propA': 'A Prop'
         }
+        request_properties = {
+            'reqA': 'A req prop'
+        }
         deployment_location = {
             'name': 'Test',
             'type': 'Kubernetes',
@@ -19,18 +22,21 @@ class TestResourceContextBuilder(unittest.TestCase):
                 'dlPropA': 'A DL Prop'
             }
         }
-        return system_properties, properties, deployment_location
+        return system_properties, properties, request_properties, deployment_location
 
     def test_init(self):
-        system_properties, properties, deployment_location = self.__example_values()
-        builder = ResourceContextBuilder(system_properties, properties, deployment_location)
+        system_properties, properties, request_properties, deployment_location = self.__example_values()
+        builder = ResourceContextBuilder(system_properties, properties, request_properties, deployment_location)
         self.assertEqual(builder.result, {
             'propA': 'A Prop',
-            'systemProperties': {
+            'system_properties': {
                 'sysA': 'A',
                 'sysB': 'B'
             }, 
-            'deploymentLocationInst': {
+            'request_properties': {
+                'reqA': 'A req prop'
+            },
+            'deployment_location': {
                 'name': 'Test',
                 'type': 'Kubernetes',
                 'properties': {
@@ -40,17 +46,20 @@ class TestResourceContextBuilder(unittest.TestCase):
         })
 
     def test_init_with_prop_value_maps(self):
-        system_properties, properties, deployment_location = self.__example_values()
+        system_properties, properties, request_properties, deployment_location = self.__example_values()
         system_properties = PropValueMap(system_properties)
         properties = PropValueMap(properties)
-        builder = ResourceContextBuilder(system_properties, properties, deployment_location)
+        builder = ResourceContextBuilder(system_properties, properties, request_properties, deployment_location)
         self.assertEqual(builder.result, {
             'propA': 'A Prop',
-            'systemProperties': {
+            'system_properties': {
                 'sysA': 'A',
                 'sysB': 'B'
             }, 
-            'deploymentLocationInst': {
+            'request_properties': {
+                'reqA': 'A req prop'
+            },
+            'deployment_location': {
                 'name': 'Test',
                 'type': 'Kubernetes',
                 'properties': {
@@ -60,18 +69,21 @@ class TestResourceContextBuilder(unittest.TestCase):
         })
 
     def test_add_properties(self):
-        system_properties, properties, deployment_location = self.__example_values()
-        builder = ResourceContextBuilder(system_properties, properties, deployment_location)
+        system_properties, properties, request_properties, deployment_location = self.__example_values()
+        builder = ResourceContextBuilder(system_properties, properties, request_properties, deployment_location)
         builder.add_properties({'propB': 'B Prop', 'propC': 'C Prop'})
         self.assertEqual(builder.result, {
             'propA': 'A Prop',
             'propB': 'B Prop',
             'propC': 'C Prop',
-            'systemProperties': {
+            'system_properties': {
                 'sysA': 'A',
                 'sysB': 'B'
             }, 
-            'deploymentLocationInst': {
+            'request_properties': {
+                'reqA': 'A req prop'
+            },
+            'deployment_location': {
                 'name': 'Test',
                 'type': 'Kubernetes',
                 'properties': {
@@ -81,18 +93,21 @@ class TestResourceContextBuilder(unittest.TestCase):
         })
 
     def test_add_properties_from_prop_value_map(self):
-        system_properties, properties, deployment_location = self.__example_values()
-        builder = ResourceContextBuilder(system_properties, properties, deployment_location)
+        system_properties, properties, request_properties, deployment_location = self.__example_values()
+        builder = ResourceContextBuilder(system_properties, properties, request_properties, deployment_location)
         builder.add_properties(PropValueMap({'propB': 'B Prop', 'propC': 'C Prop'}))
         self.assertEqual(builder.result, {
             'propA': 'A Prop',
             'propB': 'B Prop',
             'propC': 'C Prop',
-            'systemProperties': {
+            'system_properties': {
                 'sysA': 'A',
                 'sysB': 'B'
             }, 
-            'deploymentLocationInst': {
+            'request_properties': {
+                'reqA': 'A req prop'
+            },
+            'deployment_location': {
                 'name': 'Test',
                 'type': 'Kubernetes',
                 'properties': {
@@ -103,17 +118,20 @@ class TestResourceContextBuilder(unittest.TestCase):
 
     
     def test_add_property(self):
-        system_properties, properties, deployment_location = self.__example_values()
-        builder = ResourceContextBuilder(system_properties, properties, deployment_location)
+        system_properties, properties, request_properties, deployment_location = self.__example_values()
+        builder = ResourceContextBuilder(system_properties, properties, request_properties, deployment_location)
         builder.add_property('propB', 'B Prop')
         self.assertEqual(builder.result, {
             'propA': 'A Prop',
             'propB': 'B Prop',
-            'systemProperties': {
+            'system_properties': {
                 'sysA': 'A',
                 'sysB': 'B'
             }, 
-            'deploymentLocationInst': {
+            'request_properties': {
+                'reqA': 'A req prop'
+            },
+            'deployment_location': {
                 'name': 'Test',
                 'type': 'Kubernetes',
                 'properties': {
@@ -123,18 +141,21 @@ class TestResourceContextBuilder(unittest.TestCase):
         })
 
     def test_add_system_properties(self):
-        system_properties, properties, deployment_location = self.__example_values()
-        builder = ResourceContextBuilder(system_properties, properties, deployment_location)
+        system_properties, properties, request_properties, deployment_location = self.__example_values()
+        builder = ResourceContextBuilder(system_properties, properties, request_properties, deployment_location)
         builder.add_system_properties({'sysC': 'C', 'sysD': 'D'})
         self.assertEqual(builder.result, {
             'propA': 'A Prop',
-            'systemProperties': {
+            'system_properties': {
                 'sysA': 'A',
                 'sysB': 'B',
                 'sysC': 'C',
                 'sysD': 'D'
-            }, 
-            'deploymentLocationInst': {
+            },
+            'request_properties': {
+                'reqA': 'A req prop'
+            },
+            'deployment_location': {
                 'name': 'Test',
                 'type': 'Kubernetes',
                 'properties': {
@@ -144,18 +165,21 @@ class TestResourceContextBuilder(unittest.TestCase):
         })
 
     def test_add_system_properties_from_prop_value_map(self):
-        system_properties, properties, deployment_location = self.__example_values()
-        builder = ResourceContextBuilder(system_properties, properties, deployment_location)
+        system_properties, properties, request_properties, deployment_location = self.__example_values()
+        builder = ResourceContextBuilder(system_properties, properties, request_properties, deployment_location)
         builder.add_system_properties(PropValueMap({'sysC': 'C', 'sysD': 'D'}))
         self.assertEqual(builder.result, {
             'propA': 'A Prop',
-            'systemProperties': {
+            'system_properties': {
                 'sysA': 'A',
                 'sysB': 'B',
                 'sysC': 'C',
                 'sysD': 'D'
             }, 
-            'deploymentLocationInst': {
+            'request_properties': {
+                'reqA': 'A req prop'
+            },
+            'deployment_location': {
                 'name': 'Test',
                 'type': 'Kubernetes',
                 'properties': {
@@ -165,17 +189,20 @@ class TestResourceContextBuilder(unittest.TestCase):
         })
 
     def test_add_system_property(self):
-        system_properties, properties, deployment_location = self.__example_values()
-        builder = ResourceContextBuilder(system_properties, properties, deployment_location)
+        system_properties, properties, request_properties, deployment_location = self.__example_values()
+        builder = ResourceContextBuilder(system_properties, properties, request_properties, deployment_location)
         builder.add_system_property('sysC', 'C')
         self.assertEqual(builder.result, {
             'propA': 'A Prop',
-            'systemProperties': {
+            'system_properties': {
                 'sysA': 'A',
                 'sysB': 'B',
                 'sysC': 'C'
             }, 
-            'deploymentLocationInst': {
+            'request_properties': {
+                'reqA': 'A req prop'
+            },
+            'deployment_location': {
                 'name': 'Test',
                 'type': 'Kubernetes',
                 'properties': {
@@ -185,36 +212,50 @@ class TestResourceContextBuilder(unittest.TestCase):
         })
 
     def test_add_properties_with_reserved_system_property_keyword(self):
-        system_properties, properties, deployment_location = self.__example_values()
-        builder = ResourceContextBuilder(system_properties, properties, deployment_location)
+        system_properties, properties, request_properties, deployment_location = self.__example_values()
+        builder = ResourceContextBuilder(system_properties, properties, request_properties, deployment_location)
         with self.assertRaises(ValueError) as context:
-            builder.add_properties({'systemProperties': 'ThisPropertyIsNotAllowed'})
-        self.assertEqual(str(context.exception), 'property with name \'systemProperties\' cannot be used as this is a reserved word')
+            builder.add_properties({'system_properties': 'ThisPropertyIsNotAllowed'})
+        self.assertEqual(str(context.exception), 'property with name \'system_properties\' cannot be used as this is a reserved word')
+
+    def test_add_properties_with_reserved_request_property_keyword(self):
+        system_properties, properties, request_properties, deployment_location = self.__example_values()
+        builder = ResourceContextBuilder(system_properties, properties, request_properties, deployment_location)
+        with self.assertRaises(ValueError) as context:
+            builder.add_properties({'request_properties': 'ThisPropertyIsNotAllowed'})
+        self.assertEqual(str(context.exception), 'property with name \'request_properties\' cannot be used as this is a reserved word')
 
     def test_add_properties_with_reserved_deployment_location_inst_keyword(self):
-        system_properties, properties, deployment_location = self.__example_values()
-        builder = ResourceContextBuilder(system_properties, properties, deployment_location)
+        system_properties, properties, request_properties, deployment_location = self.__example_values()
+        builder = ResourceContextBuilder(system_properties, properties, request_properties, deployment_location)
         with self.assertRaises(ValueError) as context:
-            builder.add_properties({'deploymentLocationInst': 'ThisPropertyIsNotAllowed'})
-        self.assertEqual(str(context.exception), 'property with name \'deploymentLocationInst\' cannot be used as this is a reserved word')
+            builder.add_properties({'deployment_location': 'ThisPropertyIsNotAllowed'})
+        self.assertEqual(str(context.exception), 'property with name \'deployment_location\' cannot be used as this is a reserved word')
 
     def test_add_property_with_reserved_system_property_keyword(self):
-        system_properties, properties, deployment_location = self.__example_values()
-        builder = ResourceContextBuilder(system_properties, properties, deployment_location)
+        system_properties, properties, request_properties, deployment_location = self.__example_values()
+        builder = ResourceContextBuilder(system_properties, properties, request_properties, deployment_location)
         with self.assertRaises(ValueError) as context:
-            builder.add_property('systemProperties', 'ThisPropertyIsNotAllowed')
-        self.assertEqual(str(context.exception), 'property with name \'systemProperties\' cannot be used as this is a reserved word')
+            builder.add_property('system_properties', 'ThisPropertyIsNotAllowed')
+        self.assertEqual(str(context.exception), 'property with name \'system_properties\' cannot be used as this is a reserved word')
+
+    def test_add_property_with_reserved_request_property_keyword(self):
+        system_properties, properties, request_properties, deployment_location = self.__example_values()
+        builder = ResourceContextBuilder(system_properties, properties, request_properties, deployment_location)
+        with self.assertRaises(ValueError) as context:
+            builder.add_property('request_properties', 'ThisPropertyIsNotAllowed')
+        self.assertEqual(str(context.exception), 'property with name \'request_properties\' cannot be used as this is a reserved word')
 
     def test_add_property_with_reserved_deployment_location_inst_keyword(self):
-        system_properties, properties, deployment_location = self.__example_values()
-        builder = ResourceContextBuilder(system_properties, properties, deployment_location)
+        system_properties, properties, request_properties, deployment_location = self.__example_values()
+        builder = ResourceContextBuilder(system_properties, properties, request_properties, deployment_location)
         with self.assertRaises(ValueError) as context:
-            builder.add_property('deploymentLocationInst', 'ThisPropertyIsNotAllowed')
-        self.assertEqual(str(context.exception), 'property with name \'deploymentLocationInst\' cannot be used as this is a reserved word')
+            builder.add_property('deployment_location', 'ThisPropertyIsNotAllowed')
+        self.assertEqual(str(context.exception), 'property with name \'deployment_location\' cannot be used as this is a reserved word')
 
     def test_set_deployment_location(self):
-        system_properties, properties, deployment_location = self.__example_values()
-        builder = ResourceContextBuilder(system_properties, properties, deployment_location)
+        system_properties, properties, request_properties, deployment_location = self.__example_values()
+        builder = ResourceContextBuilder(system_properties, properties, request_properties, deployment_location)
         new_deployment_location = {
             'name': 'Alternative',
             'type': 'Docker',
@@ -225,11 +266,14 @@ class TestResourceContextBuilder(unittest.TestCase):
         builder.set_deployment_location(new_deployment_location)
         self.assertEqual(builder.result, {
             'propA': 'A Prop',
-            'systemProperties': {
+            'system_properties': {
                 'sysA': 'A',
                 'sysB': 'B'
             }, 
-            'deploymentLocationInst': {
+            'request_properties': {
+                'reqA': 'A req prop'
+            },
+            'deployment_location': {
                 'name': 'Alternative',
                 'type': 'Docker',
                 'properties': {
@@ -239,16 +283,19 @@ class TestResourceContextBuilder(unittest.TestCase):
         })
 
     def test_add_deployment_location_property(self):
-        system_properties, properties, deployment_location = self.__example_values()
-        builder = ResourceContextBuilder(system_properties, properties, deployment_location)
+        system_properties, properties, request_properties, deployment_location = self.__example_values()
+        builder = ResourceContextBuilder(system_properties, properties, request_properties, deployment_location)
         builder.add_deployment_location_property('dlPropB', 'B DL Prop')
         self.assertEqual(builder.result, {
             'propA': 'A Prop',
-            'systemProperties': {
+            'system_properties': {
                 'sysA': 'A',
                 'sysB': 'B'
             }, 
-            'deploymentLocationInst': {
+            'request_properties': {
+                'reqA': 'A req prop'
+            },
+            'deployment_location': {
                 'name': 'Test',
                 'type': 'Kubernetes',
                 'properties': {
@@ -259,17 +306,20 @@ class TestResourceContextBuilder(unittest.TestCase):
         })
 
     def test_deployment_location_property_not_hidden(self):
-        system_properties, properties, deployment_location = self.__example_values()
+        system_properties, properties, request_properties, deployment_location = self.__example_values()
         properties['deploymentLocation'] = 'Test'
-        builder = ResourceContextBuilder(system_properties, properties, deployment_location)
+        builder = ResourceContextBuilder(system_properties, properties, request_properties, deployment_location)
         self.assertEqual(builder.result, {
             'propA': 'A Prop',
             'deploymentLocation': 'Test',
-            'systemProperties': {
+            'system_properties': {
                 'sysA': 'A',
                 'sysB': 'B'
             }, 
-            'deploymentLocationInst': {
+            'request_properties': {
+                'reqA': 'A req prop'
+            },
+            'deployment_location': {
                 'name': 'Test',
                 'type': 'Kubernetes',
                 'properties': {

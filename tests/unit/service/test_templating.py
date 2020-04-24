@@ -11,11 +11,13 @@ class TestJinja2TemplatingService(unittest.TestCase):
 
 class ExtendedResourceTemplateContextService(ResourceTemplateContextService):
 
-    def _configure_additional_props(self, builder, system_properties, properties, deployment_location):
+    def _configure_additional_props(self, builder, system_properties, properties, request_properties, deployment_location):
         sysA_value = system_properties.get('sysA')
         builder.add_system_property('extSysA', sysA_value)
         propA_value = properties.get('propA')
         builder.add_property('extPropA', propA_value)
+        reqA_value = request_properties.get('reqA')
+        builder.add_request_property('extReqA', reqA_value)
         dlPropA_value = deployment_location.get('properties').get('dlPropA')
         builder.add_deployment_location_property('ExtDlPropA', dlPropA_value)
 
@@ -30,6 +32,9 @@ class TestResourceTemplateContextService(unittest.TestCase):
         properties = {
             'propA': 'A Prop'
         }
+        request_properties = {
+            'reqA': 'A req prop'
+        }
         deployment_location = {
             'name': 'Test',
             'type': 'Kubernetes',
@@ -37,14 +42,17 @@ class TestResourceTemplateContextService(unittest.TestCase):
                 'dlPropA': 'A DL Prop'
             }
         }
-        result = service.build(system_properties, properties, deployment_location)
+        result = service.build(system_properties, properties, request_properties, deployment_location)
         self.assertEqual(result, {
             'propA': 'A Prop',
-            'systemProperties': {
+            'system_properties': {
                 'sysA': 'A',
                 'sysB': 'B'
             }, 
-            'deploymentLocationInst': {
+            'request_properties': {
+                'reqA': 'A req prop'
+            },
+            'deployment_location': {
                 'name': 'Test',
                 'type': 'Kubernetes',
                 'properties': {
@@ -62,6 +70,9 @@ class TestResourceTemplateContextService(unittest.TestCase):
         properties = {
             'propA': 'A Prop'
         }
+        request_properties = {
+            'reqA': 'A req prop'
+        }
         deployment_location = {
             'name': 'Test',
             'type': 'Kubernetes',
@@ -69,16 +80,20 @@ class TestResourceTemplateContextService(unittest.TestCase):
                 'dlPropA': 'A DL Prop'
             }
         }
-        result = service.build(system_properties, properties, deployment_location)
+        result = service.build(system_properties, properties, request_properties, deployment_location)
         self.assertEqual(result, {
             'propA': 'A Prop',
             'extPropA': 'A Prop',
-            'systemProperties': {
+            'system_properties': {
                 'sysA': 'A',
                 'sysB': 'B',
                 'extSysA': 'A'
             }, 
-            'deploymentLocationInst': {
+            'request_properties': {
+                'reqA': 'A req prop',
+                'extReqA': 'A req prop'
+            },
+            'deployment_location': {
                 'name': 'Test',
                 'type': 'Kubernetes',
                 'properties': {

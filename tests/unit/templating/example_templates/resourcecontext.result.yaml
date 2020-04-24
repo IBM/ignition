@@ -6,3 +6,4 @@ data:
   propA: A Prop
   dlType: Kubernetes
   dlPropA: A DL Prop
+  reqPropA: A Req Prop
