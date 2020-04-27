@@ -280,6 +280,8 @@ components:
           description: Details of the result, if found. This will be empty if the Resource was not found
           type: object
           properties:
+            resourceId:
+              description: Unique ID to assign to this Resource
             associatedTopology:
               description: Internal resources associated to the Resource
               allOf:
@@ -350,9 +352,10 @@ components:
     ExampleFindReferenceResponse:
       value:
         result:
+          resourceId: 1ebc1231-3580-4044-a3e6-3ad745099c1e
           associatedTopology:
-          - type: OpenstackStack
-            name: StackId
+          - type: Openstack
+            name: Network
             value: 1ebc1231-3580-4044-a3e6-3ad745099c1e
           outputs:
             propA: valueA
