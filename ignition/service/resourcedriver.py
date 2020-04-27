@@ -268,7 +268,7 @@ class ResourceDriverService(Service, ResourceDriverServiceCapability):
         else:
             file_name = '{0}'.format(str(uuid.uuid4()))
             driver_files_tree = self.driver_files_manager.build_tree(file_name, driver_files)
-            associated_topology = AssociatedTopology.from_list(associated_topology)
+            associated_topology = AssociatedTopology.from_dict(associated_topology)
             execute_response = self.handler.execute_lifecycle(lifecycle_name, driver_files_tree, PropValueMap(system_properties), PropValueMap(resource_properties), PropValueMap(request_properties), associated_topology, deployment_location)
             if self.async_enabled is True:
                 self.__async_lifecycle_execution_completion(execute_response.request_id, deployment_location)

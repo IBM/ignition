@@ -134,16 +134,16 @@ components:
         - deploymentLocation
         - driverFiles
     AssociatedTopology:
-      type: array
-      items:
-        type: object
-        properties:
-          id:
-            type: string
-          name:
-            type: string
-          type:
-            type: string
+      type: object
+      additionalProperties:
+        $ref: "#/components/schemas/AssociatedTopologyEntry"
+    AssociatedTopologyEntry:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
     Properties:
       type: object
       additionalProperties:
@@ -304,9 +304,9 @@ components:
         driverFiles:
         requestProperties: {}
         associatedTopology:
-          - type: Openstack
-            name: CreatedStack
-            value: 1ebc1231-3580-4044-a3e6-3ad745099c1e
+          InfrastructureStack:
+            type: Openstack
+            id: 1ebc1231-3580-4044-a3e6-3ad745099c1e
         systemProperties:
           resourceId: be3870d2-891c-487e-9736-ca19e4741cf4
           requestId: a44ac9db-1625-4a9b-87c5-6e77bd88c08a
@@ -324,9 +324,9 @@ components:
       value:
         requestId: 2b84e4da-663c-41a5-a637-8695fcec314f
         associatedTopology:
-          - type: Openstack
-            name: CreatedStack
-            value: 1ebc1231-3580-4044-a3e6-3ad745099c1e
+          InfrastructureStack:
+            type: Openstack
+            id: 1ebc1231-3580-4044-a3e6-3ad745099c1e
     ExampleLifecycleExecutionAsyncResponse:
       value:
         requestId: 2b84e4da-663c-41a5-a637-8695fcec314f
@@ -354,9 +354,9 @@ components:
         result:
           resourceId: 1ebc1231-3580-4044-a3e6-3ad745099c1e
           associatedTopology:
-          - type: Openstack
-            name: Network
-            value: 1ebc1231-3580-4044-a3e6-3ad745099c1e
+            InfrastructureStack:
+              type: Openstack
+              id: 1ebc1231-3580-4044-a3e6-3ad745099c1e
           outputs:
             propA: valueA
             propB: valueB

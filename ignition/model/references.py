@@ -11,7 +11,7 @@ class FindReferenceResult():
 
     def __init__(self, resource_id, associated_topology=None, outputs=None):
         self.resource_id = resource_id
-        self.associated_topology = associated_topology if associated_topology is not None else []
+        self.associated_topology = associated_topology
         self.outputs = outputs if outputs is not None else []
 
     def __str__(self):
@@ -19,12 +19,16 @@ class FindReferenceResult():
 
 
 def find_reference_response_dict(find_reference_response):
-    result = None
+    converted_result = None
     if find_reference_response.result is not None:
-        result = {
-            'resource_id': find_reference_response.result.resource_id,
-            'associatedTopology': find_reference_response.result.associated_topology,
-            'outputs': find_reference_response.result.outputs
+        find_result = find_reference_response.result
+        converted_result = {
+            'resourceId': find_result.resource_id,
+            'outputs': find_result.outputs
         }
-    message = {'result': result}
+        if find_result.associated_topology is not None:
+            converted_result['associatedTopology'] = find_result.associated_topology.to_dict()
+        else:
+            converted_result['associatedTopology'] = {}
+    message = {'result': converted_result}
     return message

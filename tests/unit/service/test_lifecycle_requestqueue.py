@@ -221,7 +221,7 @@ class TestLifecycleRequestQueueService(unittest.TestCase):
                            "value": "testing"
                        }
                    },
-                   "associated_topology": [],
+                   "associated_topology": {},
                    "deployment_location": {
                       "resourceManager": "brent",
                       "name": "core1",

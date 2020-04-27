@@ -14,9 +14,9 @@ def lifecycle_execute_response_dict(execute_response):
         'requestId': execute_response.request_id
     }
     if execute_response.associated_topology is not None:
-        message['associatedTopology'] = execute_response.associated_topology.to_list()
+        message['associatedTopology'] = execute_response.associated_topology.to_dict()
     else:
-        message['associatedTopology'] = []
+        message['associatedTopology'] = {}
     return message
 
 class LifecycleExecution():
@@ -46,7 +46,7 @@ def lifecycle_execution_dict(lifecycle_execution):
     else:
         message['outputs'] = {}
     if lifecycle_execution.associated_topology is not None:
-        message['associatedTopology'] = lifecycle_execution.associated_topology.to_list()
+        message['associatedTopology'] = lifecycle_execution.associated_topology.to_dict()
     else:
-        message['associatedTopology'] = []
+        message['associatedTopology'] = {}
     return message

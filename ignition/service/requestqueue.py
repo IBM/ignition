@@ -194,7 +194,7 @@ class KafkaLifecycleRequestQueueHandler(KafkaRequestQueueHandler):
             request_as_dict['resource_properties'] = PropValueMap(request_as_dict['resource_properties'])
             request_as_dict['system_properties'] = PropValueMap(request_as_dict['system_properties'])
             request_as_dict['request_properties'] = PropValueMap(request_as_dict['request_properties'])
-            request_as_dict['associated_topology'] = AssociatedTopology.from_list(request_as_dict['associated_topology'])
+            request_as_dict['associated_topology'] = AssociatedTopology.from_dict(request_as_dict['associated_topology'])
 
             self.lifecycle_request_handler.handle_request(request_as_dict)
         except Exception as e:
