@@ -4,8 +4,6 @@ from unittest.mock import patch, MagicMock
 from ignition.boot.api import ApplicationBuilder
 from ignition.boot.config import BootstrapApplicationConfiguration, ApplicationProperties, ApiProperties
 from ignition.service.config import DictSource
-from ignition.service.infrastructure import InfrastructureProperties
-from ignition.service.lifecycle import LifecycleProperties
 from ignition.service.messaging import MessagingProperties, TopicsProperties
 from ignition.service.framework import Service, Capability, ServiceRegistration
 from ignition.boot.app import BootstrapRunner
@@ -89,14 +87,14 @@ class TestBootstrapRunner(unittest.TestCase):
         mock_resolver = MagicMock()
 
         def mock_api_configure(configuration, service_register, service_instances, api_register):
-            api_register.register_api(os.path.join(openapi_path, 'vim_infrastructure.yaml'), resolver=mock_resolver)
+            api_register.register_api(os.path.join(openapi_path, 'resource-driver.yaml'), resolver=mock_resolver)
         mock_api_configurator.configure.side_effect = mock_api_configure
         app_builder = self.__minimal_working_configuration_builder('MyTest')
         app_builder.add_api_configurator(mock_api_configurator)
         bootstrap_runner = BootstrapRunner(app_builder.build())
         app = bootstrap_runner.init_app()
         mock_connexion_app.assert_called_once_with('MyTest', **{'specification_dir': '{0}/MyTest_boot/api_specs'.format(os.getcwd())})
-        mock_connexion_App_inst.add_api.assert_called_once_with('vim_infrastructure.yaml', **{'resolver': mock_resolver, 'validator_map': {'body': RequestBodyValidator}})
+        mock_connexion_App_inst.add_api.assert_called_once_with('resource-driver.yaml', **{'resolver': mock_resolver, 'validator_map': {'body': RequestBodyValidator}})
         self.assertEqual(app.connexion_app, mock_connexion_App_inst)
 
     @patch('ignition.boot.app.connexion.App')

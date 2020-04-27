@@ -6,14 +6,14 @@ DEPLOYMENT_LOCATION_KEY = 'deployment_location'
 class ResourceContextBuilder:
     """
     Helper class to build dictionary to be used as the context for rendering a template 
-    from the 4 expected property sources of any driver request (resource properties, system properties, request_properties and the deployment location)
+    from the 4 expected property sources of any driver request (resource properties, system properties, request properties and the deployment location)
 
     Resource properties make up the root of the dictionary. System properties are added under the 'system_properties' key. 
     Deployment Location data is added under the `deployment_location` so it does not collide with the 'deploymentLocation' property.
 
     Example:
         Input:
-            properties: {'propertyA': 'valueA'}
+            resource_properties: {'propertyA': 'valueA'}
             system_properties: {'resourceId': '123', 'resourceName': 'example'}
             deployment_location = {'name': 'example-location', 'type': 'test', 'properties': {'dlPropA': 'location property'}}
             request_properties: {'requestA': 'request valueA'}
@@ -40,13 +40,13 @@ class ResourceContextBuilder:
         result (dict): the context built with this instance
     """
 
-    def __init__(self, system_properties, properties, request_properties, deployment_location):
+    def __init__(self, system_properties, resource_properties, request_properties, deployment_location):
         """
         Initiate a builder
 
         Args:
             system_properties (dict or PropValueMap): dictionary of system_properties to include
-            properties (dict or PropValueMap): dictionary of resource properties to include
+            resource_properties (dict or PropValueMap): dictionary of resource properties to include
             request_properties (dict or PropValueMap): dictionary of request properties to include
             deployment_location (dict): dictionary representing the deployment location details
         """
@@ -56,7 +56,7 @@ class ResourceContextBuilder:
             DEPLOYMENT_LOCATION_KEY: {}
         }
         self.add_system_properties(system_properties)
-        self.add_properties(properties)
+        self.add_resource_properties(resource_properties)
         self.add_request_properties(request_properties)
         self.set_deployment_location(deployment_location)
 
@@ -67,24 +67,24 @@ class ResourceContextBuilder:
         if key in [SYSTEM_PROPERTIES_KEY, DEPLOYMENT_LOCATION_KEY, REQUEST_PROPERTIES_KEY]:
             raise ValueError(self.__reserved_key_error_msg(key))
 
-    def add_properties(self, properties):
+    def add_resource_properties(self, resource_properties):
         """
-        Add extra properties. If any of the given properties are already present the existing values will be replaced by the incoming values
+        Add extra resource properties. If any of the given properties are already present the existing values will be replaced by the incoming values
 
         Args:
-            properties (dict or PropValueMap): dictionary of properties to include
+            resource_properties (dict or PropValueMap): dictionary of properties to include
 
         Returns:
             this builder
         """
-        for k,v in properties.items():
+        for k,v in resource_properties.items():
             self.__check_for_reserved_key(k)
             self.result[k] = v
         return self
 
-    def add_property(self, key, value):
+    def add_resource_property(self, key, value):
         """
-        Add extra property. If the property is already present the existing value will be replaced by the incoming value
+        Add extra resource property. If the property is already present the existing value will be replaced by the incoming value
 
         Args:
             key (str): name of the property

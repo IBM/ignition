@@ -15,7 +15,7 @@ class ExtendedResourceTemplateContextService(ResourceTemplateContextService):
         sysA_value = system_properties.get('sysA')
         builder.add_system_property('extSysA', sysA_value)
         propA_value = properties.get('propA')
-        builder.add_property('extPropA', propA_value)
+        builder.add_resource_property('extPropA', propA_value)
         reqA_value = request_properties.get('reqA')
         builder.add_request_property('extReqA', reqA_value)
         dlPropA_value = deployment_location.get('properties').get('dlPropA')
@@ -29,7 +29,7 @@ class TestResourceTemplateContextService(unittest.TestCase):
             'sysA': 'A',
             'sysB': 'B'
         }
-        properties = {
+        resource_properties =  {
             'propA': 'A Prop'
         }
         request_properties = {
@@ -42,7 +42,7 @@ class TestResourceTemplateContextService(unittest.TestCase):
                 'dlPropA': 'A DL Prop'
             }
         }
-        result = service.build(system_properties, properties, request_properties, deployment_location)
+        result = service.build(system_properties, resource_properties, request_properties, deployment_location)
         self.assertEqual(result, {
             'propA': 'A Prop',
             'system_properties': {
@@ -67,7 +67,7 @@ class TestResourceTemplateContextService(unittest.TestCase):
             'sysA': 'A',
             'sysB': 'B'
         }
-        properties = {
+        resource_properties =  {
             'propA': 'A Prop'
         }
         request_properties = {
@@ -80,7 +80,7 @@ class TestResourceTemplateContextService(unittest.TestCase):
                 'dlPropA': 'A DL Prop'
             }
         }
-        result = service.build(system_properties, properties, request_properties, deployment_location)
+        result = service.build(system_properties, resource_properties, request_properties, deployment_location)
         self.assertEqual(result, {
             'propA': 'A Prop',
             'extPropA': 'A Prop',

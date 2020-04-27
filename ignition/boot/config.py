@@ -7,10 +7,9 @@ class BootProperties(ConfigurationPropertiesGroup):
 
     def __init__(self):
         super().__init__('bootstrap')
-        self.infrastructure = BootInfrastructureProperties()
         self.messaging = BootMessagingProperties()
         self.job_queue = BootJobQueueProperties()
-        self.lifecycle = BootLifecycleProperties()
+        self.resource_driver = BootResourceDriverProperties()
         self.management = BootManagementProperties()
         self.request_queue = BootRequestQueueProperties()
         self.templating = BootTemplatingProperties()
@@ -35,27 +34,16 @@ class BootRequestQueueProperties(ConfigurationProperties):
         self.enabled = False
 
 
-class BootInfrastructureProperties(ConfigurationProperties):
+class BootResourceDriverProperties(ConfigurationProperties):
 
     def __init__(self):
         self.api_enabled = False
         self.api_service_enabled = False
         self.service_enabled = False
         self.service_driver = None
-        self.monitoring_service_enabled = False
-        self.messaging_service_enabled = False
-
-
-class BootLifecycleProperties(ConfigurationProperties):
-
-    def __init__(self):
-        self.api_enabled = False
-        self.api_service_enabled = False
-        self.service_enabled = False
-        self.service_driver = None
-        self.monitoring_service_enabled = False
-        self.messaging_service_enabled = False
-        self.script_file_manager_service_enabled = False
+        self.lifecycle_monitoring_service_enabled = False
+        self.lifecycle_messaging_service_enabled = False
+        self.driver_files_manager_service_enabled = False
 
 
 class BootMessagingProperties(ConfigurationProperties):
@@ -95,7 +83,7 @@ class ApplicationProperties(ConfigurationPropertiesGroup, Service, Capability):
         self.ssl = SSLProperties()
 
 
-class SSLProperties(ConfigurationPropertiesGroup):
+class SSLProperties(ConfigurationProperties):
 
     def __init__(self):
         self.enabled = False

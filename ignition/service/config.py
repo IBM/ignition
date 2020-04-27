@@ -84,7 +84,7 @@ class ConfigParserWorker:
 class Source:
 
     @abstractmethod
-    def get():
+    def get(self):
         pass
 
 

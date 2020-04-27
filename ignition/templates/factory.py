@@ -5,8 +5,7 @@ import os
 import ignition
 import re
 
-DRIVER_TYPE_VIM = 'VIM'
-DRIVER_TYPE_LIFECYCLE = 'LIFECYCLE'
+DRIVER_TYPE_RESOURCE = 'RESOURCE'
 
 JINJA_VARIABLE_START = '{('
 JINJA_VARIABLE_END = ')}'
@@ -21,11 +20,10 @@ class DriverGenRequest:
             raise ValueError('driver_types cannot be empty')
         for driver_type in driver_types:
             target_driver_type = driver_type.upper()
-            if target_driver_type == DRIVER_TYPE_VIM or target_driver_type == DRIVER_TYPE_LIFECYCLE:
-                if driver_type not in self.driver_types:
-                    self.driver_types.append(target_driver_type)
+            if target_driver_type == DRIVER_TYPE_RESOURCE:
+                self.driver_types.append(target_driver_type)
             else:
-                raise ValueError('Each driver_type must be one of: {0}'.format([DRIVER_TYPE_VIM, DRIVER_TYPE_LIFECYCLE]))
+                raise ValueError('Each driver_type must be one of: {0}'.format([DRIVER_TYPE_RESOURCE]))
         self.app_name = app_name
         self.version = version
         if port == None:
@@ -93,10 +91,8 @@ class DriverProducer:
     def __determine_templates(self):
         templates_dir = os.path.dirname(__file__)
         template_paths = [os.path.join(templates_dir, 'driver_template')]
-        if DRIVER_TYPE_VIM in self.request.driver_types:
-            template_paths.append(os.path.join(templates_dir, 'vim_additions'))
-        if DRIVER_TYPE_LIFECYCLE in self.request.driver_types:
-            template_paths.append(os.path.join(templates_dir, 'lifecycle_additions'))
+        if DRIVER_TYPE_RESOURCE in self.request.driver_types:
+            template_paths.append(os.path.join(templates_dir, 'resource_additions'))
         return template_paths
 
     def __create_render_props(self):
@@ -104,8 +100,7 @@ class DriverProducer:
         render_props['ignition'] = {}
         render_props['ignition']['version'] = ignition.__version__
         render_props['app'] = {}
-        render_props['app']['is_vim'] = (DRIVER_TYPE_VIM in self.request.driver_types)
-        render_props['app']['is_lifecycle'] = (DRIVER_TYPE_LIFECYCLE in self.request.driver_types)
+        render_props['app']['is_resource_driver'] = (DRIVER_TYPE_RESOURCE in self.request.driver_types)
         render_props['app']['name'] = self.request.app_name
         render_props['app']['description'] = self.request.description
         render_props['app']['module_name'] = self.request.module_name

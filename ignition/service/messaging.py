@@ -37,7 +37,6 @@ class MessagingProperties(ConfigurationPropertiesGroup, Service, Capability):
 class TopicsProperties(ConfigurationProperties, Service, Capability):
 
     def __init__(self):
-        self.infrastructure_task_events = TopicConfigProperties(name='lm_vim_infrastructure_task_events')
         self.lifecycle_execution_events = TopicConfigProperties(name='lm_vnfc_lifecycle_execution_events')
         # No default name set on job_queue topic as this needs to be unique per driver
         self.job_queue = TopicConfigProperties(auto_create=True, config={'retention.ms': 60000, 'message.timestamp.difference.max.ms': 60000, 'file.delete.delay.ms': 60000})

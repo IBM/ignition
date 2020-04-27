@@ -33,7 +33,7 @@ Creating a driver with Ignition is simple with the CLI tool provided with the fr
 - deployment as a Docker container
 - deployment on Kubernetes through Helm
 
-The driver application included in the project is ready to handle infrastructure and/or lifecycle requests with HTTP from Brent and return responses on Kafka - all you need to do is write the code to provide the individual functionality of your driver.
+The driver application included in the project is ready to handle lifecycle requests with HTTP from Brent and return responses on Kafka - all you need to do is write the code to provide the individual functionality of your driver.
 
 To get started, create a new directory for your project:
 
@@ -41,7 +41,7 @@ To get started, create a new directory for your project:
 mkdir my-driver && cd my-driver
 ```
 
-When creating a driver you must give it a name and specify if it will function as a VIM driver, Lifecycle driver or both. In addition, you may configure any of the following options:
+When creating a driver you must give it a name but you may also configure any of the following options:
 
 - `--version` - the initial version of the driver (defaults to: 0.0.1)
 - `--port` - the default port your driver will run on. This will be configurable at runtime but having a default is recommended for consistency (defaults to a randomly chosen value)
@@ -51,21 +51,10 @@ When creating a driver you must give it a name and specify if it will function a
 - `--helm-name` - the intended name for the helm chart of your driver (defaults to a lower case copy of the driver name with spaces replaced for dashes e.g. "My Driver" becomes "my-driver")
 - `--helm-node-port` - the Helm chart includes an option to expose your deployed driver through a NodePort and Ingress. This option allows you to set the default NodePort (defaults to a randomly chosen value)
 
-In the directory for your project, run the create command specifying the name of your driver, type and the value to any options you wish to set:
+In the directory for your project, run the create command specifying the name of your driver  and the value to any options you wish to set:
 
-**Create a VIM Driver:**
 ```
-ignition create "My Driver" -t vim
-```
-
-**Create a Lifecycle Driver:**
-```
-ignition create "My Driver" -t lifecycle
-```
-
-**Create a Driver to handle both VIM and Lifecycle:**
-```
-ignition create "My Driver" -t vim -t lifecycle
+ignition create "My Driver"
 ```
 
 On completion you should see a directory structure including all of the generated files for your driver.
@@ -92,10 +81,7 @@ pip install --editable .
 mydriver-dev
 ```
 
-If successful you should be able to access your driver at: 
-
-- VIM Driver - `http://localhost:<port>/api/infrastructure/ui`
-- Lifecycle Driver - `http://localhost:<port>/api/lifecycle/ui`
+If successful you should be able to access your driver at: `http://localhost:<port>/api/drvier/ui`
 
 # The Basics of a Driver
 
@@ -168,7 +154,7 @@ The Python package directory (`mydriver` in our example) contains the source cod
 - `__init__.py` - every Python package must have one of these files and they are usually empty. However, the root init file contains the code to return an application to be used in production mode.  This file also includes code to make the version of your driver from `pkg_info.json` available on the Python standard `__version__` variable.
 - `config` - directory containing the default properties for the driver
 - `bin` - directory containing the scripts used as entry points for the uWSGI production server
-- `service` - directory containing the source code for this driver's implementations of the infrastructure and/or lifecycle APIs
+- `service` - directory containing the source code for this driver's implementations of the driver APIs
 
 You are free to add additional modules to the Python package in order to structure the code in a way that suits your style. 
 
@@ -184,19 +170,19 @@ import ignition.boot.api as ignition
 import pathlib
 import os
 import mydriver.config as driverconfig
-from mydriver.service.infrastructure import InfrastructureDriver
+from mydriver.service.resourcedriver import ResourceDriver
 
 default_config_dir_path = str(pathlib.Path(driverconfig.__file__).parent.resolve())
 default_config_path = os.path.join(default_config_dir_path, 'default_config.yml')
 
 def create_app():
-    app_builder = ignition.build_driver('My Driver', vim=True)
+    app_builder = ignition.build_resource_driver('My Driver')
     app_builder.include_file_config_properties(default_config_path, required=True)
     app_builder.include_file_config_properties('./mydriver_config.yml', required=False)
     # custom config file e.g. for K8s populated from Helm chart values
     app_builder.include_file_config_properties('/var/mydriver/mydriver_config.yml', required=False)
     app_builder.include_environment_config_properties('MYDRIVER_CONFIG', required=False)
-    app_builder.add_service(InfrastructureDriver)
+    app_builder.add_service(ResourceDriver)
     return app_builder.configure()
 
 
@@ -208,7 +194,7 @@ def init_app():
 The first key component of this file is the `create_app` method, which configures the application. We start by building a Ignition app builder, with the name of our driver and the type. 
 
 ```
-app_builder = ignition.build_driver('My Driver', vim=True)
+app_builder = ignition.build_resource_driver('My Driver')
 ```
 
 We then define how our application will be configured, by default we add 4 sources. This may seem excessive but it offers flexbility to configure the application in different ways based on the type of deployment.
@@ -239,12 +225,12 @@ This signals that the application should check if a `MYDRIVER_CONFIG` environmen
 After configuring the property sources, we configure the custom services to be instantiated on startup:
 
 ```
-app_builder.add_service(InfrastructureDriver)
+app_builder.add_service(ResourceDriver)
 ```
 
-The Ignition app builder has been auto-configured with several services, based on the type of driver being created (specified on the `build_driver` call), so we only need to add our additional services. In our example, we are adding our implementation of the InfrastructureDriver, which is ultimately called to handle infrastructure requests. You can read more about services and their role in an Ignition based app in the [framework](./framework/index.md) section.
+The Ignition app builder has been auto-configured with several services, based on the type of driver being created (specified on the `build_resource_driver` call), so we only need to add our additional services. In our example, we are adding our implementation of the ResourceDriver, which is ultimately called to handle API requests. You can read more about services and their role in an Ignition based app in the [framework](./framework/index.md) section.
 
-It's important to note that the Service you add (in this case the InfrastructureDriver) does not have to continue using this Service/Capability framework. The python code within your driver implementation is free to use any style you like.
+It's important to note that the Service you add (in this case the ResourceDriver) does not have to continue using this Service/Capability framework. The python code within your driver implementation is free to use any style you like.
 
 Finally we build the application and return it:
 
@@ -254,11 +240,11 @@ return app_builder.configure()
 
 The last element of this file is the `init_app` method. This method creates the application and then runs it. You'll see in `__main__.py` and `__init__.py` that in development we want to start the app but in production we only need to create and return it, so it may be managed by a uWSGI container.
 
-### infrastructure.py or lifecycle.py
+### resourcedriver.py
 
-These files are where you should begin implementing the functionality of your driver. In each file you will see a class which implements either the `InfrastructureCapability` or the `LifecycleCapability`.
+These files are where you should begin implementing the functionality of your driver. In each file you will see a class which implements either the `ResourceDriverCapability`.
 
-To add functionality to your driver, you must implement each method stub included on those classes. To understand how these methods are used in the handling a request to your driver, see [infrastructure components](./framework/bootstrap-components/infrastructure.md) and [lifecycle components](./framework/bootstrap-components/lifecycle.md)
+To add functionality to your driver, you must implement each method stub included on those classes. To understand how these methods are used in the handling a request to your driver, see [Resource driver components](./framework/bootstrap-components/resourcedriver.md).
 
 ## Docker 
 
@@ -289,4 +275,4 @@ Ensure you have read through [The Basics of a Driver](#the-basic-of-a-driver) to
 
 Read through the [devdocs](#devdocs) generated for your driver (at `<project root>/devdocs`) to learn how to build and deploy your driver.
 
-Read [infrastructure components](./framework/bootstrap-components/infrastructure.md) and [lifecycle components](./framework/bootstrap-components/lifecycle.md) to understand how Ignition bootstraps components handling the boilerplate of your driver and how to add your desired functionality.
+Read [Resource driver components](./framework/bootstrap-components/resourcedriver.md) to understand how Ignition bootstraps components handling the boilerplate of your driver and how to add your desired functionality.

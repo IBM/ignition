@@ -96,14 +96,14 @@ clientConfig: |
 
 The classes for the Kubernetes deployment location can be found in the `igniton.locations.kubernetes` module. 
 
-You can easily parse the raw deployment location data passed to an infrastructure/lifecycle request using the `from_dict` static method on the class:
+You can easily parse the raw deployment location data passed to a request using the `from_dict` static method on the class:
 
 ```python
 from igniton.locations.kubernetes import KubernetesDeploymentLocation
 
-class InfrastructureDriver(Service, InfrastructureDriverCapability):
+class ResourceDriver(Service, ResourceDriverCapability):
   
-    def create_infrastructure(self, template, template_type, system_properties, properties, deployment_location):
+    def execute_lifecycle(self, lifecycle_name, driver_files, system_properties, resource_properties, request_properties, internal_resources, deployment_location):
         kube_location = KubernetesDeploymentLocation.from_dict(deployment_location)
 ```
 

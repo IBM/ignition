@@ -22,7 +22,7 @@ touch my-file.txt
 
 The [Jinja](https://jinja.palletsprojects.com/en/2.11.x/templates/) library is used to process templates.
 
-Although optional, the Services listed below are enabled by default when using the `ignition.boot.api.build_vim_driver` or `ignition.boot.api.build_lifecycle_driver` method. 
+Although optional, the Services listed below are enabled by default when using the `ignition.boot.api.build_resource_driver` function.
 
 ## Services
 
@@ -31,14 +31,14 @@ The following services are auto-configured when enabled:
 | Name                     | Capability         | Required Capabilities             | Bootstrap Enable/Disable flag       | Description                                                                                                                                     |
 | ------------------------ | ------------------ | --------------------------------- | ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
 | Jinja2TemplatingService | TemplatingCapability | - | bootstrap.templating.service_enabled | Handles rendering templates |
-| ResourceTemplateContextService | ResourceTemplateContextCapability | - | bootstrap.templating.resource_context_service_enabled | Builds up a dictionary context to use in templates, based on common infrastructure/lifecycle request inputs. Using this service provides consistent property language for template developers across drivers |
+| ResourceTemplateContextService | ResourceTemplateContextCapability | - | bootstrap.templating.resource_context_service_enabled | Builds up a dictionary context to use in templates, based on request inputs. Using this service provides consistent property language for template developers across drivers |
 
 ## Usage
 
-Example usage shown for an Infrastructure driver built with Ignition:
+Example usage shown for a driver built with Ignition:
 
 ```python
-class InfrastructureDriver(Service, InfrastructureDriverCapability):
+class ResourceDriver(Service, ResourceDriverCapability):
 
     def __init__(self, templating_service, resource_context_service):
         # Jinja2TemplatingService
@@ -46,11 +46,12 @@ class InfrastructureDriver(Service, InfrastructureDriverCapability):
         # ResourceTemplateContextService
         self.resource_context_service = resource_context_service
 
-    def create_infrastructure(self, template, template_type, system_properties, properties, deployment_location):
+    def execute_lifecycle(self, lifecycle_name, driver_files, system_properties, resource_properties, request_properties, internal_resources, deployment_location):
         # Build context based on inputs
         context = self.resource_context_service.build(system_properties, properties, deployment_location)
         # Render the template
-        rendered_template = self.templating_service.render(template, context)
+        with open(driver_files.get_file_path('template.yaml'), 'r') as f:
+            rendered_template = self.templating_service.render(f.read(), context)
         # Proceed to use the rendered template
         ...
 ```

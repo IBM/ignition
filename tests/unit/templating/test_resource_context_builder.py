@@ -68,10 +68,10 @@ class TestResourceContextBuilder(unittest.TestCase):
             }
         })
 
-    def test_add_properties(self):
+    def test_add_resource_properties(self):
         system_properties, properties, request_properties, deployment_location = self.__example_values()
         builder = ResourceContextBuilder(system_properties, properties, request_properties, deployment_location)
-        builder.add_properties({'propB': 'B Prop', 'propC': 'C Prop'})
+        builder.add_resource_properties({'propB': 'B Prop', 'propC': 'C Prop'})
         self.assertEqual(builder.result, {
             'propA': 'A Prop',
             'propB': 'B Prop',
@@ -92,10 +92,10 @@ class TestResourceContextBuilder(unittest.TestCase):
             }
         })
 
-    def test_add_properties_from_prop_value_map(self):
+    def test_add_resource_properties_from_prop_value_map(self):
         system_properties, properties, request_properties, deployment_location = self.__example_values()
         builder = ResourceContextBuilder(system_properties, properties, request_properties, deployment_location)
-        builder.add_properties(PropValueMap({'propB': 'B Prop', 'propC': 'C Prop'}))
+        builder.add_resource_properties(PropValueMap({'propB': 'B Prop', 'propC': 'C Prop'}))
         self.assertEqual(builder.result, {
             'propA': 'A Prop',
             'propB': 'B Prop',
@@ -117,10 +117,10 @@ class TestResourceContextBuilder(unittest.TestCase):
         })
 
     
-    def test_add_property(self):
+    def test_add_resource_property(self):
         system_properties, properties, request_properties, deployment_location = self.__example_values()
         builder = ResourceContextBuilder(system_properties, properties, request_properties, deployment_location)
-        builder.add_property('propB', 'B Prop')
+        builder.add_resource_property('propB', 'B Prop')
         self.assertEqual(builder.result, {
             'propA': 'A Prop',
             'propB': 'B Prop',
@@ -211,46 +211,46 @@ class TestResourceContextBuilder(unittest.TestCase):
             }
         })
 
-    def test_add_properties_with_reserved_system_property_keyword(self):
+    def test_add_resource_properties_with_reserved_system_property_keyword(self):
         system_properties, properties, request_properties, deployment_location = self.__example_values()
         builder = ResourceContextBuilder(system_properties, properties, request_properties, deployment_location)
         with self.assertRaises(ValueError) as context:
-            builder.add_properties({'system_properties': 'ThisPropertyIsNotAllowed'})
+            builder.add_resource_properties({'system_properties': 'ThisPropertyIsNotAllowed'})
         self.assertEqual(str(context.exception), 'property with name \'system_properties\' cannot be used as this is a reserved word')
 
-    def test_add_properties_with_reserved_request_property_keyword(self):
+    def test_add_resource_properties_with_reserved_request_property_keyword(self):
         system_properties, properties, request_properties, deployment_location = self.__example_values()
         builder = ResourceContextBuilder(system_properties, properties, request_properties, deployment_location)
         with self.assertRaises(ValueError) as context:
-            builder.add_properties({'request_properties': 'ThisPropertyIsNotAllowed'})
+            builder.add_resource_properties({'request_properties': 'ThisPropertyIsNotAllowed'})
         self.assertEqual(str(context.exception), 'property with name \'request_properties\' cannot be used as this is a reserved word')
 
-    def test_add_properties_with_reserved_deployment_location_inst_keyword(self):
+    def test_add_resource_properties_with_reserved_deployment_location_inst_keyword(self):
         system_properties, properties, request_properties, deployment_location = self.__example_values()
         builder = ResourceContextBuilder(system_properties, properties, request_properties, deployment_location)
         with self.assertRaises(ValueError) as context:
-            builder.add_properties({'deployment_location': 'ThisPropertyIsNotAllowed'})
+            builder.add_resource_properties({'deployment_location': 'ThisPropertyIsNotAllowed'})
         self.assertEqual(str(context.exception), 'property with name \'deployment_location\' cannot be used as this is a reserved word')
 
-    def test_add_property_with_reserved_system_property_keyword(self):
+    def test_add_resource_property_with_reserved_system_property_keyword(self):
         system_properties, properties, request_properties, deployment_location = self.__example_values()
         builder = ResourceContextBuilder(system_properties, properties, request_properties, deployment_location)
         with self.assertRaises(ValueError) as context:
-            builder.add_property('system_properties', 'ThisPropertyIsNotAllowed')
+            builder.add_resource_property('system_properties', 'ThisPropertyIsNotAllowed')
         self.assertEqual(str(context.exception), 'property with name \'system_properties\' cannot be used as this is a reserved word')
 
-    def test_add_property_with_reserved_request_property_keyword(self):
+    def test_add_resource_property_with_reserved_request_property_keyword(self):
         system_properties, properties, request_properties, deployment_location = self.__example_values()
         builder = ResourceContextBuilder(system_properties, properties, request_properties, deployment_location)
         with self.assertRaises(ValueError) as context:
-            builder.add_property('request_properties', 'ThisPropertyIsNotAllowed')
+            builder.add_resource_property('request_properties', 'ThisPropertyIsNotAllowed')
         self.assertEqual(str(context.exception), 'property with name \'request_properties\' cannot be used as this is a reserved word')
 
-    def test_add_property_with_reserved_deployment_location_inst_keyword(self):
+    def test_add_resource_property_with_reserved_deployment_location_inst_keyword(self):
         system_properties, properties, request_properties, deployment_location = self.__example_values()
         builder = ResourceContextBuilder(system_properties, properties, request_properties, deployment_location)
         with self.assertRaises(ValueError) as context:
-            builder.add_property('deployment_location', 'ThisPropertyIsNotAllowed')
+            builder.add_resource_property('deployment_location', 'ThisPropertyIsNotAllowed')
         self.assertEqual(str(context.exception), 'property with name \'deployment_location\' cannot be used as this is a reserved word')
 
     def test_set_deployment_location(self):

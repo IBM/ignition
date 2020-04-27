@@ -1,12 +1,12 @@
 # Error Handling
 
-This section assumes you have already created your first driver and started working on your implementation of either the `InfrastructureDriverCapability` or `LifecycleDriverCapability`. It's at this stage you might wonder how to customise the errors thrown by the bootstrapped API services. 
+This section assumes you have already created your first driver and started working on your implementation of the `ResourceDriverCapability`. It's at this stage you might wonder how to customise the errors thrown by the bootstrapped API services. 
 
 This guide will show you to easily customise the HTTP status code and localizedMessage included in the response by creating a Python exception to be raised in an implementation of a driver capability (or your own Service).
 
 It will also show more advanced configuration to customise the full response body of an error. 
 
-It's important to note that you should make sure any custom Exceptions you throw as part of Infrastructure or Lifecycle API request handling adhere to the expectations of the APIs (see [Infrastructure](./framework/bootstrap-components/infrastructure.md) and [Lifecycle](./framework/bootstrap-components/lifecycle.md) ).
+It's important to note that you should make sure any custom Exceptions you throw as part of API request handling adhere to the expectations of the APIs (see [Resource driver components](./framework/bootstrap-components/resourcedriver.md).
 
 ## Easy Customisation
 
@@ -17,14 +17,14 @@ In your Python code, import the `ApiException` and create a subclass from it.
 ```
 from ignition.api.exceptions import ApiException
 
-class TemplateInvalidError(ApiException):
+class MissingFileError(ApiException):
     pass
 ```
 
 Set a single class level attribute on this Exception to configure the HTTP status code that should be returned when raised:
 
 ```
-class TemplateInvalidError(ApiException):
+class MissingFileError(ApiException):
     status_code = 400
 ```
 
@@ -38,19 +38,15 @@ class ValidationResult:
         self.is_valid = is_valid
         self.reason = reason
 
-class InfrastructureDriver(Service, InfrastructureDriverCapability):
+class ResourceDriver(Service, ResourceDriverCapability):
 
-    def __template_is_valid(self, template):
-        return ValidationResult(False, 'Because we wanted to show how to return API errors')
-
-    def create_infrastructure(self, template, template_type, inputs, deployment_location):
-        validation_result = self.__template_is_valid(template)
-        if not validation_result.is_valid:
-            raise TemplateInvalidError('The template is not valid, here is why: {0}'.format(validation_result.reason))
+    def execute_lifecycle(self, lifecycle_name, driver_files, system_properties, resource_properties, request_properties, internal_resources, deployment_location):
+        if not driver_files.has_file('expected_template.yaml'):
+            raise MissingFileError('Missing an expected file')
         ...
 ```
 
-In this example, if we call the Create Infrastructure API we will receive an error response with a 400 HTTP status code. Update the `status_code` of the `TemplateInvalidError` to another code and try again to see response change. You will also notice the `localizedMessage` in the response body includes the message passed into the Exception (e.g. 'The template is not valid, here is why: Because we wanted to show how to return API errors')
+In this example, if we call the Execute Lifecycle API we will receive an error response with a 400 HTTP status code. Update the `status_code` of the `TemplateInvalidError` to another code and try again to see response change. You will also notice the `localizedMessage` in the response body includes the message passed into the Exception (e.g. 'Missing an expected file')
 
 ## Advanced Customisation
 
@@ -74,7 +70,7 @@ def handle_my_exception(exception):
     }
 
 def create_app():
-    app_builder = ignition.build_vim_driver('My Driver')
+    app_builder = ignition.build_resource_driver('My Driver')
     app_builder.api_error_converter.register_handler(MyException, handle_my_exception)
     ...
 ```
@@ -90,19 +86,15 @@ In your driver code, raise the Exception when you want this error to be returned
 ```
 from datetime import datetime 
 
-class InfrastructureDriver(Service, InfrastructureDriverCapability):
+class ResourceDriver(Service, ResourceDriverCapability):
 
-    def __template_is_valid(self, template):
-        return ValidationResult(False, 'Because we wanted to show how to return API errors')
-
-    def create_infrastructure(self, template, template_type, inputs, deployment_location):
-        validation_result = self.__template_is_valid(template)
-        if not validation_result.is_valid:
+    def execute_lifecycle(self, lifecycle_name, driver_files, system_properties, resource_properties, request_properties, internal_resources, deployment_location):
+        if not driver_files.has_file('expected_template.yaml'):x
             raise MyException('This is not valid', 'serverA', 'time is {0}'.format(datetime.now().strftime('%d/%m/%Y %H:%M:%S')))
         ...
 ```
 
-In this example, if we call the Create Infrastructure API we will receive an error response with a 400 HTTP status code and a body which includes:
+In this example, if we call the Execute Lifecycle API we will receive an error response with a 400 HTTP status code and a body which includes:
 
 ```
 {

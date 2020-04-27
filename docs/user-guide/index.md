@@ -1,6 +1,6 @@
 # User Guide
 
-The following sections detail how Ignition works and how it may be used to build a VIM/Lifecycle driver:
+The following sections detail how Ignition works and how it may be used to build a Resource driver:
 
 **Contents:**
 
