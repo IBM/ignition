@@ -66,9 +66,9 @@ The Lifecycle Driver API implementation for `execute_lifecycle` is now a noop (I
 
 ```
 from ignition.service.framework import Service
-from ignition.service.resourcedriver import ResourceDriverCapability
+from ignition.service.resourcedriver import ResourceDriverHandlerCapability
 
-class TestLifecycleDriver(Service, ResourceDriverCapability):
+class TestLifecycleDriver(Service, ResourceDriverHandlerCapability):
     ...
 
     def execute_lifecycle(self, lifecycle_name, lifecycle_scripts_tree, system_properties, properties, deployment_location):

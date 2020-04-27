@@ -230,20 +230,20 @@ class TestResourceDriverService(unittest.TestCase):
         mock_driver_files_manager = MagicMock()
         with self.assertRaises(ValueError) as context:
             ResourceDriverService(resource_driver_config=mock_resource_driver_config, driver_files_manager=mock_driver_files_manager)
-        self.assertEqual(str(context.exception), 'driver argument not provided')
+        self.assertEqual(str(context.exception), 'handler argument not provided')
 
     def test_init_without_configuration_throws_error(self):
         mock_driver = MagicMock()
         mock_driver_files_manager = MagicMock()
         with self.assertRaises(ValueError) as context:
-            ResourceDriverService(driver=mock_driver, driver_files_manager=mock_driver_files_manager)
+            ResourceDriverService(handler=mock_driver, driver_files_manager=mock_driver_files_manager)
         self.assertEqual(str(context.exception), 'resource_driver_config argument not provided')
 
     def test_init_without_driver_files_manager_throws_error(self):
         mock_driver = MagicMock()
         mock_resource_driver_config = MagicMock()
         with self.assertRaises(ValueError) as context:
-            ResourceDriverService(driver=mock_driver, resource_driver_config=mock_resource_driver_config)
+            ResourceDriverService(handler=mock_driver, resource_driver_config=mock_resource_driver_config)
         self.assertEqual(str(context.exception), 'driver_files_manager argument not provided')
 
     def test_init_without_monitor_service_when_async_enabled_throws_error(self):
@@ -252,7 +252,7 @@ class TestResourceDriverService(unittest.TestCase):
         mock_resource_driver_config = MagicMock()
         mock_resource_driver_config.async_messaging_enabled = True
         with self.assertRaises(ValueError) as context:
-            ResourceDriverService(driver=mock_service_driver, resource_driver_config=mock_resource_driver_config, driver_files_manager=mock_driver_files_manager)
+            ResourceDriverService(handler=mock_service_driver, resource_driver_config=mock_resource_driver_config, driver_files_manager=mock_driver_files_manager)
         self.assertEqual(str(context.exception), 'lifecycle_monitor_service argument not provided (required when async_messaging_enabled is True)')
 
     def test_init_without_request_queue_service_when_async_requests_enabled_throws_error(self):
@@ -262,7 +262,7 @@ class TestResourceDriverService(unittest.TestCase):
         mock_resource_driver_config.async_messaging_enabled = False
         mock_resource_driver_config.lifecycle_request_queue.enabled = True
         with self.assertRaises(ValueError) as context:
-            ResourceDriverService(driver=mock_service_driver, resource_driver_config=mock_resource_driver_config, driver_files_manager=mock_driver_files_manager)
+            ResourceDriverService(handler=mock_service_driver, resource_driver_config=mock_resource_driver_config, driver_files_manager=mock_driver_files_manager)
         self.assertEqual(str(context.exception), 'lifecycle_request_queue argument not provided (required when lifecycle_request_queue.enabled is True)')
 
     def test_execute_with_request_queue(self):
@@ -272,7 +272,7 @@ class TestResourceDriverService(unittest.TestCase):
         mock_resource_driver_config = MagicMock()
         mock_resource_driver_config.async_messaging_enabled = False
         mock_resource_driver_config.lifecycle_request_queue.enabled = True
-        service = ResourceDriverService(driver=mock_service_driver, resource_driver_config=mock_resource_driver_config, driver_files_manager=mock_driver_files_manager, lifecycle_request_queue=mock_request_queue)
+        service = ResourceDriverService(handler=mock_service_driver, resource_driver_config=mock_resource_driver_config, driver_files_manager=mock_driver_files_manager, lifecycle_request_queue=mock_request_queue)
         lifecycle_name = 'Install'
         driver_files = '123'
         system_properties = {'resourceId': '1'}
@@ -297,7 +297,7 @@ class TestResourceDriverService(unittest.TestCase):
             'deployment_location': deployment_location
         })
 
-    def test_execute_uses_driver(self):
+    def test_execute_uses_driver_handler(self):
         mock_service_driver = MagicMock()
         execute_response = LifecycleExecuteResponse('123')
         mock_service_driver.execute_lifecycle.return_value = execute_response
@@ -306,7 +306,7 @@ class TestResourceDriverService(unittest.TestCase):
         mock_driver_files_manager.build_tree.return_value = mock_script_tree
         mock_resource_driver_config = MagicMock()
         mock_resource_driver_config.lifecycle_request_queue.enabled = False
-        service = ResourceDriverService(driver=mock_service_driver, resource_driver_config=mock_resource_driver_config, driver_files_manager=mock_driver_files_manager)
+        service = ResourceDriverService(handler=mock_service_driver, resource_driver_config=mock_resource_driver_config, driver_files_manager=mock_driver_files_manager)
         lifecycle_name = 'start'
         driver_files = b'123'
         system_properties = self.__propvaluemap({'resourceId': '999'})
@@ -327,7 +327,7 @@ class TestResourceDriverService(unittest.TestCase):
         mock_driver_files_manager.build_tree.return_value = mock_script_tree
         mock_resource_driver_config = MagicMock()
         mock_resource_driver_config.lifecycle_request_queue.enabled = False
-        service = ResourceDriverService(driver=mock_service_driver, resource_driver_config=mock_resource_driver_config, driver_files_manager=mock_driver_files_manager)
+        service = ResourceDriverService(handler=mock_service_driver, resource_driver_config=mock_resource_driver_config, driver_files_manager=mock_driver_files_manager)
         lifecycle_name = 'start'
         driver_files = b'123'
         system_properties = {'resourceId': '999'}
@@ -351,7 +351,7 @@ class TestResourceDriverService(unittest.TestCase):
         mock_resource_driver_config.async_messaging_enabled = True
         mock_resource_driver_config.lifecycle_request_queue.enabled = False
         mock_lifecycle_monitor_service = MagicMock()
-        service = ResourceDriverService(driver=mock_service_driver, resource_driver_config=mock_resource_driver_config, driver_files_manager=mock_driver_files_manager, lifecycle_monitor_service=mock_lifecycle_monitor_service)
+        service = ResourceDriverService(handler=mock_service_driver, resource_driver_config=mock_resource_driver_config, driver_files_manager=mock_driver_files_manager, lifecycle_monitor_service=mock_lifecycle_monitor_service)
         lifecycle_name = 'start'
         driver_files = b'123'
         system_properties = {'resourceId': '999'}
@@ -371,25 +371,25 @@ class TestLifecycleExecutionMonitoringService(unittest.TestCase):
     
     def test_init_without_job_queue_throws_error(self):
         with self.assertRaises(ValueError) as context:
-            LifecycleExecutionMonitoringService(lifecycle_messaging_service=self.mock_lifecycle_messaging_service, driver=self.mock_driver)
+            LifecycleExecutionMonitoringService(lifecycle_messaging_service=self.mock_lifecycle_messaging_service, handler=self.mock_driver)
         self.assertEqual(str(context.exception), 'job_queue_service argument not provided')
 
     def test_init_without_lifecycle_messaging_service_throws_error(self):
         with self.assertRaises(ValueError) as context:
-            LifecycleExecutionMonitoringService(job_queue_service=self.mock_job_queue, driver=self.mock_driver)
+            LifecycleExecutionMonitoringService(job_queue_service=self.mock_job_queue, handler=self.mock_driver)
         self.assertEqual(str(context.exception), 'lifecycle_messaging_service argument not provided')
 
     def test_init_without_driver_throws_error(self):
         with self.assertRaises(ValueError) as context:
             LifecycleExecutionMonitoringService(job_queue_service=self.mock_job_queue, lifecycle_messaging_service=self.mock_lifecycle_messaging_service)
-        self.assertEqual(str(context.exception), 'driver argument not provided')
+        self.assertEqual(str(context.exception), 'handler argument not provided')
 
     def test_init_registers_handler_to_job_queue(self):
-        monitoring_service = LifecycleExecutionMonitoringService(job_queue_service=self.mock_job_queue, lifecycle_messaging_service=self.mock_lifecycle_messaging_service, driver=self.mock_driver)
+        monitoring_service = LifecycleExecutionMonitoringService(job_queue_service=self.mock_job_queue, lifecycle_messaging_service=self.mock_lifecycle_messaging_service, handler=self.mock_driver)
         self.mock_job_queue.register_job_handler.assert_called_once_with('LifecycleExecutionMonitoring', monitoring_service.job_handler)
 
     def test_monitor_execution_schedules_job(self):
-        monitoring_service = LifecycleExecutionMonitoringService(job_queue_service=self.mock_job_queue, lifecycle_messaging_service=self.mock_lifecycle_messaging_service, driver=self.mock_driver)
+        monitoring_service = LifecycleExecutionMonitoringService(job_queue_service=self.mock_job_queue, lifecycle_messaging_service=self.mock_lifecycle_messaging_service, handler=self.mock_driver)
         monitoring_service.monitor_execution('req123', {'name': 'TestDl'})
         self.mock_job_queue.queue_job.assert_called_once_with({
             'job_type': 'LifecycleExecutionMonitoring',
@@ -398,20 +398,20 @@ class TestLifecycleExecutionMonitoringService(unittest.TestCase):
         })
 
     def test_monitor_execution_throws_error_when_request_id_is_none(self):
-        monitoring_service = LifecycleExecutionMonitoringService(job_queue_service=self.mock_job_queue, lifecycle_messaging_service=self.mock_lifecycle_messaging_service, driver=self.mock_driver)
+        monitoring_service = LifecycleExecutionMonitoringService(job_queue_service=self.mock_job_queue, lifecycle_messaging_service=self.mock_lifecycle_messaging_service, handler=self.mock_driver)
         with self.assertRaises(ValueError) as context:
             monitoring_service.monitor_execution(None, {'name': 'TestDl'})
         self.assertEqual(str(context.exception), 'Cannot monitor task when request_id is not given')
         
     def test_monitor_execution_throws_error_when_deployment_location_is_none(self):
-        monitoring_service = LifecycleExecutionMonitoringService(job_queue_service=self.mock_job_queue, lifecycle_messaging_service=self.mock_lifecycle_messaging_service, driver=self.mock_driver)
+        monitoring_service = LifecycleExecutionMonitoringService(job_queue_service=self.mock_job_queue, lifecycle_messaging_service=self.mock_lifecycle_messaging_service, handler=self.mock_driver)
         with self.assertRaises(ValueError) as context:
             monitoring_service.monitor_execution('req123', None)
         self.assertEqual(str(context.exception), 'Cannot monitor task when deployment_location is not given')
 
     def test_job_handler_does_not_mark_job_as_finished_if_in_progress(self):
         self.mock_driver.get_lifecycle_execution.return_value = LifecycleExecution('req123', 'IN_PROGRESS', None)
-        monitoring_service = LifecycleExecutionMonitoringService(job_queue_service=self.mock_job_queue, lifecycle_messaging_service=self.mock_lifecycle_messaging_service, driver=self.mock_driver)
+        monitoring_service = LifecycleExecutionMonitoringService(job_queue_service=self.mock_job_queue, lifecycle_messaging_service=self.mock_lifecycle_messaging_service, handler=self.mock_driver)
         job_finished = monitoring_service.job_handler({
             'job_type': 'LifecycleExecutionMonitoring',
             'request_id': 'req123',
@@ -422,7 +422,7 @@ class TestLifecycleExecutionMonitoringService(unittest.TestCase):
 
     def test_job_handler_does_not_mark_job_as_finished_if_temporary_error_thrown(self):
         self.mock_driver.get_lifecycle_execution.side_effect = TemporaryResourceDriverError('Retry it')
-        monitoring_service = LifecycleExecutionMonitoringService(job_queue_service=self.mock_job_queue, lifecycle_messaging_service=self.mock_lifecycle_messaging_service, driver=self.mock_driver)
+        monitoring_service = LifecycleExecutionMonitoringService(job_queue_service=self.mock_job_queue, lifecycle_messaging_service=self.mock_lifecycle_messaging_service, handler=self.mock_driver)
         job_finished = monitoring_service.job_handler({
             'job_type': 'LifecycleExecutionMonitoring',
             'request_id': 'req123',
@@ -433,7 +433,7 @@ class TestLifecycleExecutionMonitoringService(unittest.TestCase):
 
     def test_job_handler_marks_job_as_finished_if_request_not_found_error_thrown(self):
         self.mock_driver.get_lifecycle_execution.side_effect = RequestNotFoundError('Not found')
-        monitoring_service = LifecycleExecutionMonitoringService(job_queue_service=self.mock_job_queue, lifecycle_messaging_service=self.mock_lifecycle_messaging_service, driver=self.mock_driver)
+        monitoring_service = LifecycleExecutionMonitoringService(job_queue_service=self.mock_job_queue, lifecycle_messaging_service=self.mock_lifecycle_messaging_service, handler=self.mock_driver)
         job_finished = monitoring_service.job_handler({
             'job_type': 'LifecycleExecutionMonitoring',
             'request_id': 'req123',
@@ -445,7 +445,7 @@ class TestLifecycleExecutionMonitoringService(unittest.TestCase):
 
     def test_job_handler_sends_message_when_task_complete(self):
         self.mock_driver.get_lifecycle_execution.return_value = LifecycleExecution('req123', 'COMPLETE', None)
-        monitoring_service = LifecycleExecutionMonitoringService(job_queue_service=self.mock_job_queue, lifecycle_messaging_service=self.mock_lifecycle_messaging_service, driver=self.mock_driver)
+        monitoring_service = LifecycleExecutionMonitoringService(job_queue_service=self.mock_job_queue, lifecycle_messaging_service=self.mock_lifecycle_messaging_service, handler=self.mock_driver)
         job_finished = monitoring_service.job_handler({
             'job_type': 'LifecycleExecutionMonitoring',
             'request_id': 'req123',
@@ -457,7 +457,7 @@ class TestLifecycleExecutionMonitoringService(unittest.TestCase):
         
     def test_job_handler_sends_message_when_task_failed(self):
         self.mock_driver.get_lifecycle_execution.return_value = LifecycleExecution('req123', 'FAILED', None)
-        monitoring_service = LifecycleExecutionMonitoringService(job_queue_service=self.mock_job_queue, lifecycle_messaging_service=self.mock_lifecycle_messaging_service, driver=self.mock_driver)
+        monitoring_service = LifecycleExecutionMonitoringService(job_queue_service=self.mock_job_queue, lifecycle_messaging_service=self.mock_lifecycle_messaging_service, handler=self.mock_driver)
         job_finished = monitoring_service.job_handler({
             'job_type': 'LifecycleExecutionMonitoring',
             'request_id': 'req123',
@@ -468,7 +468,7 @@ class TestLifecycleExecutionMonitoringService(unittest.TestCase):
         self.mock_lifecycle_messaging_service.send_lifecycle_execution.assert_called_once_with(self.mock_driver.get_lifecycle_execution.return_value)
         
     def test_job_handler_ignores_job_without_request_id(self):
-        monitoring_service = LifecycleExecutionMonitoringService(job_queue_service=self.mock_job_queue, lifecycle_messaging_service=self.mock_lifecycle_messaging_service, driver=self.mock_driver)
+        monitoring_service = LifecycleExecutionMonitoringService(job_queue_service=self.mock_job_queue, lifecycle_messaging_service=self.mock_lifecycle_messaging_service, handler=self.mock_driver)
         job_finished = monitoring_service.job_handler({
             'job_type': 'LifecycleExecutionMonitoring',
             'deployment_location': {'name': 'TestDl'}
@@ -478,7 +478,7 @@ class TestLifecycleExecutionMonitoringService(unittest.TestCase):
         self.mock_lifecycle_messaging_service.send_lifecycle_execution.assert_not_called()
 
     def test_job_handler_ignores_job_without_deployment_location_id(self):
-        monitoring_service = LifecycleExecutionMonitoringService(job_queue_service=self.mock_job_queue, lifecycle_messaging_service=self.mock_lifecycle_messaging_service, driver=self.mock_driver)
+        monitoring_service = LifecycleExecutionMonitoringService(job_queue_service=self.mock_job_queue, lifecycle_messaging_service=self.mock_lifecycle_messaging_service, handler=self.mock_driver)
         job_finished = monitoring_service.job_handler({
             'job_type': 'LifecycleExecutionMonitoring',
             'request_id': 'req123'

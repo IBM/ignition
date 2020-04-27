@@ -170,7 +170,7 @@ import ignition.boot.api as ignition
 import pathlib
 import os
 import mydriver.config as driverconfig
-from mydriver.service.resourcedriver import ResourceDriver
+from mydriver.service.resourcedriver import ResourceDriverHandler
 
 default_config_dir_path = str(pathlib.Path(driverconfig.__file__).parent.resolve())
 default_config_path = os.path.join(default_config_dir_path, 'default_config.yml')
@@ -182,7 +182,7 @@ def create_app():
     # custom config file e.g. for K8s populated from Helm chart values
     app_builder.include_file_config_properties('/var/mydriver/mydriver_config.yml', required=False)
     app_builder.include_environment_config_properties('MYDRIVER_CONFIG', required=False)
-    app_builder.add_service(ResourceDriver)
+    app_builder.add_service(ResourceDriverHandler)
     return app_builder.configure()
 
 
@@ -225,12 +225,12 @@ This signals that the application should check if a `MYDRIVER_CONFIG` environmen
 After configuring the property sources, we configure the custom services to be instantiated on startup:
 
 ```
-app_builder.add_service(ResourceDriver)
+app_builder.add_service(ResourceDriverHandler)
 ```
 
-The Ignition app builder has been auto-configured with several services, based on the type of driver being created (specified on the `build_resource_driver` call), so we only need to add our additional services. In our example, we are adding our implementation of the ResourceDriver, which is ultimately called to handle API requests. You can read more about services and their role in an Ignition based app in the [framework](./framework/index.md) section.
+The Ignition app builder has been auto-configured with several services, based on the type of driver being created (specified on the `build_resource_driver` call), so we only need to add our additional services. In our example, we are adding our implementation of the ResourceDriverHandler, which is ultimately called to handle API requests. You can read more about services and their role in an Ignition based app in the [framework](./framework/index.md) section.
 
-It's important to note that the Service you add (in this case the ResourceDriver) does not have to continue using this Service/Capability framework. The python code within your driver implementation is free to use any style you like.
+It's important to note that the Service you add (in this case the ResourceDriverHandler) does not have to continue using this Service/Capability framework. The python code within your driver implementation is free to use any style you like.
 
 Finally we build the application and return it:
 
@@ -242,7 +242,7 @@ The last element of this file is the `init_app` method. This method creates the 
 
 ### resourcedriver.py
 
-These files are where you should begin implementing the functionality of your driver. In each file you will see a class which implements either the `ResourceDriverCapability`.
+These files are where you should begin implementing the functionality of your driver. In each file you will see a class which implements either the `ResourceDriverHandlerCapability`.
 
 To add functionality to your driver, you must implement each method stub included on those classes. To understand how these methods are used in the handling a request to your driver, see [Resource driver components](./framework/bootstrap-components/resourcedriver.md).
 

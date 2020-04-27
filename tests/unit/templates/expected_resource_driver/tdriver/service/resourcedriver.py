@@ -1,9 +1,9 @@
 import ignition.model.lifecycle as lifecycle_model
 import ignition.model.references as reference_model
 from ignition.service.framework import Service
-from ignition.service.resourcedriver import ResourceDriverCapability
+from ignition.service.resourcedriver import ResourceDriverHandlerCapability
 
-class ResourceDriver(Service, ResourceDriverCapability):
+class ResourceDriverHandler(Service, ResourceDriverHandlerCapability):
 
     @interface
     def execute_lifecycle(self, lifecycle_name, driver_files, system_properties, resource_properties, request_properties, internal_resources, deployment_location):

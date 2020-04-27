@@ -80,7 +80,7 @@ class LifecycleRequestQueueProperties(ConfigurationProperties, Service, Capabili
         self.failed_topic = TopicConfigProperties(auto_create=True, num_partitions=1, config={})
 
 
-class ResourceDriverCapability(Capability):
+class ResourceDriverHandlerCapability(Capability):
 
     @interface
     def execute_lifecycle(self, lifecycle_name, driver_files, system_properties, resource_properties, request_properties, internal_resources, deployment_location):
@@ -231,13 +231,13 @@ class ResourceDriverService(Service, ResourceDriverServiceCapability):
     """
 
     def __init__(self, **kwargs):
-        if 'driver' not in kwargs:
-            raise ValueError('driver argument not provided')
+        if 'handler' not in kwargs:
+            raise ValueError('handler argument not provided')
         if 'resource_driver_config' not in kwargs:
             raise ValueError('resource_driver_config argument not provided')
         if 'driver_files_manager' not in kwargs:
             raise ValueError('driver_files_manager argument not provided')
-        self.driver = kwargs.get('driver')
+        self.handler = kwargs.get('handler')
         self.driver_files_manager = kwargs.get('driver_files_manager')
         resource_driver_config = kwargs.get('resource_driver_config')
         self.async_enabled = resource_driver_config.async_messaging_enabled
@@ -269,7 +269,7 @@ class ResourceDriverService(Service, ResourceDriverServiceCapability):
             file_name = '{0}'.format(str(uuid.uuid4()))
             driver_files_tree = self.driver_files_manager.build_tree(file_name, driver_files)
             internal_resources = InternalResources.from_list(internal_resources)
-            execute_response = self.driver.execute_lifecycle(lifecycle_name, driver_files_tree, PropValueMap(system_properties), PropValueMap(resource_properties), PropValueMap(request_properties), internal_resources, deployment_location)
+            execute_response = self.handler.execute_lifecycle(lifecycle_name, driver_files_tree, PropValueMap(system_properties), PropValueMap(resource_properties), PropValueMap(request_properties), internal_resources, deployment_location)
             if self.async_enabled is True:
                 self.__async_lifecycle_execution_completion(execute_response.request_id, deployment_location)
         return execute_response
@@ -277,7 +277,7 @@ class ResourceDriverService(Service, ResourceDriverServiceCapability):
     def find_reference(self, instance_name, driver_files, deployment_location):
         file_name = '{0}'.format(str(uuid.uuid4()))
         driver_files_tree = self.driver_files_manager.build_tree(file_name, driver_files)
-        find_response = self.driver.find_reference(instance_name, driver_files, deployment_location)
+        find_response = self.handler.find_reference(instance_name, driver_files, deployment_location)
         return find_response
 
     def __async_lifecycle_execution_completion(self, request_id, deployment_location):
@@ -294,11 +294,11 @@ class LifecycleExecutionMonitoringService(Service, LifecycleExecutionMonitoringC
             raise ValueError('job_queue_service argument not provided')
         if 'lifecycle_messaging_service' not in kwargs:
             raise ValueError('lifecycle_messaging_service argument not provided')
-        if 'driver' not in kwargs:
-            raise ValueError('driver argument not provided')
+        if 'handler' not in kwargs:
+            raise ValueError('handler argument not provided')
         self.job_queue_service = kwargs.get('job_queue_service')
         self.lifecycle_messaging_service = kwargs.get('lifecycle_messaging_service')
-        self.driver = kwargs.get('driver')
+        self.handler = kwargs.get('handler')
         self.job_queue_service.register_job_handler(LIFECYCLE_EXECUTION_MONITOR_JOB_TYPE, self.job_handler)
 
     def job_handler(self, job_definition):
@@ -311,7 +311,7 @@ class LifecycleExecutionMonitoringService(Service, LifecycleExecutionMonitoringC
         request_id = job_definition['request_id']
         deployment_location = job_definition['deployment_location']
         try:
-            lifecycle_execution_task = self.driver.get_lifecycle_execution(request_id, deployment_location)
+            lifecycle_execution_task = self.handler.get_lifecycle_execution(request_id, deployment_location)
         except RequestNotFoundError as e:
             logger.debug('Request with ID {0} not found, the request will no longer be monitored'.format(request_id))
             return True

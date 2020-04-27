@@ -2,7 +2,7 @@ from unittest.mock import patch, MagicMock
 from .utils import ConfiguratorTestCase
 from ignition.boot.config import BootstrapApplicationConfiguration, BootProperties
 from ignition.boot.configurators.resourcedriverapi import ResourceDriverApiConfigurator, ResourceDriverServicesConfigurator
-from ignition.service.resourcedriver import ResourceDriverProperties, ResourceDriverApiCapability, ResourceDriverServiceCapability, DriverFilesManagerCapability, ResourceDriverCapability, LifecycleExecutionMonitoringCapability, LifecycleMessagingCapability, ResourceDriverApiService, ResourceDriverService, DriverFilesManagerService, LifecycleExecutionMonitoringService, LifecycleMessagingService
+from ignition.service.resourcedriver import ResourceDriverProperties, ResourceDriverApiCapability, ResourceDriverServiceCapability, DriverFilesManagerCapability, ResourceDriverHandlerCapability, LifecycleExecutionMonitoringCapability, LifecycleMessagingCapability, ResourceDriverApiService, ResourceDriverService, DriverFilesManagerService, LifecycleExecutionMonitoringService, LifecycleMessagingService
 from ignition.service.messaging import TopicsProperties, PostalCapability, MessagingProperties
 from ignition.service.queue import JobQueueCapability
 from ignition.service.framework import Service, ServiceRegistration
@@ -109,7 +109,7 @@ class TestResourceDriverServicesConfigurator(ConfiguratorTestCase):
             ResourceDriverServicesConfigurator().configure(configuration, self.mock_service_register)
         self.assertEqual(str(context.exception), 'An existing service has been registered to serve the Resource Driver API capability but bootstrap.resource_driver.api_service_enabled has not been disabled')
 
-    class DummyDriver(Service, ResourceDriverCapability):
+    class DummyDriver(Service, ResourceDriverHandlerCapability):
 
         def execute_lifecycle(self, lifecycle_name, driver_files, system_properties, resource_properties, request_properties, internal_resources, deployment_location):
             pass
@@ -128,7 +128,7 @@ class TestResourceDriverServicesConfigurator(ConfiguratorTestCase):
         ResourceDriverServicesConfigurator().configure(configuration, self.mock_service_register)
         service_registrations = self.assert_services_registered(1)
         self.assert_service_registration_equal(service_registrations[0], ServiceRegistration(
-            ResourceDriverService, driver=ResourceDriverCapability, resource_driver_config=ResourceDriverProperties, driver_files_manager=DriverFilesManagerCapability, lifecycle_monitor_service=LifecycleExecutionMonitoringCapability))
+            ResourceDriverService, handler=ResourceDriverHandlerCapability, resource_driver_config=ResourceDriverProperties, driver_files_manager=DriverFilesManagerCapability, lifecycle_monitor_service=LifecycleExecutionMonitoringCapability))
 
     def test_configure_service_does_not_include_monitoring_when_async_messaging_disabled(self):
         configuration = self.__bootstrap_config()
@@ -137,7 +137,7 @@ class TestResourceDriverServicesConfigurator(ConfiguratorTestCase):
         self.mock_service_register.get_service_offering_capability.return_value = None
         ResourceDriverServicesConfigurator().configure(configuration, self.mock_service_register)
         service_registrations = self.assert_services_registered(1)
-        self.assert_service_registration_equal(service_registrations[0], ServiceRegistration(ResourceDriverService, driver=ResourceDriverCapability,
+        self.assert_service_registration_equal(service_registrations[0], ServiceRegistration(ResourceDriverService, handler=ResourceDriverHandlerCapability,
                                                                                              resource_driver_config=ResourceDriverProperties, driver_files_manager=DriverFilesManagerCapability))
 
     def test_configure_service_fails_when_already_registered(self):
@@ -155,7 +155,7 @@ class TestResourceDriverServicesConfigurator(ConfiguratorTestCase):
         ResourceDriverServicesConfigurator().configure(configuration, self.mock_service_register)
         service_registrations = self.assert_services_registered(1)
         self.assert_service_registration_equal(service_registrations[0], ServiceRegistration(LifecycleExecutionMonitoringService,
-                                                                                             job_queue_service=JobQueueCapability, lifecycle_messaging_service=LifecycleMessagingCapability, driver=ResourceDriverCapability))
+                                                                                             job_queue_service=JobQueueCapability, lifecycle_messaging_service=LifecycleMessagingCapability, handler=ResourceDriverHandlerCapability))
 
     def test_configure_monitoring_fails_when_already_registered(self):
         configuration = self.__bootstrap_config()

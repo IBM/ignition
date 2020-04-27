@@ -1,6 +1,6 @@
 # Error Handling
 
-This section assumes you have already created your first driver and started working on your implementation of the `ResourceDriverCapability`. It's at this stage you might wonder how to customise the errors thrown by the bootstrapped API services. 
+This section assumes you have already created your first driver and started working on your implementation of the `ResourceDriverHandlerCapability`. It's at this stage you might wonder how to customise the errors thrown by the bootstrapped API services. 
 
 This guide will show you to easily customise the HTTP status code and localizedMessage included in the response by creating a Python exception to be raised in an implementation of a driver capability (or your own Service).
 
@@ -38,7 +38,7 @@ class ValidationResult:
         self.is_valid = is_valid
         self.reason = reason
 
-class ResourceDriver(Service, ResourceDriverCapability):
+class ResourceDriverHandler(Service, ResourceDriverHandlerCapability):
 
     def execute_lifecycle(self, lifecycle_name, driver_files, system_properties, resource_properties, request_properties, internal_resources, deployment_location):
         if not driver_files.has_file('expected_template.yaml'):
@@ -86,7 +86,7 @@ In your driver code, raise the Exception when you want this error to be returned
 ```
 from datetime import datetime 
 
-class ResourceDriver(Service, ResourceDriverCapability):
+class ResourceDriverHandler(Service, ResourceDriverHandlerCapability):
 
     def execute_lifecycle(self, lifecycle_name, driver_files, system_properties, resource_properties, request_properties, internal_resources, deployment_location):
         if not driver_files.has_file('expected_template.yaml'):x

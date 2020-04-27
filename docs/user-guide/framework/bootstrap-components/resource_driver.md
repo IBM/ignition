@@ -21,13 +21,13 @@ Ignition can bootstrap the following services for the Resource Driver API:
 | Name                                | Capability                             | Required Capabilities                  | Bootstrap Enable/Disable flag                  | Description                                                                                                                                |
 | ----------------------------------- | -------------------------------------- | -------------------------------------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
 | ResourceDriverApiService                 | ResourceDriverApiCapability                 | ResourceDriverServiceCapability             | bootstrap.resource_driver.api_service_enabled        | Handles API requests, passing calls down to the ResourceDriverService Service                                                                          |
-| ResourceDriverService                    | ResourceDriverServiceCapability             | LifecycleExecutionMonitoringCapability | bootstrap.resource_driver.service_enabled            | Service layer for handling execution requests, will ultimately call a driver (to handle the implementation of the request) |
+| ResourceDriverService                    | ResourceDriverServiceCapability             | LifecycleExecutionMonitoringCapability, ResourceDriverHandlerCapability | bootstrap.resource_driver.service_enabled            | Service layer for handling execution requests, will ultimately call a handler (to handle the implementation of the request) |
 | LifecycleExecutionMonitoringService | LifecycleExecutionMonitoringCapability | LifecycleMessagingCapability           | bootstrap.resource_driver.lifecycle_monitoring_service_enabled | Service used by the ResourceDriverService to monitor the progress of execution requests, sending a message on Kafka when complete              |
 | LifecycleMessagingService           | LifecycleMessagingCapability           | PostalCapability                       | bootstrap.resource_driver.lifecycle_messaging_service_enabled  | Service used by the LifecycleMonitoringService to send a message to Kafka for Lifecycle execution updates                                |
 
 All Capability and Service implementations for the Resource Driver API can be found in the `service.resourcedriver` module.
 
-By bootstrapping the above services, all you need to provide is a Service that fulfills the ResourceDriverCapability and you will have a functioning Resource Driver API.
+By bootstrapping the above services, all you need to provide is a Service that fulfills the ResourceDriverHandlerCapability and you will have a functioning Resource Driver API.
 
 ## Configuration Properties
 
@@ -41,10 +41,10 @@ The LifecycleMessagingService depends on on the `topics.lifecycle_execution_even
 
 # Integration with your Driver
 
-Let's look at the ResourceDriverCapability:
+Let's look at the ResourceDriverHandlerCapability:
 
 ```python
-class ResourceDriverCapability(Capability):
+class ResourceDriverHandlerCapability(Capability):
 
     @interface
     def execute_lifecycle(self, lifecycle_name, driver_files, system_properties, resource_properties, request_properties, internal_resources, deployment_location):
@@ -110,21 +110,21 @@ There are several methods required on any Service implementing this Capability, 
 
 The ResourceDriverApiService handles the incoming HTTP request, parsing the headers and body before making a call to the ResourceDriverService with the expected arguments. 
 
-The ResourceDriverService takes the base64 encoded version of the `driver_files`, writes them to disk, then extracts the contents so they are available as full directories and files. The Service then calls the `execute_lifecycle` method on the ResourceDriver provided by the user, passing all of the original parameters but with the `driver_files` base64 string replaced with a `ignition.utils.file.DirectoryTree` instance, which can be used to interact with the extracted contents of the files. 
+The ResourceDriverService takes the base64 encoded version of the `driver_files`, writes them to disk, then extracts the contents so they are available as full directories and files. The Service then calls the `execute_lifecycle` method on the ResourceDriverHandler provided by the user, passing all of the original parameters but with the `driver_files` base64 string replaced with a `ignition.utils.file.DirectoryTree` instance, which can be used to interact with the extracted contents of the files. 
 
-The ResourceDriver is expected to either:
+The ResourceDriverHandler is expected to either:
 - Complete the request by initiating execution of the target lifecycle, returning immediately with an instance of `ignition.model.lifecycle.LifecycleExecuteResponse` which includes a `request_id` which may be used at a later time to check the status of the execution.
 - Raise an Exception if the request is invalid or cannot be accepted. This Exception will end the continuation of this flow and instead result in an error being returned to the client of the ResourceDriverApiService. 
 
 On receipt of a LifecycleExecuteResponse, the ResourceDriverService will inform the LifecycleExecutionMonitoringService that it should monitor the completion of the execution, using the `request_id` from the response.
 
-The LifecycleExecutionMonitoringService will periodically, using the JobQueueService (see [job queue](./job_queue)), check if execution has complete. It will do this by polling the `get_lifecycle_execution` method of the ResourceDriver (particular care should be taken raising Exceptions from this method, see the [errors](#errors) section of this document).
+The LifecycleExecutionMonitoringService will periodically, using the JobQueueService (see [job queue](./job_queue)), check if execution has complete. It will do this by polling the `get_lifecycle_execution` method of the ResourceDriverHandler (particular care should be taken raising Exceptions from this method, see the [errors](#errors) section of this document).
 
 Meanwhile, the ResourceDriverService will return the LifecycleExecuteResponse to the ResourceDriverApiService, so it may convert it to a HTTP response and return it to the original client.
 
 In the background, LifecycleExecutionMonitoringService continues to call `get_lifecycle_execution` and checks the status of the `ignition.model.lifecycle.LifecycleExecution` returned. If it returns as "IN_PROGRESS" then the job is placed back on the job queue and called again later. If the status is "COMPLETE" or "FAILED", the LifecycleExecutionMonitoringService uses the LifecycleMessagingService to send out a message on Kafka to inform Brent of the result.
 
-If the execution has failed, the ResourceDriver should include `failure_details` on the `LifecycleExecution`. This must be an instance of `ignition.model.failure.FailureDetails` and description of the error and one of the following failure codes:
+If the execution has failed, the ResourceDriverHandler should include `failure_details` on the `LifecycleExecution`. This must be an instance of `ignition.model.failure.FailureDetails` and description of the error and one of the following failure codes:
 
 | Failure Code | Description |
 | --- | --- |
@@ -135,7 +135,7 @@ If the execution has failed, the ResourceDriver should include `failure_details`
 
 ## Execution Errors
 
-Your ResourceDriver is free to raise any Python errors when handling execution requests in order to indicate a failure (errors thrown by `get_lifecycle_execution` have implications on the monitoring service, discussed later in this section). To customise the response returned to the API client on error, see [error handling](../../api-error-handling.md).
+Your ResourceDriverHandler is free to raise any Python errors when handling execution requests in order to indicate a failure (errors thrown by `get_lifecycle_execution` have implications on the monitoring service, discussed later in this section). To customise the response returned to the API client on error, see [error handling](../../api-error-handling.md).
 
 In the `resourcedriver` module of Ignition there are existing error types you are encouraged to use:
 
@@ -159,9 +159,9 @@ The LifecycleExecutionMonitoringService has specific behaviour attached to Excep
 
 The ResourceDriverApiService handles the incoming HTTP request, parsing the headers and body before making a call to the ResourceDriverService with the expected arguments. 
 
-The ResourceDriverService forwards this call down to the `find_reference` method on the ResourceDriver provided by the user. 
+The ResourceDriverService forwards this call down to the `find_reference` method on the ResourceDriverHandler provided by the user. 
 
-The ResourceDriver is expected to complete the request and return an instance of a `ignition.model.resourcedriver.FindReferenceResponse` with details of whether the Resource could be found or not. 
+The ResourceDriverHandler is expected to complete the request and return an instance of a `ignition.model.resourcedriver.FindReferenceResponse` with details of whether the Resource could be found or not. 
 
 The ResourceDriverService takes this result and returns it to the ResourceDriverApiService so it may be converted to a HTTP response and returned to the original client.
 

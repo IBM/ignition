@@ -101,7 +101,7 @@ You can easily parse the raw deployment location data passed to a request using 
 ```python
 from igniton.locations.kubernetes import KubernetesDeploymentLocation
 
-class ResourceDriver(Service, ResourceDriverCapability):
+class ResourceDriverHandler(Service, ResourceDriverHandlerCapability):
   
     def execute_lifecycle(self, lifecycle_name, driver_files, system_properties, resource_properties, request_properties, internal_resources, deployment_location):
         kube_location = KubernetesDeploymentLocation.from_dict(deployment_location)

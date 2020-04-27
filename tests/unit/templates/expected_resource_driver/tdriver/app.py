@@ -3,7 +3,7 @@ import ignition.boot.api as ignition
 import pathlib
 import os
 import tdriver.config as driverconfig
-from tdriver.service.resourcedriver import ResourceDriver
+from tdriver.service.resourcedriver import ResourceDriverHandler
 
 
 default_config_dir_path = str(pathlib.Path(driverconfig.__file__).parent.resolve())
@@ -17,7 +17,7 @@ def create_app():
     # custom config file e.g. for K8s populated from Helm chart values
     app_builder.include_file_config_properties('/var/tdriver/tdriver_config.yml', required=False)
     app_builder.include_environment_config_properties('TDRIVER_CONFIG', required=False)
-    app_builder.add_service(ResourceDriver)
+    app_builder.add_service(ResourceDriverHandler)
     return app_builder.configure()
 
 

@@ -4,7 +4,7 @@ import pathlib
 import os
 import {( app.module_name )}.config as driverconfig
 {%- if app.is_resource_driver == true %}
-from {( app.module_name )}.service.resourcedriver import ResourceDriver
+from {( app.module_name )}.service.resourcedriver import ResourceDriverHandler
 {%- endif %}
 
 
@@ -20,7 +20,7 @@ def create_app():
     app_builder.include_file_config_properties('/var/{( app.module_name )}/{( app.module_name )}_config.yml', required=False)
     app_builder.include_environment_config_properties('{( app.module_name|upper )}_CONFIG', required=False)
     {%- if app.is_resource_driver == true %}
-    app_builder.add_service(ResourceDriver)
+    app_builder.add_service(ResourceDriverHandler)
     {%- endif %}
     return app_builder.configure()
 

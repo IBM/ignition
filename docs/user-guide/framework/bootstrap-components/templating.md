@@ -38,7 +38,7 @@ The following services are auto-configured when enabled:
 Example usage shown for a driver built with Ignition:
 
 ```python
-class ResourceDriver(Service, ResourceDriverCapability):
+class ResourceDriverHandler(Service, ResourceDriverHandlerCapability):
 
     def __init__(self, templating_service, resource_context_service):
         # Jinja2TemplatingService

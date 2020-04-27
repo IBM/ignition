@@ -74,7 +74,7 @@ import ignition.boot.api as ignition
 import pathlib
 import os
 import mydriver.config as driverconfig
-from mydriver.service.resourcedriver import ResourceDriver
+from mydriver.service.resourcedriver import ResourceDriverHandler
 ## ADD
 import mydriver.api_specs as api_specs
 from mydriver.service.helloworld import HelloWorldApiService, HelloWorldApiCapability 
@@ -95,7 +95,7 @@ def create_app():
     # custom config file e.g. for K8s populated from Helm chart values
     app_builder.include_file_config_properties('/var/mydriver/mydriver_config.yml', required=False)
     app_builder.include_environment_config_properties('MYDRIVER_CONFIG', required=False)
-    app_builder.add_service(ResourceDriver)
+    app_builder.add_service(ResourceDriverHandler)
     ## ADD
     app_builder.add_api(os.path.join(api_spec_path, 'helloworld.yaml'), HelloWorldApiCapability) 
     app_builder.add_service(HelloWorldApiService)

@@ -6,7 +6,7 @@ from ignition.service.messaging import PostalCapability, TopicsProperties, Topic
 from ignition.service.queue import JobQueueCapability
 from ignition.service.requestqueue import LifecycleRequestQueueCapability
 from ignition.service.resourcedriver import (ResourceDriverProperties, ResourceDriverApiCapability, ResourceDriverServiceCapability, 
-                                        ResourceDriverCapability, LifecycleExecutionMonitoringCapability, LifecycleMessagingCapability, 
+                                        ResourceDriverHandlerCapability, LifecycleExecutionMonitoringCapability, LifecycleMessagingCapability, 
                                         DriverFilesManagerCapability, ResourceDriverApiService, ResourceDriverService, 
                                         LifecycleExecutionMonitoringService, LifecycleMessagingService, DriverFilesManagerService)
 from ignition.boot.configurators.utils import validate_no_service_with_capability_exists
@@ -84,7 +84,7 @@ class ResourceDriverServicesConfigurator():
             required_capabilities = {}
             if resource_driver_config.async_messaging_enabled is True:
                 required_capabilities['lifecycle_monitor_service'] = LifecycleExecutionMonitoringCapability
-            required_capabilities['driver'] = ResourceDriverCapability
+            required_capabilities['handler'] = ResourceDriverHandlerCapability
             required_capabilities['resource_driver_config'] = ResourceDriverProperties
             required_capabilities['driver_files_manager'] = DriverFilesManagerCapability
 
@@ -102,7 +102,7 @@ class ResourceDriverServicesConfigurator():
             validate_no_service_with_capability_exists(service_register, LifecycleExecutionMonitoringCapability,
                                                        'Resource Driver Lifecycle Execution Monitoring Service', 'bootstrap.resource_driver.lifecycle_monitoring_service_enabled')
             service_register.add_service(ServiceRegistration(LifecycleExecutionMonitoringService, job_queue_service=JobQueueCapability,
-                                                             lifecycle_messaging_service=LifecycleMessagingCapability, driver=ResourceDriverCapability))
+                                                             lifecycle_messaging_service=LifecycleMessagingCapability, handler=ResourceDriverHandlerCapability))
         else:
             logger.debug('Disabled: bootstrapped Resource Driver Lifecycle Monitoring Service')
 
