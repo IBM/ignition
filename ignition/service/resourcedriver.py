@@ -1,7 +1,7 @@
 from ignition.service.framework import Capability, Service, interface
 from ignition.service.config import ConfigurationPropertiesGroup, ConfigurationProperties
 from ignition.service.api import BaseController
-from ignition.model.lifecycle import LifecycleExecution, LifecycleExecuteResponse, lifecycle_execution_dict, STATUS_COMPLETE, STATUS_FAILED
+from ignition.model.lifecycle import LifecycleExecution, LifecycleExecuteResponse, lifecycle_execution_dict, lifecycle_execute_response_dict, STATUS_COMPLETE, STATUS_FAILED
 from ignition.model.references import FindReferenceResponse, FindReferenceResult, find_reference_response_dict
 from ignition.model.internal_resources import InternalResources
 from ignition.service.messaging import Message, Envelope, JsonContent, TopicConfigProperties
@@ -204,7 +204,7 @@ class ResourceDriverApiService(Service, ResourceDriverApiCapability, BaseControl
             internal_resources = self.get_body_field(body, 'internalResources', [])
             deployment_location = self.get_body_required_field(body, 'deploymentLocation')
             execute_response = self.service.execute_lifecycle(lifecycle_name, driver_files, system_properties, resource_properties, request_properties, internal_resources, deployment_location)
-            response = {'requestId': execute_response.request_id}
+            response = lifecycle_execute_response_dict(execute_response)
             return (response, 202)
         finally:
             logging_context.clear()

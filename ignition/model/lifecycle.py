@@ -5,8 +5,19 @@ STATUS_UNKNOWN = 'UNKNOWN'
 
 class LifecycleExecuteResponse():
 
-    def __init__(self, request_id):
+    def __init__(self, request_id, internal_resources=None):
         self.request_id = request_id
+        self.internal_resources = internal_resources
+
+def lifecycle_execute_response_dict(execute_response):
+    message = {
+        'requestId': execute_response.request_id
+    }
+    if execute_response.internal_resources is not None:
+        message['internalResources'] = execute_response.internal_resources.to_list()
+    else:
+        message['internalResources'] = []
+    return message
 
 class LifecycleExecution():
 
