@@ -190,7 +190,7 @@ class KafkaLifecycleRequestQueueHandler(KafkaRequestQueueHandler):
                 return
 
             file_name = '{0}'.format(str(uuid.uuid4()))
-            request_as_dict['lifecycle_path'] = self.driver_files_manager.build_tree(file_name, request_as_dict['driver_files'])
+            request_as_dict['driver_files'] = self.driver_files_manager.build_tree(file_name, request_as_dict['driver_files'])
             request_as_dict['resource_properties'] = PropValueMap(request_as_dict['resource_properties'])
             request_as_dict['system_properties'] = PropValueMap(request_as_dict['system_properties'])
             request_as_dict['request_properties'] = PropValueMap(request_as_dict['request_properties'])

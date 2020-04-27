@@ -11,15 +11,32 @@ class InternalResources:
         if not isinstance(entry, InternalResourceEntry):
             raise ValueError(f'Internal resource entry should an instance of {InternalResourceEntry.__class__.__name__} but was {type(entry)}')
 
+    def __validate_no_duplicates(self, new_entry):
+        for entry in self._entries:
+            if entry.name == new_entry.name:
+                raise ValueError(f'Duplicate internal resource entry with name \'{entry.name}\'')
+
     def add(self, entry):
         self.__validate_entry(entry)
+        self.__validate_no_duplicates(entry)
+        self._entries.append(entry)
+
+    def add_entry(self, identifier, name, internal_type):
+        entry = InternalResourceEntry(identifier, name, internal_type)
+        self.__validate_no_duplicates(entry)
         self._entries.append(entry)
 
     def get_by_id(self, identifier):
         for entry in self._entries:
             if entry.identifier == identifier:
                 return entry
-        return None 
+        return None
+
+    def get_by_name(self, name):
+        for entry in self._entries:
+            if entry.name == name:
+                return entry
+        return None
 
     def get_by_type(self, internal_type):
         results = []

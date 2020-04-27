@@ -194,6 +194,10 @@ components:
         requestId:
           type: string
           description: ID associated to the request handling the execution
+        internalResources:
+          description: Internal resources associated to the Resource during the acceptance of this request
+          allOf:
+          - $ref: "#/components/schemas/InternalResources"
       required:
         - requestId
     LifecycleExecutionAsyncResponse:
@@ -210,7 +214,7 @@ components:
           type: object
           description: Output values to assign to properties of the Resource
         internalResources:
-          description: Internal resources created as part of this request to be associated to the Resource
+          description: Internal resources associated to the Resource during the handling of this request
           allOf:
           - $ref: "#/components/schemas/InternalResources"
     DeploymentLocation:
@@ -298,8 +302,8 @@ components:
         driverFiles:
         requestProperties: {}
         internalResources:
-          - type: OpenstackStack
-            name: StackId
+          - type: Openstack.Stack
+            name: CreatedStack
             value: 1ebc1231-3580-4044-a3e6-3ad745099c1e
         systemProperties:
           resourceId: be3870d2-891c-487e-9736-ca19e4741cf4
@@ -317,6 +321,10 @@ components:
     ExampleLifecycleExecutionAcceptedResponse:
       value:
         requestId: 2b84e4da-663c-41a5-a637-8695fcec314f
+        internalResources:
+          - type: Openstack.Stack
+            name: CreatedStack
+            value: 1ebc1231-3580-4044-a3e6-3ad745099c1e
     ExampleLifecycleExecutionAsyncResponse:
       value:
         requestId: 2b84e4da-663c-41a5-a637-8695fcec314f

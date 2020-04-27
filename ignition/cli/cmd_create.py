@@ -5,7 +5,7 @@ import ignition.templates.factory as factory
 
 logger = logging.getLogger(__name__)
 
-@click.command(help='Create a new VIM and/or Lifecycle driver')
+@click.command(help='Create a new Resource driver')
 @click.argument('app_name')
 @click.option('--driver-type', '-t', 'driver_types', default='Resource', help='type of driver to generate. \'Resource\' is the only accepted value(case insensitive)')
 @click.option('--version', default='0.0.1', help='Initial version of the driver (Defaults to: 0.0.1)')
