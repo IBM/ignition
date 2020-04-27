@@ -21,7 +21,7 @@ def find_reference_response_dict(find_reference_response):
     result = None
     if find_reference_response.result is not None:
         result = {
-            'internalResources': find_reference_response.result.internal_resources,
+            'associatedTopology': find_reference_response.result.internal_resources,
             'outputs': find_reference_response.result.outputs
         }
     message = {'result': result}

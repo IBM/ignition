@@ -1,6 +1,6 @@
 from ignition.model.failure import FailureDetails, FAILURE_CODE_INTERNAL_ERROR
 from ignition.model.lifecycle import LifecycleExecution, STATUS_FAILED
-from ignition.model.internal_resources import InternalResources
+from ignition.model.associated_topology import AssociatedTopology
 from ignition.service.config import ConfigurationPropertiesGroup
 from ignition.service.framework import Capability, Service, interface
 from ignition.service.messaging import TopicConfigProperties, Envelope, Message, JsonContent
@@ -194,7 +194,7 @@ class KafkaLifecycleRequestQueueHandler(KafkaRequestQueueHandler):
             request_as_dict['resource_properties'] = PropValueMap(request_as_dict['resource_properties'])
             request_as_dict['system_properties'] = PropValueMap(request_as_dict['system_properties'])
             request_as_dict['request_properties'] = PropValueMap(request_as_dict['request_properties'])
-            request_as_dict['internal_resources'] = InternalResources.from_list(request_as_dict['internal_resources'])
+            request_as_dict['internal_resources'] = AssociatedTopology.from_list(request_as_dict['internal_resources'])
 
             self.lifecycle_request_handler.handle_request(request_as_dict)
         except Exception as e:

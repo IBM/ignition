@@ -1,6 +1,6 @@
 
 
-class InternalResources:
+class AssociatedTopology:
 
     def __init__(self, entries=None):
         self._entries = entries if entries is not None else []
@@ -8,8 +8,8 @@ class InternalResources:
             self.__validate_entry(entry)
 
     def __validate_entry(self, entry):
-        if not isinstance(entry, InternalResourceEntry):
-            raise ValueError(f'Internal resource entry should an instance of {InternalResourceEntry.__class__.__name__} but was {type(entry)}')
+        if not isinstance(entry, AssociatedTopologyEntry):
+            raise ValueError(f'Associated topology entry should an instance of {AssociatedTopologyEntry.__class__.__name__} but was {type(entry)}')
 
     def __validate_no_duplicates(self, new_entry):
         for entry in self._entries:
@@ -21,8 +21,8 @@ class InternalResources:
         self.__validate_no_duplicates(entry)
         self._entries.append(entry)
 
-    def add_entry(self, identifier, name, internal_type):
-        entry = InternalResourceEntry(identifier, name, internal_type)
+    def add_entry(self, identifier, name, element_type):
+        entry = AssociatedTopologyEntry(identifier, name, element_type)
         self.__validate_no_duplicates(entry)
         self._entries.append(entry)
 
@@ -38,10 +38,10 @@ class InternalResources:
                 return entry
         return None
 
-    def get_by_type(self, internal_type):
+    def get_by_type(self, element_type):
         results = []
         for entry in self._entries:
-            if entry.internal_type == internal_type:
+            if entry.element_type == element_type:
                 results.append(entry)
         return results
 
@@ -50,31 +50,31 @@ class InternalResources:
         entries = []
         if data is not None:
             for item in data:
-                entries.append(InternalResourceEntry.from_dict(item))
-        return InternalResources(entries)
+                entries.append(AssociatedTopologyEntry.from_dict(item))
+        return AssociatedTopology(entries)
     
     def to_list(self):
         return [entry.to_dict() for entry in self._entries]
 
     def __eq__(self, other):
-        if not isinstance(other, InternalResources):
+        if not isinstance(other, AssociatedTopology):
             return False
         if self._entries != other._entries:
             return False
         return True
 
-class InternalResourceEntry:
+class AssociatedTopologyEntry:
 
-    def __init__(self, identifier, name, internal_type):
+    def __init__(self, identifier, name, element_type):
         if identifier is None:
-            raise ValueError('Internal resource entry missing \'identifier\'')
+            raise ValueError('Associated topology entry missing \'identifier\'')
         if name is None:
-            raise ValueError('Internal resource entry missing \'name\'')
-        if internal_type is None:
-            raise ValueError('Internal resource entry missing \'internal_type\'')
+            raise ValueError('Associated topology entry missing \'name\'')
+        if element_type is None:
+            raise ValueError('Associated topology entry missing \'element_type\'')
         self.identifier = identifier
         self.name = name
-        self.internal_type = internal_type
+        self.element_type = element_type
 
     @staticmethod
     def from_dict(data):
@@ -82,29 +82,29 @@ class InternalResourceEntry:
             raise ValueError('Cannot convert from None')
         identifier = data.get('id')
         if identifier is None:
-            raise ValueError('Internal resource entry missing \'id\'')
+            raise ValueError('Associated topology entry missing \'id\'')
         name = data.get('name')
         if name is None:
-            raise ValueError('Internal resource entry missing \'name\'')
-        internal_type = data.get('type')
-        if internal_type is None:
-            raise ValueError('Internal resource entry missing \'type\'')
-        return InternalResourceEntry(identifier, name, internal_type)
+            raise ValueError('Associated topology entry missing \'name\'')
+        element_type = data.get('type')
+        if element_type is None:
+            raise ValueError('Associated topology entry missing \'type\'')
+        return AssociatedTopologyEntry(identifier, name, element_type)
 
     def to_dict(self):
         return {
             'id': self.identifier,
             'name': self.name,
-            'type': self.internal_type
+            'type': self.element_type
         }
 
     def __eq__(self, other):
-        if not isinstance(other, InternalResourceEntry):
+        if not isinstance(other, AssociatedTopologyEntry):
             return False
         if self.identifier != other.identifier:
             return False
         if self.name != other.name:
             return False
-        if self.internal_type != other.internal_type:
+        if self.element_type != other.element_type:
             return False
         return True

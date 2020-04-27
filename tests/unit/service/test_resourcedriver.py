@@ -5,7 +5,7 @@ from ignition.service.resourcedriver import (ResourceDriverApiService, ResourceD
                         DriverFilesManagerService, TemporaryResourceDriverError, RequestNotFoundError)
 from ignition.model.lifecycle import LifecycleExecuteResponse, LifecycleExecution
 from ignition.model.failure import FailureDetails, FAILURE_CODE_INTERNAL_ERROR
-from ignition.model.internal_resources import InternalResources
+from ignition.model.associated_topology import AssociatedTopology
 from ignition.service.messaging import Envelope, Message, TopicConfigProperties
 import zipfile
 import os
@@ -45,13 +45,13 @@ class TestResourceDriverApiService(unittest.TestCase):
                 'systemProperties': self.__props_with_types({'resourceId': '1'}),
                 'resourceProperties': self.__props_with_types({'a': '2'}),
                 'requestProperties': self.__props_with_types({'reqA': '3'}),
-                'internalResources': [{'id': 'abc', 'name': 'Test', 'type': 'Testing'}],
+                'associatedTopology': [{'id': 'abc', 'name': 'Test', 'type': 'Testing'}],
                 'driverFiles': b'123', 
                 'deploymentLocation': {'name': 'test'} 
             } 
         })
         mock_service.execute_lifecycle.assert_called_once_with('Start', b'123', {'resourceId': { 'type': 'string', 'value': '1'}}, {'a': { 'type': 'string', 'value': '2'}}, {'reqA': {'type': 'string', 'value': '3'}}, [{'id': 'abc', 'name': 'Test', 'type': 'Testing'}], {'name': 'test'})
-        self.assertEqual(response, {'requestId': '123', 'internalResources': []})
+        self.assertEqual(response, {'requestId': '123', 'associatedTopology': []})
         self.assertEqual(code, 202)
         logging_context.set_from_headers.assert_called_once()
 
@@ -65,7 +65,7 @@ class TestResourceDriverApiService(unittest.TestCase):
                     'systemProperties': self.__props_with_types({'resourceId': '1'}),
                     'resourceProperties': self.__props_with_types({'a': '2'}),
                     'requestProperties': self.__props_with_types({'reqA': '3'}),
-                    'internalResources': [{'id': 'abc', 'name': 'Test', 'type': 'Testing'}],
+                    'associatedTopology': [{'id': 'abc', 'name': 'Test', 'type': 'Testing'}],
                     'driverFiles': b'123', 
                     'deploymentLocation': {'name': 'test'} 
                 } 
@@ -83,7 +83,7 @@ class TestResourceDriverApiService(unittest.TestCase):
                     'systemProperties': self.__props_with_types({'resourceId': '1'}),
                     'resourceProperties': self.__props_with_types({'a': '2'}),
                     'requestProperties': self.__props_with_types({'reqA': '3'}),
-                    'internalResources': [{'id': 'abc', 'name': 'Test', 'type': 'Testing'}],
+                    'associatedTopology': [{'id': 'abc', 'name': 'Test', 'type': 'Testing'}],
                     'deploymentLocation': {'name': 'test'} 
                 } 
             })
@@ -100,7 +100,7 @@ class TestResourceDriverApiService(unittest.TestCase):
                     'systemProperties': self.__props_with_types({'resourceId': '1'}),
                     'resourceProperties': self.__props_with_types({'a': '2'}),
                     'requestProperties': self.__props_with_types({'reqA': '3'}),
-                    'internalResources': [{'id': 'abc', 'name': 'Test', 'type': 'Testing'}],
+                    'associatedTopology': [{'id': 'abc', 'name': 'Test', 'type': 'Testing'}],
                     'driverFiles': b'123'
                 } 
             })
@@ -116,7 +116,7 @@ class TestResourceDriverApiService(unittest.TestCase):
                     'lifecycleName': 'Start', 
                     'resourceProperties': self.__props_with_types({'a': '2'}),
                     'requestProperties': self.__props_with_types({'reqA': '3'}),
-                    'internalResources': [{'id': 'abc', 'name': 'Test', 'type': 'Testing'}],
+                    'associatedTopology': [{'id': 'abc', 'name': 'Test', 'type': 'Testing'}],
                     'driverFiles': b'123', 
                     'deploymentLocation': {'name': 'test'} 
                 } 
@@ -133,13 +133,13 @@ class TestResourceDriverApiService(unittest.TestCase):
                 'lifecycleName': 'Start', 
                 'systemProperties': self.__props_with_types({'resourceId': '1'}),
                 'requestProperties': self.__props_with_types({'reqA': '3'}),
-                'internalResources': [{'id': 'abc', 'name': 'Test', 'type': 'Testing'}],
+                'associatedTopology': [{'id': 'abc', 'name': 'Test', 'type': 'Testing'}],
                 'driverFiles': b'123', 
                 'deploymentLocation': {'name': 'test'} 
             } 
         })
         mock_service.execute_lifecycle.assert_called_once_with('Start', b'123', {'resourceId': { 'type': 'string', 'value': '1'}}, {}, {'reqA': {'type': 'string', 'value': '3'}}, [{'id': 'abc', 'name': 'Test', 'type': 'Testing'}], {'name': 'test'})
-        self.assertEqual(response, {'requestId': '123', 'internalResources': []})
+        self.assertEqual(response, {'requestId': '123', 'associatedTopology': []})
         self.assertEqual(code, 202)
     
     @patch('ignition.service.resourcedriver.logging_context')
@@ -152,13 +152,13 @@ class TestResourceDriverApiService(unittest.TestCase):
                 'lifecycleName': 'Start', 
                 'systemProperties': self.__props_with_types({'resourceId': '1'}),
                 'resourceProperties': self.__props_with_types({'a': '2'}),
-                'internalResources': [{'id': 'abc', 'name': 'Test', 'type': 'Testing'}],
+                'associatedTopology': [{'id': 'abc', 'name': 'Test', 'type': 'Testing'}],
                 'driverFiles': b'123', 
                 'deploymentLocation': {'name': 'test'} 
             } 
         })
         mock_service.execute_lifecycle.assert_called_once_with('Start', b'123', {'resourceId': { 'type': 'string', 'value': '1'}}, {'a': { 'type': 'string', 'value': '2'}}, {}, [{'id': 'abc', 'name': 'Test', 'type': 'Testing'}], {'name': 'test'})
-        self.assertEqual(response, {'requestId': '123', 'internalResources': []})
+        self.assertEqual(response, {'requestId': '123', 'associatedTopology': []})
         self.assertEqual(code, 202)
 
     @patch('ignition.service.resourcedriver.logging_context')
@@ -177,7 +177,7 @@ class TestResourceDriverApiService(unittest.TestCase):
             } 
         })
         mock_service.execute_lifecycle.assert_called_once_with('Start', b'123', {'resourceId': { 'type': 'string', 'value': '1'}}, {'a': { 'type': 'string', 'value': '2'}}, {'reqA': {'type': 'string', 'value': '3'}}, [], {'name': 'test'})
-        self.assertEqual(response, {'requestId': '123', 'internalResources': []})
+        self.assertEqual(response, {'requestId': '123', 'associatedTopology': []})
         self.assertEqual(code, 202)
 
 class TestResourceDriverService(unittest.TestCase):
@@ -315,7 +315,7 @@ class TestResourceDriverService(unittest.TestCase):
         internal_resources = [{'id': '123', 'name': 'Test', 'type': 'TestType'}]
         deployment_location = {'name': 'TestDl'}
         result = service.execute_lifecycle(lifecycle_name, driver_files, system_properties, resource_properties, request_properties, internal_resources, deployment_location)
-        mock_service_driver.execute_lifecycle.assert_called_once_with(lifecycle_name, mock_script_tree, self.__propvaluemap(system_properties), self.__propvaluemap(resource_properties), self.__propvaluemap(request_properties), InternalResources.from_list(internal_resources), deployment_location)
+        mock_service_driver.execute_lifecycle.assert_called_once_with(lifecycle_name, mock_script_tree, self.__propvaluemap(system_properties), self.__propvaluemap(resource_properties), self.__propvaluemap(request_properties), AssociatedTopology.from_list(internal_resources), deployment_location)
         self.assertEqual(result, execute_response)
 
     def test_execute_uses_file_manager(self):
@@ -337,7 +337,7 @@ class TestResourceDriverService(unittest.TestCase):
         deployment_location = {'name': 'TestDl'}
         result = service.execute_lifecycle(lifecycle_name, driver_files, system_properties, resource_properties, request_properties, internal_resources, deployment_location)
         mock_driver_files_manager.build_tree.assert_called_once_with(ANY, driver_files)
-        mock_service_driver.execute_lifecycle.assert_called_once_with(lifecycle_name, mock_script_tree, self.__propvaluemap(system_properties), self.__propvaluemap(resource_properties), self.__propvaluemap(request_properties), InternalResources.from_list(internal_resources), deployment_location)
+        mock_service_driver.execute_lifecycle.assert_called_once_with(lifecycle_name, mock_script_tree, self.__propvaluemap(system_properties), self.__propvaluemap(resource_properties), self.__propvaluemap(request_properties), AssociatedTopology.from_list(internal_resources), deployment_location)
         self.assertEqual(result, execute_response)
 
     def test_execute_uses_monitor_when_async_enabled(self):
@@ -526,7 +526,7 @@ class TestLifecycleMessagingService(unittest.TestCase):
         self.assertIsInstance(envelope_arg, Envelope)
         self.assertEqual(envelope_arg.address, self.mock_topics_configuration.lifecycle_execution_events.name)
         self.assertIsInstance(envelope_arg.message, Message)
-        self.assertEqual(envelope_arg.message.content, b'{"requestId": "req123", "status": "FAILED", "failureDetails": {"failureCode": "INTERNAL_ERROR", "description": "because it was meant to fail"}, "outputs": {}, "internalResources": []}')
+        self.assertEqual(envelope_arg.message.content, b'{"requestId": "req123", "status": "FAILED", "failureDetails": {"failureCode": "INTERNAL_ERROR", "description": "because it was meant to fail"}, "outputs": {}, "associatedTopology": []}')
     
     def test_send_lifecycle_execution_throws_error_when_task_is_none(self):
         messaging_service = LifecycleMessagingService(postal_service=self.mock_postal_service, topics_configuration=self.mock_topics_configuration)

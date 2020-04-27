@@ -1,7 +1,7 @@
 import unittest
-from ignition.model.internal_resources import InternalResourceEntry, InternalResources
+from ignition.model.associated_topology import AssociatedTopologyEntry, AssociatedTopology
 
-class TestInternalResourceEntry(unittest.TestCase):
+class TestAssociatedTopologyEntry(unittest.TestCase):
     
     def test_from_dict(self):
         data = {
@@ -9,13 +9,13 @@ class TestInternalResourceEntry(unittest.TestCase):
             'name': 'Test',
             'type': 'Testing'
         }
-        entry = InternalResourceEntry.from_dict(data)
+        entry = AssociatedTopologyEntry.from_dict(data)
         self.assertEqual(entry.identifier, '123')
         self.assertEqual(entry.name, 'Test')
-        self.assertEqual(entry.internal_type, 'Testing')
+        self.assertEqual(entry.element_type, 'Testing')
     
     def test_to_dict(self):
-        entry = InternalResourceEntry('123', 'Test', 'Testing')
+        entry = AssociatedTopologyEntry('123', 'Test', 'Testing')
         result = entry.to_dict()
         self.assertEqual(result, {
             'id': '123',
@@ -23,7 +23,7 @@ class TestInternalResourceEntry(unittest.TestCase):
             'type': 'Testing'
         })
 
-class TestInternalResources(unittest.TestCase):
+class TestAssociatedTopology(unittest.TestCase):
 
     def test_from_list(self):
         data = [
@@ -38,20 +38,20 @@ class TestInternalResources(unittest.TestCase):
                 'type': 'VimB'
             }
         ]
-        resources = InternalResources.from_list(data)
+        resources = AssociatedTopology.from_list(data)
         resource_A = resources.get_by_id('A')
         self.assertIsNotNone(resource_A)
         self.assertEqual(resource_A.name, 'TestA')
-        self.assertEqual(resource_A.internal_type, 'VimA')
+        self.assertEqual(resource_A.element_type, 'VimA')
         resource_B = resources.get_by_id('B')
         self.assertIsNotNone(resource_B)
         self.assertEqual(resource_B.name, 'TestB')
-        self.assertEqual(resource_B.internal_type, 'VimB')
+        self.assertEqual(resource_B.element_type, 'VimB')
 
     def test_to_list(self):
-        resource_A = InternalResourceEntry('A', 'TestA', 'VimA')
-        resource_B = InternalResourceEntry('B', 'TestB', 'VimB')
-        resources = InternalResources([resource_A, resource_B])
+        resource_A = AssociatedTopologyEntry('A', 'TestA', 'VimA')
+        resource_B = AssociatedTopologyEntry('B', 'TestB', 'VimB')
+        resources = AssociatedTopology([resource_A, resource_B])
         result = resources.to_list()
         self.assertEqual(result, [
             {

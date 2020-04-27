@@ -14,9 +14,9 @@ def lifecycle_execute_response_dict(execute_response):
         'requestId': execute_response.request_id
     }
     if execute_response.internal_resources is not None:
-        message['internalResources'] = execute_response.internal_resources.to_list()
+        message['associatedTopology'] = execute_response.internal_resources.to_list()
     else:
-        message['internalResources'] = []
+        message['associatedTopology'] = []
     return message
 
 class LifecycleExecution():
@@ -46,7 +46,7 @@ def lifecycle_execution_dict(lifecycle_execution):
     else:
         message['outputs'] = {}
     if lifecycle_execution.internal_resources is not None:
-        message['internalResources'] = lifecycle_execution.internal_resources.to_list()
+        message['associatedTopology'] = lifecycle_execution.internal_resources.to_list()
     else:
-        message['internalResources'] = []
+        message['associatedTopology'] = []
     return message
