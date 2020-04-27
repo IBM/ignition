@@ -110,7 +110,7 @@ class TestLifecycleRequestQueueService(unittest.TestCase):
             },
             "request_properties": {
             },
-            "internal_resources": [],
+            "associated_topology": [],
             'deployment_location': {
                 "name": "dl1",
                 "type": "Openstack",
@@ -139,7 +139,7 @@ class TestLifecycleRequestQueueService(unittest.TestCase):
             },
             "request_properties": {
             },
-            "internal_resources": [],
+            "associated_topology": [],
             'deployment_location': {
                 "name": "dl1",
                 "type": "Openstack",
@@ -221,7 +221,7 @@ class TestLifecycleRequestQueueService(unittest.TestCase):
                            "value": "testing"
                        }
                    },
-                   "internal_resources": [],
+                   "associated_topology": [],
                    "deployment_location": {
                       "resourceManager": "brent",
                       "name": "core1",
@@ -260,7 +260,7 @@ class TestLifecycleRequestQueueService(unittest.TestCase):
            },
            "request_properties": {
            },
-           "internal_resources": [],
+           "associated_topology": [],
            "deployment_location": {
            }
         }
@@ -294,7 +294,7 @@ class TestLifecycleRequestQueueService(unittest.TestCase):
            },
            "request_properties": {
            },
-           "internal_resources": [],
+           "associated_topology": [],
            "deployment_location": {
            }
         }
@@ -330,7 +330,7 @@ class TestLifecycleRequestQueueService(unittest.TestCase):
            },
            "request_properties": {
            },
-           "internal_resources": [],
+           "associated_topology": [],
            "deployment_location": {
            }
         }
@@ -366,7 +366,7 @@ class TestLifecycleRequestQueueService(unittest.TestCase):
            },
            "resource_properties": {
            },
-           "internal_resources": [],
+           "associated_topology": [],
            "request_properties": {
            }
         }
@@ -401,7 +401,7 @@ class TestLifecycleRequestQueueService(unittest.TestCase):
            },
            "resource_properties": {
            },
-           "internal_resources": [],
+           "associated_topology": [],
            "deployment_location": {
            }
         }
@@ -436,7 +436,7 @@ class TestLifecycleRequestQueueService(unittest.TestCase):
            },
            "request_properties": {
            },
-           "internal_resources": [],
+           "associated_topology": [],
            "deployment_location": {
            }
         }
@@ -471,7 +471,7 @@ class TestLifecycleRequestQueueService(unittest.TestCase):
            },
            "request_properties": {
            },
-           "internal_resources": [],
+           "associated_topology": [],
            "deployment_location": {
            }
         }
@@ -491,7 +491,7 @@ class TestLifecycleRequestQueueService(unittest.TestCase):
             'Lifecycle request for partition 0 offset 0 is missing system_properties.'), {}))
         self.assert_request_failed_not_posted(request)
 
-    def test_lifecycle_requestqueue_process_missing_internal_resources(self):
+    def test_lifecycle_requestqueue_process_missing_associated_topology(self):
         mock_kafka_lifecycle_consumer = MagicMock()
         mock_kafka_lifecycle_consumer_factory = MagicMock()
         mock_kafka_lifecycle_consumer_factory.create_consumer.return_value = mock_kafka_lifecycle_consumer
@@ -524,5 +524,5 @@ class TestLifecycleRequestQueueService(unittest.TestCase):
         request_handler.handle_request.assert_not_called()
         mock_kafka_lifecycle_consumer.commit.assert_called_once()
         self.assert_lifecycle_execution_response_posted(LifecycleExecution('123', STATUS_FAILED, FailureDetails(FAILURE_CODE_INTERNAL_ERROR,
-            'Lifecycle request for partition 0 offset 0 is missing internal_resources.'), {}))
+            'Lifecycle request for partition 0 offset 0 is missing associated_topology.'), {}))
         self.assert_request_failed_not_posted(request)

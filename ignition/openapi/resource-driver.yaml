@@ -302,7 +302,7 @@ components:
         driverFiles:
         requestProperties: {}
         associatedTopology:
-          - type: Openstack.Stack
+          - type: Openstack
             name: CreatedStack
             value: 1ebc1231-3580-4044-a3e6-3ad745099c1e
         systemProperties:
@@ -322,7 +322,7 @@ components:
       value:
         requestId: 2b84e4da-663c-41a5-a637-8695fcec314f
         associatedTopology:
-          - type: Openstack.Stack
+          - type: Openstack
             name: CreatedStack
             value: 1ebc1231-3580-4044-a3e6-3ad745099c1e
     ExampleLifecycleExecutionAsyncResponse:

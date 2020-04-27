@@ -178,8 +178,8 @@ class KafkaLifecycleRequestQueueHandler(KafkaRequestQueueHandler):
                 logger.warning(msg)
                 self.messaging_service.send_lifecycle_execution(LifecycleExecution(request_id, STATUS_FAILED, FailureDetails(FAILURE_CODE_INTERNAL_ERROR, msg), {}))
                 return
-            if 'internal_resources' not in request_as_dict or request_as_dict['internal_resources'] is None:
-                msg = 'Lifecycle request for partition {0} offset {1} is missing internal_resources.'.format(partition, offset)
+            if 'associated_topology' not in request_as_dict or request_as_dict['associated_topology'] is None:
+                msg = 'Lifecycle request for partition {0} offset {1} is missing associated_topology.'.format(partition, offset)
                 logger.warning(msg)
                 self.messaging_service.send_lifecycle_execution(LifecycleExecution(request_id, STATUS_FAILED, FailureDetails(FAILURE_CODE_INTERNAL_ERROR, msg), {}))
                 return
@@ -194,7 +194,7 @@ class KafkaLifecycleRequestQueueHandler(KafkaRequestQueueHandler):
             request_as_dict['resource_properties'] = PropValueMap(request_as_dict['resource_properties'])
             request_as_dict['system_properties'] = PropValueMap(request_as_dict['system_properties'])
             request_as_dict['request_properties'] = PropValueMap(request_as_dict['request_properties'])
-            request_as_dict['internal_resources'] = AssociatedTopology.from_list(request_as_dict['internal_resources'])
+            request_as_dict['associated_topology'] = AssociatedTopology.from_list(request_as_dict['associated_topology'])
 
             self.lifecycle_request_handler.handle_request(request_as_dict)
         except Exception as e:

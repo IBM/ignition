@@ -162,7 +162,7 @@ class TestResourceDriverApiService(unittest.TestCase):
         self.assertEqual(code, 202)
 
     @patch('ignition.service.resourcedriver.logging_context')
-    def test_execute_missing_internal_resources(self, logging_context):
+    def test_execute_missing_associated_topology(self, logging_context):
         mock_service = MagicMock()
         mock_service.execute_lifecycle.return_value = LifecycleExecuteResponse('123')
         controller = ResourceDriverApiService(service=mock_service)
@@ -278,9 +278,9 @@ class TestResourceDriverService(unittest.TestCase):
         system_properties = {'resourceId': '1'}
         resource_properties = {'propA': 'valueA'}
         request_properties = {'reqPropA': 'reqValueA'}
-        internal_resources = [{'id': '123', 'name': 'Test', 'type': 'TestType'}]
+        associated_topology = [{'id': '123', 'name': 'Test', 'type': 'TestType'}]
         deployment_location = {'name': 'TestDl'}
-        result = service.execute_lifecycle(lifecycle_name, driver_files, system_properties, resource_properties, request_properties, internal_resources, deployment_location)
+        result = service.execute_lifecycle(lifecycle_name, driver_files, system_properties, resource_properties, request_properties, associated_topology, deployment_location)
         self.assertIsNotNone(result.request_id)
         mock_service_driver.execute_lifecycle.assert_not_called()
         mock_request_queue.queue_lifecycle_request.assert_called_once()
@@ -293,7 +293,7 @@ class TestResourceDriverService(unittest.TestCase):
             'resource_properties': resource_properties,
             'system_properties': system_properties,
             'request_properties': request_properties,
-            'internal_resources': internal_resources,
+            'associated_topology': associated_topology,
             'deployment_location': deployment_location
         })
 
@@ -312,10 +312,10 @@ class TestResourceDriverService(unittest.TestCase):
         system_properties = self.__propvaluemap({'resourceId': '999'})
         resource_properties = self.__propvaluemap({'a': 1})
         request_properties = self.__propvaluemap({'reqPropA': 'reqValueA'})
-        internal_resources = [{'id': '123', 'name': 'Test', 'type': 'TestType'}]
+        associated_topology = [{'id': '123', 'name': 'Test', 'type': 'TestType'}]
         deployment_location = {'name': 'TestDl'}
-        result = service.execute_lifecycle(lifecycle_name, driver_files, system_properties, resource_properties, request_properties, internal_resources, deployment_location)
-        mock_service_driver.execute_lifecycle.assert_called_once_with(lifecycle_name, mock_script_tree, self.__propvaluemap(system_properties), self.__propvaluemap(resource_properties), self.__propvaluemap(request_properties), AssociatedTopology.from_list(internal_resources), deployment_location)
+        result = service.execute_lifecycle(lifecycle_name, driver_files, system_properties, resource_properties, request_properties, associated_topology, deployment_location)
+        mock_service_driver.execute_lifecycle.assert_called_once_with(lifecycle_name, mock_script_tree, self.__propvaluemap(system_properties), self.__propvaluemap(resource_properties), self.__propvaluemap(request_properties), AssociatedTopology.from_list(associated_topology), deployment_location)
         self.assertEqual(result, execute_response)
 
     def test_execute_uses_file_manager(self):
@@ -333,11 +333,11 @@ class TestResourceDriverService(unittest.TestCase):
         system_properties = {'resourceId': '999'}
         resource_properties = {'a': 1}
         request_properties = {'reqPropA': 'reqValueA'}
-        internal_resources = [{'id': '123', 'name': 'Test', 'type': 'TestType'}]
+        associated_topology = [{'id': '123', 'name': 'Test', 'type': 'TestType'}]
         deployment_location = {'name': 'TestDl'}
-        result = service.execute_lifecycle(lifecycle_name, driver_files, system_properties, resource_properties, request_properties, internal_resources, deployment_location)
+        result = service.execute_lifecycle(lifecycle_name, driver_files, system_properties, resource_properties, request_properties, associated_topology, deployment_location)
         mock_driver_files_manager.build_tree.assert_called_once_with(ANY, driver_files)
-        mock_service_driver.execute_lifecycle.assert_called_once_with(lifecycle_name, mock_script_tree, self.__propvaluemap(system_properties), self.__propvaluemap(resource_properties), self.__propvaluemap(request_properties), AssociatedTopology.from_list(internal_resources), deployment_location)
+        mock_service_driver.execute_lifecycle.assert_called_once_with(lifecycle_name, mock_script_tree, self.__propvaluemap(system_properties), self.__propvaluemap(resource_properties), self.__propvaluemap(request_properties), AssociatedTopology.from_list(associated_topology), deployment_location)
         self.assertEqual(result, execute_response)
 
     def test_execute_uses_monitor_when_async_enabled(self):
@@ -357,9 +357,9 @@ class TestResourceDriverService(unittest.TestCase):
         system_properties = {'resourceId': '999'}
         resource_properties = {'a': 1}
         request_properties = {'reqPropA': 'reqValueA'}
-        internal_resources = [{'id': '123', 'name': 'Test', 'type': 'TestType'}]
+        associated_topology = [{'id': '123', 'name': 'Test', 'type': 'TestType'}]
         deployment_location = {'name': 'TestDl'}
-        result = service.execute_lifecycle(lifecycle_name, driver_files, system_properties, resource_properties, request_properties, internal_resources, deployment_location)
+        result = service.execute_lifecycle(lifecycle_name, driver_files, system_properties, resource_properties, request_properties, associated_topology, deployment_location)
         mock_lifecycle_monitor_service.monitor_execution.assert_called_once_with('123', deployment_location)
 
 class TestLifecycleExecutionMonitoringService(unittest.TestCase):

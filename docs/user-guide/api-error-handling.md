@@ -40,7 +40,7 @@ class ValidationResult:
 
 class ResourceDriverHandler(Service, ResourceDriverHandlerCapability):
 
-    def execute_lifecycle(self, lifecycle_name, driver_files, system_properties, resource_properties, request_properties, internal_resources, deployment_location):
+    def execute_lifecycle(self, lifecycle_name, driver_files, system_properties, resource_properties, request_properties, associated_topology, deployment_location):
         if not driver_files.has_file('expected_template.yaml'):
             raise MissingFileError('Missing an expected file')
         ...
@@ -88,7 +88,7 @@ from datetime import datetime
 
 class ResourceDriverHandler(Service, ResourceDriverHandlerCapability):
 
-    def execute_lifecycle(self, lifecycle_name, driver_files, system_properties, resource_properties, request_properties, internal_resources, deployment_location):
+    def execute_lifecycle(self, lifecycle_name, driver_files, system_properties, resource_properties, request_properties, associated_topology, deployment_location):
         if not driver_files.has_file('expected_template.yaml'):x
             raise MyException('This is not valid', 'serverA', 'time is {0}'.format(datetime.now().strftime('%d/%m/%Y %H:%M:%S')))
         ...

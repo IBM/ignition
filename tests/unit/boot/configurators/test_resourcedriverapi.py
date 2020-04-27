@@ -111,7 +111,7 @@ class TestResourceDriverServicesConfigurator(ConfiguratorTestCase):
 
     class DummyDriver(Service, ResourceDriverHandlerCapability):
 
-        def execute_lifecycle(self, lifecycle_name, driver_files, system_properties, resource_properties, request_properties, internal_resources, deployment_location):
+        def execute_lifecycle(self, lifecycle_name, driver_files, system_properties, resource_properties, request_properties, associated_topology, deployment_location):
             pass
 
         def get_lifecycle_execution(self, request_id, deployment_location):

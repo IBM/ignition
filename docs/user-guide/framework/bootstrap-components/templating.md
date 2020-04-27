@@ -46,7 +46,7 @@ class ResourceDriverHandler(Service, ResourceDriverHandlerCapability):
         # ResourceTemplateContextService
         self.resource_context_service = resource_context_service
 
-    def execute_lifecycle(self, lifecycle_name, driver_files, system_properties, resource_properties, request_properties, internal_resources, deployment_location):
+    def execute_lifecycle(self, lifecycle_name, driver_files, system_properties, resource_properties, request_properties, associated_topology, deployment_location):
         # Build context based on inputs
         context = self.resource_context_service.build(system_properties, properties, deployment_location)
         # Render the template
