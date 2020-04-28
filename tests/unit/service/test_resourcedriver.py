@@ -4,6 +4,7 @@ from ignition.api.exceptions import BadRequest
 from ignition.service.resourcedriver import (ResourceDriverApiService, ResourceDriverService, LifecycleExecutionMonitoringService, LifecycleMessagingService, 
                         DriverFilesManagerService, TemporaryResourceDriverError, RequestNotFoundError)
 from ignition.model.lifecycle import LifecycleExecuteResponse, LifecycleExecution
+from ignition.model.references import FindReferenceResponse
 from ignition.model.failure import FailureDetails, FAILURE_CODE_INTERNAL_ERROR
 from ignition.model.associated_topology import AssociatedTopology
 from ignition.service.messaging import Envelope, Message, TopicConfigProperties
@@ -376,7 +377,7 @@ class TestResourceDriverService(unittest.TestCase):
         driver_files = b'123'
         deployment_location = {'name': 'TestDl'}
         result = service.find_reference('Test', driver_files, deployment_location)
-        mock_service_driver.find_reference.assert_called_once_with('Test', mock_script_tree, sroperties), deployment_location)
+        mock_service_driver.find_reference.assert_called_once_with('Test', mock_script_tree, deployment_location)
         self.assertEqual(result, find_response)
 
     def test_find_uses_file_manager(self):
@@ -394,7 +395,7 @@ class TestResourceDriverService(unittest.TestCase):
         deployment_location = {'name': 'TestDl'}
         result = service.find_reference('Test', driver_files, deployment_location)
         mock_driver_files_manager.build_tree.assert_called_once_with(ANY, driver_files)
-        mock_service_driver.find_reference.assert_called_once_with('Test', mock_script_tree, sroperties), deployment_location)
+        mock_service_driver.find_reference.assert_called_once_with('Test', mock_script_tree, deployment_location)
 
 class TestLifecycleExecutionMonitoringService(unittest.TestCase):
 

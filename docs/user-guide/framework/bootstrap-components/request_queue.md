@@ -18,7 +18,7 @@ The following request queue services are auto-configured when enabled:
 
 | Name                     | Capability         | Required Capabilities             | Bootstrap Enable/Disable flag       | Topic Name   | Failed Request Topic Name |Description                                                                                                                                     |
 | ------------------------ | ------------------ | --------------------------------- | ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| KafkaLifecycleRequestQueueService | LifecycleRequestQueueCapability | LifecycleMessagingCapability, MessagingProperties, ResourceDriverProperties, PostalCapability, DriverFilesManagerCapability, LifecycleConsumerFactoryCapability | lifecycle.request_queue.enabled | `[Driver Name]_lifecycle_request_queue` | `[Driver Name]_lifecycle_request_failed_queue` | Handles placing Execute Lifecycle API requests on the queue and handles reading requests from the queue |
+| KafkaLifecycleRequestQueueService | LifecycleRequestQueueCapability | LifecycleMessagingCapability, MessagingProperties, ResourceDriverProperties, PostalCapability, DriverFilesManagerCapability, LifecycleConsumerFactoryCapability | request_queue.enabled | `[Driver Name]_lifecycle_request_queue` | `[Driver Name]_lifecycle_request_failed_queue` | Handles placing Execute Lifecycle API requests on the queue and handles reading requests from the queue |
 
 ## Configuration Properties
 

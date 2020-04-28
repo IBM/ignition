@@ -6,13 +6,16 @@ logger = logging.getLogger(__name__)
 
 class FindReferenceRequest:
 
-    def __init__(self, resource_state, instance_name, driver_endpoint, quiet=False):
+    def __init__(self, resource_state, instance_name, driver_type, driver_endpoint, quiet=False):
         if resource_state is None:
             raise ValueError('resource_state must be provided')
         self.resource_state = resource_state
         if instance_name is None:
             raise ValueError('instance_name must be provided')
         self.instance_name = instance_name
+        if driver_type is None:
+            raise ValueError('driver_type must be provided')
+        self.driver_type = driver_type
         if driver_endpoint is None:
             raise ValueError('driver_endpoint must be provided')
         self.driver_endpoint = driver_endpoint
@@ -21,7 +24,7 @@ class FindReferenceRequest:
     def _get_request_args(self):
         return {
             'instance_name': self.instance_name,
-            'driver_files': self.resource_state.base64_driver_files,
+            'driver_files': self.resource_state.base64_driver_files(self.driver_type),
             'deployment_location': self.resource_state.deployment_location
         }
 
