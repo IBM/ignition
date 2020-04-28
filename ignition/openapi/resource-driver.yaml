@@ -313,7 +313,7 @@ components:
           resourceManagerId: brent
           deploymentLocation: TestLocation
           resourceType: resource::helloworld::1.0
-        properties:
+        resourceProperties:
           propA: valueA
           propB: valueB
         deploymentLocation:

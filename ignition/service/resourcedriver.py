@@ -277,7 +277,7 @@ class ResourceDriverService(Service, ResourceDriverServiceCapability):
     def find_reference(self, instance_name, driver_files, deployment_location):
         file_name = '{0}'.format(str(uuid.uuid4()))
         driver_files_tree = self.driver_files_manager.build_tree(file_name, driver_files)
-        find_response = self.handler.find_reference(instance_name, driver_files, deployment_location)
+        find_response = self.handler.find_reference(instance_name, driver_files_tree, deployment_location)
         return find_response
 
     def __async_lifecycle_execution_completion(self, request_id, deployment_location):

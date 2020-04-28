@@ -362,6 +362,40 @@ class TestResourceDriverService(unittest.TestCase):
         result = service.execute_lifecycle(lifecycle_name, driver_files, system_properties, resource_properties, request_properties, associated_topology, deployment_location)
         mock_lifecycle_monitor_service.monitor_execution.assert_called_once_with('123', deployment_location)
 
+    def test_find_uses_driver_handler(self):
+        mock_service_driver = MagicMock()
+        find_response = FindReferenceResponse()
+        mock_service_driver.find_reference.return_value = find_response
+        mock_driver_files_manager = MagicMock()
+        mock_script_tree = MagicMock()
+        mock_driver_files_manager.build_tree.return_value = mock_script_tree
+        mock_resource_driver_config = MagicMock()
+        mock_resource_driver_config.lifecycle_request_queue.enabled = False
+        service = ResourceDriverService(handler=mock_service_driver, resource_driver_config=mock_resource_driver_config, driver_files_manager=mock_driver_files_manager)
+        lifecycle_name = 'start'
+        driver_files = b'123'
+        deployment_location = {'name': 'TestDl'}
+        result = service.find_reference('Test', driver_files, deployment_location)
+        mock_service_driver.find_reference.assert_called_once_with('Test', mock_script_tree, sroperties), deployment_location)
+        self.assertEqual(result, find_response)
+
+    def test_find_uses_file_manager(self):
+        mock_service_driver = MagicMock()
+        find_response = FindReferenceResponse()
+        mock_service_driver.find_reference.return_value = find_response
+        mock_driver_files_manager = MagicMock()
+        mock_script_tree = MagicMock()
+        mock_driver_files_manager.build_tree.return_value = mock_script_tree
+        mock_resource_driver_config = MagicMock()
+        mock_resource_driver_config.lifecycle_request_queue.enabled = False
+        service = ResourceDriverService(handler=mock_service_driver, resource_driver_config=mock_resource_driver_config, driver_files_manager=mock_driver_files_manager)
+        lifecycle_name = 'start'
+        driver_files = b'123'
+        deployment_location = {'name': 'TestDl'}
+        result = service.find_reference('Test', driver_files, deployment_location)
+        mock_driver_files_manager.build_tree.assert_called_once_with(ANY, driver_files)
+        mock_service_driver.find_reference.assert_called_once_with('Test', mock_script_tree, sroperties), deployment_location)
+
 class TestLifecycleExecutionMonitoringService(unittest.TestCase):
 
     def setUp(self):
