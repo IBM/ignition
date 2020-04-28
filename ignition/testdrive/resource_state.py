@@ -2,18 +2,24 @@ import os
 import tempfile
 import shutil
 import base64
+import logging
 import uuid
 import yaml
 import random
 from ignition.utils.propvaluemap import PropValueMap
 from ignition.model.associated_topology import AssociatedTopology
 
+logger = logging.getLogger(__name__)
+
 class ResourceState:
 
-    def __init__(self, driver_files=None, deployment_location=None, system_properties=None, resource_properties=None, associated_topology=None, 
+    def __init__(self, driver_files=None, driver_files_dir=None, deployment_location=None, system_properties=None, resource_properties=None, associated_topology=None, 
     driver_files_encoded=False, disable_auto_system_properties=False):
+        if driver_files is not None and driver_files_dir is not None:
+            raise ValueError('Cannot set both driver_files and driver_files_dir')
         self.driver_files = driver_files
         self.driver_files_encoded = driver_files_encoded
+        self.driver_files_dir = driver_files_dir
         self.deployment_location = deployment_location if deployment_location is not None else {}
         self.system_properties = system_properties if system_properties is not None else {}
         self.resource_properties = resource_properties if resource_properties is not None else {}
@@ -41,39 +47,45 @@ class ResourceState:
                 resource_name_and_type = generate_resource_name_and_type()
             self.system_properties['resourceType'] = {'type': 'string', 'value': resource_name_and_type[1]}
 
-    @property
-    def base64_driver_files(self):
-        return self._get_driver_files_base64()
-
-    def _get_driver_files_base64(self):
-        if self.driver_files is None:
-            return None
-        elif self.driver_files_encoded:
-            return self.driver_files
+    def base64_driver_files(self, driver_type):
+        if self.driver_files is not None:
+            if self.driver_files_encoded:
+                logger.info('driver_files_encoded is True - using raw value of driver_files')
+                return self.driver_files
+            else:
+                logger.info('driver_files is set - encoding value')
+                return self._get_driver_files_base64(self.driver_files)
+        elif self.driver_files_dir is not None and driver_type is not None:
+            logger.info(f'driver_files_dir is set - encoding directory for driver type {driver_type}')
+            driver_files_path = os.path.join(self.driver_files_dir, driver_type)
+            return self._get_driver_files_base64(driver_files_path) 
         else:
-            tmp_dir = None
-            try:
-                file_to_encode = None
-                if os.path.exists(self.driver_files):
-                    if os.path.isdir(self.driver_files):
-                        tmp_dir = tempfile.mkdtemp()
-                        zip_name = os.path.join(tmp_dir, 'driver_files')
-                        file_to_encode = shutil.make_archive(zip_name, 'zip', self.driver_files)
-                    else:
-                        file_to_encode = self.driver_files
-                if file_to_encode is None:
-                    raise ValueError(f'driver_files_encoded is False but driver_files does not appear to be a path to a valid ZIP or directory (path: {self.driver_files})')
+            return None
+
+    def _get_driver_files_base64(self, driver_files):
+        tmp_dir = None
+        try:
+            file_to_encode = None
+            if os.path.exists(driver_files):
+                if os.path.isdir(driver_files):
+                    tmp_dir = tempfile.mkdtemp()
+                    zip_name = os.path.join(tmp_dir, 'driver_files')
+                    file_to_encode = shutil.make_archive(zip_name, 'zip', driver_files)
                 else:
-                    with open(file_to_encode, 'rb') as f:
-                        return base64.b64encode(f.read()).decode('utf-8')
-            finally:
-                if tmp_dir is not None and os.path.exists(tmp_dir):
-                    shutil.rmtree(tmp_dir)
+                    file_to_encode = self.driver_files
+            else:
+                raise ValueError(f'Could not find driver_files at path {driver_files}')
+            with open(file_to_encode, 'rb') as f:
+                return base64.b64encode(f.read()).decode('utf-8')
+        finally:
+            if tmp_dir is not None and os.path.exists(tmp_dir):
+                shutil.rmtree(tmp_dir)
 
     @staticmethod
     def from_dict(data):
         return ResourceState(
             driver_files=data.get('driverFiles'),
+            driver_files_dir=data.get('driverFilesDir'),
             system_properties=data.get('systemProperties'),
             resource_properties=data.get('resourceProperties'),
             associated_topology=data.get('associatedTopology'),

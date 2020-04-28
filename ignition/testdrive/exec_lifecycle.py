@@ -14,13 +14,16 @@ logging.getLogger('kafka').setLevel(logging.WARNING)
 
 class ExecLifecycleRequest:
 
-    def __init__(self, resource_state, lifecycle_name, driver_endpoint, wait_async, request_properties=None, kafka_endpoint=None, topic='lm_vnfc_lifecycle_execution_events', async_timeout=900, quiet=False):
+    def __init__(self, resource_state, lifecycle_name, driver_type, driver_endpoint, wait_async, request_properties=None, kafka_endpoint=None, topic='lm_vnfc_lifecycle_execution_events', async_timeout=900, quiet=False):
         if resource_state is None:
             raise ValueError('resource_state must be provided')
         self.resource_state = resource_state
         if lifecycle_name is None:
             raise ValueError('lifecycle_name must be provided')
         self.lifecycle_name = lifecycle_name
+        if driver_type is None:
+            raise ValueError('driver_type must be provided')
+        self.driver_type = driver_type
         if driver_endpoint is None:
             raise ValueError('driver_endpoint must be provided')
         self.driver_endpoint = driver_endpoint
@@ -59,7 +62,7 @@ class ExecLifecycleRequest:
     def _get_request_args(self):
         return {
             'lifecycle_name': self.lifecycle_name,
-            'driver_files': self.resource_state.base64_driver_files,
+            'driver_files': self.resource_state.base64_driver_files(self.driver_type),
             'system_properties': self.resource_state.system_properties,
             'resource_properties': self.resource_state.resource_properties,
             'request_properties': self.request_properties,

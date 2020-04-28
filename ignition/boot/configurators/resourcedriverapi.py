@@ -89,7 +89,7 @@ class ResourceDriverServicesConfigurator():
             required_capabilities['driver_files_manager'] = DriverFilesManagerCapability
 
             if resource_driver_config.lifecycle_request_queue.enabled is True:
-                required_capabilities['request_queue'] = LifecycleRequestQueueCapability
+                required_capabilities['lifecycle_request_queue'] = LifecycleRequestQueueCapability
 
             service_register.add_service(ServiceRegistration(ResourceDriverService, **required_capabilities))
         else:
