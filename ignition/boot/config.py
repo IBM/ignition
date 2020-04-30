@@ -13,6 +13,13 @@ class BootProperties(ConfigurationPropertiesGroup):
         self.management = BootManagementProperties()
         self.request_queue = BootRequestQueueProperties()
         self.templating = BootTemplatingProperties()
+        self.movedapis = BootMovedApisProperties()
+
+class BootMovedApisProperties(ConfigurationProperties):
+    
+    def __init__(self):
+        self.infrastructure_enabled = False
+        self.lifecycle_enabled = False
 
 class BootManagementProperties(ConfigurationProperties):
 

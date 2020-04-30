@@ -1,0 +1,8 @@
+openapi: 3.0.0
+info:
+  description: This API is no longer supported, see the new API at /api/driver/ui 
+  version: "1.0.0"
+  title: Infrastructure API (Moved)
+servers:
+  - url: /api/infrastructure
+paths: {}
