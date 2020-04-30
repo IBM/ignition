@@ -8,14 +8,17 @@ from ignition.boot.configurators.messaging import MessagingConfigurator
 from ignition.boot.configurators.jobqueue import JobQueueConfigurator
 from ignition.boot.configurators.requestqueue import RequestQueueConfigurator
 from ignition.boot.configurators.management import ManagmentServicesConfigurator, ManagementApiConfigurator
+from ignition.boot.configurators.movedapis import MovedApisConfigurator
+from ignition.boot.configurators.templating import TemplatingConfigurator
 from ignition.service.resourcedriver import ResourceDriverProperties, LifecycleRequestQueueProperties
 from ignition.service.messaging import MessagingProperties, TopicCreator
 from ignition.service.queue import JobQueueProperties
 from ignition.service.management import ManagementProperties
 from jsonschema import ValidationError
 
-SERVICE_CONFIGURATORS = [RequestQueueConfigurator(TopicCreator()), ResourceDriverServicesConfigurator(), MessagingConfigurator(), JobQueueConfigurator(), ManagmentServicesConfigurator()]
-API_CONFIGURATORS = [ResourceDriverApiConfigurator(), ManagementApiConfigurator()]
+SERVICE_CONFIGURATORS = [RequestQueueConfigurator(TopicCreator()), ResourceDriverServicesConfigurator(), \
+    MessagingConfigurator(), JobQueueConfigurator(), ManagmentServicesConfigurator(), TemplatingConfigurator()]
+API_CONFIGURATORS = [ResourceDriverApiConfigurator(), ManagementApiConfigurator(), MovedApisConfigurator()]
 MANDATORY_PROPERTY_GROUPS = [ApplicationProperties, ApiProperties]
 ADDITIONAL_PROPERTY_GROUPS = [BootProperties, ResourceDriverProperties, MessagingProperties, JobQueueProperties, ManagementProperties]
 
@@ -40,6 +43,8 @@ def configure_resource_driver(builder):
     boot_config.job_queue.service_enabled = True
     boot_config.templating.service_enabled = True
     boot_config.templating.resource_props_service_enabled = True
+    boot_config.movedapis.infrastructure_enabled = True
+    boot_config.movedapis.lifecycle_enabled = True
     return builder
 
 def build_app(app_name):
