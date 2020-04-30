@@ -201,7 +201,7 @@ class ResourceDriverApiService(Service, ResourceDriverApiCapability, BaseControl
             system_properties = self.get_body_required_field(body, 'systemProperties')
             resource_properties = self.get_body_field(body, 'resourceProperties', {})
             request_properties = self.get_body_field(body, 'requestProperties', {})
-            associated_topology = self.get_body_field(body, 'associatedTopology', [])
+            associated_topology = self.get_body_field(body, 'associatedTopology', {})
             deployment_location = self.get_body_required_field(body, 'deploymentLocation')
             execute_response = self.service.execute_lifecycle(lifecycle_name, driver_files, system_properties, resource_properties, request_properties, associated_topology, deployment_location)
             response = lifecycle_execute_response_dict(execute_response)
