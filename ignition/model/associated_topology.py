@@ -59,6 +59,9 @@ class AssociatedTopology:
             return False
         return True
 
+    def __str__(self):
+      return 'entries: {0._entries}'.format(self)
+
 class AssociatedTopologyEntry:
 
     def __init__(self, element_id, element_type):
@@ -95,3 +98,6 @@ class AssociatedTopologyEntry:
         if self.element_type != other.element_type:
             return False
         return True
+
+    def __str__(self):
+      return 'entry: {0.element_id} {0.element_type}'.format(self)
