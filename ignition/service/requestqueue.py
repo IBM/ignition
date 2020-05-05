@@ -16,6 +16,8 @@ import sys
 logger = logging.getLogger(__name__)
 
 
+MAX_POLL_INTERVAL = 2700000
+
 class InfrastructureRequestQueueCapability(Capability):
     @interface
     def queue_infrastructure_request(self, request):
@@ -24,7 +26,6 @@ class InfrastructureRequestQueueCapability(Capability):
     @interface
     def get_infrastructure_request_queue(self, name):
         pass
-
 
 class LifecycleRequestQueueCapability(Capability):
     @interface
@@ -89,7 +90,7 @@ class KafkaRequestQueueHandler():
         self.messaging_service = messaging_service
         self.postal_service = postal_service
         self.request_queue_config = request_queue_config
-        self.requests_consumer = kafka_consumer_factory.create_consumer()
+        self.requests_consumer = kafka_consumer_factory.create_consumer(request_queue_config.max_poll_interval_ms)
 
     """
     Process a single request from the request queue. If processed successfully, the Kafka topic offsets
@@ -288,7 +289,7 @@ class KafkaConsumerFactory(Service):
             raise ValueError('request_queue_config.group_id cannot be null')
         self.group_id = request_queue_config.group_id
 
-    def create_consumer(self, max_poll_interval_ms=300000):
+    def create_consumer(self, max_poll_interval_ms=MAX_POLL_INTERVAL):
         logger.debug("Creating Kafka consumer for bootstrap server {0} topic {1} group {2} max_poll_interval_ms {3}".format(self.bootstrap_servers, self.topic_name, self.group_id, max_poll_interval_ms))
         return KafkaConsumer(self.topic_name, bootstrap_servers=self.bootstrap_servers, group_id=self.group_id, enable_auto_commit=False, max_poll_interval_ms=max_poll_interval_ms)
 

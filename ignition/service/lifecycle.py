@@ -4,6 +4,7 @@ from ignition.service.api import BaseController
 from ignition.model.lifecycle import LifecycleExecution, lifecycle_execution_dict, STATUS_COMPLETE, STATUS_FAILED
 from ignition.service.messaging import Message, Envelope, JsonContent, TopicConfigProperties
 from ignition.model.lifecycle import LifecycleExecuteResponse
+from ignition.service.requestqueue import MAX_POLL_INTERVAL
 from ignition.utils.file import DirectoryTree
 from ignition.api.exceptions import ApiException
 from ignition.service.logging import logging_context
@@ -65,6 +66,7 @@ class LifecycleRequestQueueProperties(ConfigurationPropertiesGroup, Service, Cap
         super().__init__('request_queue')
         self.enabled = False
         self.group_id = "request_queue_consumer"
+        self.max_poll_interval_ms = MAX_POLL_INTERVAL
         # name intentionally not set so that it can be constructed per-driver
         self.topic = TopicConfigProperties(auto_create=True, num_partitions=20, config={'retention.ms': 60000, 'message.timestamp.difference.max.ms': 60000, 'file.delete.delay.ms': 60000})
         self.failed_topic = TopicConfigProperties(auto_create=True, num_partitions=1, config={})
