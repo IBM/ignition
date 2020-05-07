@@ -5,7 +5,7 @@ class AssociatedTopology:
     def __init__(self, entries=None):
         if entries is None:
             entries = {}
-        for name, entry in entries.items():
+        for _, entry in entries.items():
             self.__validate_entry(entry)
         self._entries = entries
 

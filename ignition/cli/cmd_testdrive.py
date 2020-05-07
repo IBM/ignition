@@ -8,21 +8,6 @@ from ignition.testdrive.resource_state import ResourceState
 
 logger = logging.getLogger(__name__)
 
-"""
-ignition testdriver execlifecycle:
-lifecycle_name
-driver_files
-system_properties
-resource_properties
-request_properties
-deployment_location
-associated_topology
----
-driver_endpoint
-kafka_connection
-wait_for_async_response
-"""
-
 @click.group(name='testdrive', help='Commands for executing test requests against a driver')
 def testdrive():
     pass

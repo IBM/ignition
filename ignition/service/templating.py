@@ -1,5 +1,5 @@
 from ignition.service.framework import Capability, Service, interface
-from ignition.templating import JinjaTemplate, ResourceContextBuilder
+from ignition.templating import JinjaTemplate, ResourceContextBuilder, Syntax
 
 class TemplatingCapability(Capability):
     """
@@ -7,13 +7,34 @@ class TemplatingCapability(Capability):
     """
 
     @interface
-    def render(self, content, context):
+    def syntax(self):
+        """
+        Describe the syntax to be used in Templates
+
+        Returns:
+            string describing the syntax to be used in Templates
+        """
+        pass
+
+    @interface
+    def build_settings(self):
+        """
+        Initiate a settings object suitable for use with this templating service
+
+        Returns:
+            a settings object. The chosen return type depends on the templating service implementation
+        """
+        pass
+
+    @interface
+    def render(self, content, context, settings=None):
         """
         Render the given content based on the given context
 
         Args:
             content (str): string contents of the template to be rendered
             context (dict): context properties that may be referenced in the template
+            settings (object): settings object used to control the templating behaviour (usually initialised from build_settings) 
 
         Returns:
             string contents of the rendering result
@@ -25,8 +46,16 @@ class Jinja2TemplatingService(Service, TemplatingCapability):
     Implementation of the TemplatingCapability based on Jinja2
     """
 
-    def render(self, content, context):
-        return JinjaTemplate(content).render(context)
+    @interface
+    def syntax(self):
+        return Syntax.JINJA2
+
+    @interface
+    def build_settings(self):
+        return JinjaTemplate.build_settings()
+
+    def render(self, content, context, settings=None):
+        return JinjaTemplate(content).render(context, settings=settings)
 
 class ResourceTemplateContextCapability(Capability):
     """
