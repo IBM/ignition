@@ -17,10 +17,10 @@ def testdrive():
 @click.option('--resource', '-r', required=True, type=click.Path(exists=True), help='Path to a file describing the resource artifacts')
 @click.option('--url', '-u', required=True, type=str, help='Endpoint of the driver e.g. http://host:port (do not add any API paths)')
 @click.option('--driver-type', '-d', required=True, type=str, help='Type of driver, used to determine the directory of driver_files to use when using driver_files_dir in your resource artifacts e.g. openstack, ansible.')
-@click.option('--wait', '-w',  is_flag=True, default=False, help='Wait for the async response of the request to appear on Kafka')
-@click.option('--max-wait', '-m', type=int, default=900, help='Time, in seconds, to wait for an async response (required if --wait-async/-w is enabled)')
-@click.option('--kafka', '-k', type=str, default='kafka:9092', help='Endpoint for connection to Kafka broker (required if --wait-async/-w is enabled)')
-@click.option('--topic', '-t', type=str, default='lm_vnfc_lifecycle_execution_events', help='Kafka topic to consume async responses (required if --wait-async/-w is enabled)')
+@click.option('--wait', '-w',  is_flag=True, default=False, help='Wait for the async response of the request to appear on Kafka [Default: False]')
+@click.option('--max-wait', '-m', type=int, default=900, help='Time, in seconds, to wait for an async response (required if --wait-async/-w is enabled) [Default: 900]')
+@click.option('--kafka', '-k', type=str, default='kafka:9092', help='Endpoint for connection to Kafka broker (required if --wait-async/-w is enabled) [Default: kafka:9092]')
+@click.option('--topic', '-t', type=str, default='lm_vnfc_lifecycle_execution_events', help='Kafka topic to consume async responses (required if --wait-async/-w is enabled) [Default: lm_vnfc_lifecycle_execution_events]')
 @click.option('--set', 'set_request_properties', nargs=2, type=click.Tuple([str,str]), multiple=True, help='Request properties passed to the driver')
 def execlifecycle(lifecycle, resource, url, driver_type, wait, max_wait, kafka, topic, set_request_properties):
     try:

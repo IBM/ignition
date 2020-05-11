@@ -198,7 +198,7 @@ class KafkaDeliveryService(Service, DeliveryCapability):
             raise ValueError('An envelope must be passed to deliver a message')
         self.__lazy_init_producer()
         content = envelope.message.content
-        logger.info('Delivering envelope to {0} with message content: {1}'.format(envelope.address, content))
+        logger.debug('Delivering envelope to {0} with message content: {1}'.format(envelope.address, content))
         if key is None:
             self.producer.send(envelope.address, content).add_callback(self.__on_send_success).add_errback(self.__on_send_error)
         else:

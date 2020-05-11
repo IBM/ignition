@@ -177,7 +177,7 @@ class TestResourceDriverApiService(unittest.TestCase):
                 'deploymentLocation': {'name': 'test'} 
             } 
         })
-        mock_service.execute_lifecycle.assert_called_once_with('Start', b'123', {'resourceId': { 'type': 'string', 'value': '1'}}, {'a': { 'type': 'string', 'value': '2'}}, {'reqA': {'type': 'string', 'value': '3'}}, [], {'name': 'test'})
+        mock_service.execute_lifecycle.assert_called_once_with('Start', b'123', {'resourceId': { 'type': 'string', 'value': '1'}}, {'a': { 'type': 'string', 'value': '2'}}, {'reqA': {'type': 'string', 'value': '3'}}, {}, {'name': 'test'})
         self.assertEqual(response, {'requestId': '123', 'associatedTopology': {}})
         self.assertEqual(code, 202)
 

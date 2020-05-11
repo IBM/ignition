@@ -46,11 +46,9 @@ class Jinja2TemplatingService(Service, TemplatingCapability):
     Implementation of the TemplatingCapability based on Jinja2
     """
 
-    @interface
     def syntax(self):
         return Syntax.JINJA2
 
-    @interface
     def build_settings(self):
         return JinjaTemplate.build_settings()
 
