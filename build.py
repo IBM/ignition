@@ -220,6 +220,7 @@ class Builder:
             repo.index.commit('Update version for development')
             origin = repo.remote('origin')
             origin.push(tags=True)
+            origin.push()
 
     def push_whl(self):
         with self.stage('Push Whl to Pypi') as s:
