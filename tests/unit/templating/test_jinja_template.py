@@ -66,8 +66,11 @@ class TestJinjaTemplate(unittest.TestCase):
             'resourceId': '123',
             'resourceName': 'Test'
         })
-        properties = PropValueMap({
+        resource_properties = PropValueMap({
             'propA': 'A Prop'
+        })
+        request_properties = PropValueMap({
+            'reqA': 'A Req Prop'
         })
         deployment_location = {
             'name': 'Test',
@@ -76,7 +79,7 @@ class TestJinjaTemplate(unittest.TestCase):
                 'dlPropA': 'A DL Prop'
             }
         }
-        builder = ResourceContextBuilder(system_properties, properties, deployment_location)
+        builder = ResourceContextBuilder(system_properties, resource_properties, request_properties, deployment_location)
         template = JinjaTemplate(template_content('resourcecontext'))
         result = template.render(builder.result)
         expected_result = expected_result_content('resourcecontext')

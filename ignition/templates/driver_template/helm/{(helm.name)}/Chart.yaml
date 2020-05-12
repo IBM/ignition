@@ -10,11 +10,4 @@ keywords:
 - Driver
 - {(app.name)}
 - {(helm.name)}
-{%- if app.is_vim == true %}
-- VIM
-- Infrastructure
-{%- endif %}
-{%- if app.is_lifecycle == true %}
-- Lifecycle
-{%- endif %}
 engine: gotpl

@@ -3,75 +3,49 @@ from ignition.boot.config import BootProperties, ApplicationProperties, ApiPrope
 from ignition.boot.app import BootstrapRunner
 from ignition.api.exceptions import ErrorResponseConverter, validation_error_handler
 from ignition.service.config import YmlFileSource, EnvironmentVariableYmlFileSource
-from ignition.boot.configurators.infrastructureapi import InfrastructureApiConfigurator, InfrastructureServicesConfigurator
-from ignition.boot.configurators.lifecycleapi import LifecycleApiConfigurator, LifecycleServicesConfigurator
+from ignition.boot.configurators.resourcedriverapi import ResourceDriverApiConfigurator, ResourceDriverServicesConfigurator
 from ignition.boot.configurators.messaging import MessagingConfigurator
 from ignition.boot.configurators.jobqueue import JobQueueConfigurator
 from ignition.boot.configurators.requestqueue import RequestQueueConfigurator
 from ignition.boot.configurators.management import ManagmentServicesConfigurator, ManagementApiConfigurator
-from ignition.service.infrastructure import InfrastructureProperties, InfrastructureRequestQueueProperties
-from ignition.service.lifecycle import LifecycleProperties, LifecycleRequestQueueProperties
+from ignition.boot.configurators.movedapis import MovedApisConfigurator
+from ignition.boot.configurators.templating import TemplatingConfigurator
+from ignition.service.resourcedriver import ResourceDriverProperties, LifecycleRequestQueueProperties
 from ignition.service.messaging import MessagingProperties, TopicCreator
 from ignition.service.queue import JobQueueProperties
 from ignition.service.management import ManagementProperties
 from jsonschema import ValidationError
 
-SERVICE_CONFIGURATORS = [RequestQueueConfigurator(TopicCreator()), InfrastructureServicesConfigurator(), LifecycleServicesConfigurator(), MessagingConfigurator(), JobQueueConfigurator(), ManagmentServicesConfigurator()]
-API_CONFIGURATORS = [InfrastructureApiConfigurator(), LifecycleApiConfigurator(), ManagementApiConfigurator()]
+SERVICE_CONFIGURATORS = [RequestQueueConfigurator(TopicCreator()), ResourceDriverServicesConfigurator(), \
+    MessagingConfigurator(), JobQueueConfigurator(), ManagmentServicesConfigurator(), TemplatingConfigurator()]
+API_CONFIGURATORS = [ResourceDriverApiConfigurator(), ManagementApiConfigurator(), MovedApisConfigurator()]
 MANDATORY_PROPERTY_GROUPS = [ApplicationProperties, ApiProperties]
-ADDITIONAL_PROPERTY_GROUPS = [BootProperties, InfrastructureProperties, LifecycleProperties, MessagingProperties, JobQueueProperties, ManagementProperties]
+ADDITIONAL_PROPERTY_GROUPS = [BootProperties, ResourceDriverProperties, MessagingProperties, JobQueueProperties, ManagementProperties]
 
 logger = logging.getLogger(__name__)
 
-def build_driver(app_name, vim=False, lifecycle=False):
+def build_resource_driver(app_name):
     builder = build_app(app_name)
-    if vim == True:
-        builder = configure_vim_driver(builder)
-    if lifecycle == True:
-        builder = configure_lifecycle_driver(builder)
+    builder = configure_resource_driver(builder)
     return builder
-    
-def build_vim_driver(app_name):
-    builder = build_app(app_name)
-    return configure_vim_driver(builder)
 
-def configure_vim_driver(builder):
+def configure_resource_driver(builder):
     boot_config = builder.property_groups.get_property_group(BootProperties)
-    boot_config.infrastructure.api_enabled = True
-    boot_config.infrastructure.api_service_enabled = True
-    boot_config.infrastructure.service_enabled = True
-    boot_config.infrastructure.monitoring_service_enabled = True
-    boot_config.infrastructure.messaging_service_enabled = True
+    boot_config.resource_driver.api_enabled = True
+    boot_config.resource_driver.api_service_enabled = True
+    boot_config.resource_driver.service_enabled = True
+    boot_config.resource_driver.lifecycle_monitoring_service_enabled = True
+    boot_config.resource_driver.lifecycle_messaging_service_enabled = True
+    boot_config.resource_driver.driver_files_manager_service_enabled = True
     boot_config.messaging.postal_enabled = True
     boot_config.messaging.delivery_enabled = True
     boot_config.messaging.inbox_enabled = True
     boot_config.job_queue.service_enabled = True
     boot_config.templating.service_enabled = True
     boot_config.templating.resource_props_service_enabled = True
+    boot_config.movedapis.infrastructure_enabled = True
+    boot_config.movedapis.lifecycle_enabled = True
     return builder
-
-def build_lifecycle_driver(app_name):
-    builder = build_app(app_name)
-    return configure_lifecycle_driver(builder)
-
-def configure_lifecycle_driver(builder):
-    boot_config = builder.property_groups.get_property_group(BootProperties)
-    boot_config.lifecycle.api_enabled = True
-    boot_config.lifecycle.api_service_enabled = True
-    boot_config.lifecycle.service_enabled = True
-    boot_config.lifecycle.monitoring_service_enabled = True
-    boot_config.lifecycle.messaging_service_enabled = True
-    boot_config.lifecycle.script_file_manager_service_enabled = True
-    boot_config.messaging.postal_enabled = True
-    boot_config.messaging.delivery_enabled = True
-    boot_config.messaging.inbox_enabled = True
-    boot_config.job_queue.service_enabled = True
-    boot_config.templating.service_enabled = True
-    boot_config.templating.resource_props_service_enabled = True
-    return builder
-
-def build_vnfc_driver(app_name):
-    return build_lifecycle_driver(app_name)
 
 def build_app(app_name):
     builder = ApplicationBuilder(app_name)

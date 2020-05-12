@@ -37,7 +37,6 @@ class MessagingProperties(ConfigurationPropertiesGroup, Service, Capability):
 class TopicsProperties(ConfigurationProperties, Service, Capability):
 
     def __init__(self):
-        self.infrastructure_task_events = TopicConfigProperties(name='lm_vim_infrastructure_task_events')
         self.lifecycle_execution_events = TopicConfigProperties(name='lm_vnfc_lifecycle_execution_events')
         # No default name set on job_queue topic as this needs to be unique per driver
         self.job_queue = TopicConfigProperties(auto_create=True, config={'retention.ms': 60000, 'message.timestamp.difference.max.ms': 60000, 'file.delete.delay.ms': 60000})
@@ -199,7 +198,7 @@ class KafkaDeliveryService(Service, DeliveryCapability):
             raise ValueError('An envelope must be passed to deliver a message')
         self.__lazy_init_producer()
         content = envelope.message.content
-        logger.info('Delivering envelope to {0} with message content: {1}'.format(envelope.address, content))
+        logger.debug('Delivering envelope to {0} with message content: {1}'.format(envelope.address, content))
         if key is None:
             self.producer.send(envelope.address, content).add_callback(self.__on_send_success).add_errback(self.__on_send_error)
         else:

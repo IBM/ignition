@@ -1,6 +1,0 @@
----
-application:
-  port: 7777
-
-messaging:
-  connection_address: kafka:9092

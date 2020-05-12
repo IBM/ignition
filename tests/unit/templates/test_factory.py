@@ -6,15 +6,14 @@ import ignition
 import ignition.templates.factory as factory
 
 EXPECTED_PRODUCTS_DIR = os.path.dirname(__file__)
-EXPECTED_VIM_DRIVER = os.path.join(EXPECTED_PRODUCTS_DIR, 'expected_vim_driver')
-EXPECTED_LIFECYCLE_DRIVER = os.path.join(EXPECTED_PRODUCTS_DIR, 'expected_lifecycle_driver')
+EXPECTED_RESOURCE_DRIVER = os.path.join(EXPECTED_PRODUCTS_DIR, 'expected_resource_driver')
 
 class TestDriverGenRequest(unittest.TestCase):
 
     def test_init(self):
-        request = factory.DriverGenRequest([factory.DRIVER_TYPE_VIM], 'Test Driver', '0.5.0', port=7777, module_name='tdriver', \
+        request = factory.DriverGenRequest([factory.DRIVER_TYPE_RESOURCE], 'Test Driver', '0.5.0', port=7777, module_name='tdriver', \
             description='unit test driver', docker_name='tddock', helm_name='tdhelm', helm_node_port='30777')
-        self.assertEqual(request.driver_types, [factory.DRIVER_TYPE_VIM])
+        self.assertEqual(request.driver_types, [factory.DRIVER_TYPE_RESOURCE])
         self.assertEqual(request.app_name, 'Test Driver')
         self.assertEqual(request.version, '0.5.0')
         self.assertEqual(request.port, 7777)
@@ -25,7 +24,7 @@ class TestDriverGenRequest(unittest.TestCase):
         self.assertEqual(request.helm_node_port, '30777')
 
     def test_defaults(self):
-        request = factory.DriverGenRequest([factory.DRIVER_TYPE_VIM], 'Test Driver', '0.5.0')
+        request = factory.DriverGenRequest([factory.DRIVER_TYPE_RESOURCE], 'Test Driver', '0.5.0')
         self.assertEqual(request.module_name, 'testdriver')
         self.assertTrue(request.port >= 7000 and request.port <= 7999)
         self.assertEqual(request.description, None)
@@ -34,21 +33,21 @@ class TestDriverGenRequest(unittest.TestCase):
         self.assertTrue(request.helm_node_port >= 30000 and request.helm_node_port <= 30999)
 
     def test_default_module_name(self):
-        request = factory.DriverGenRequest([factory.DRIVER_TYPE_VIM], 'Test-_Special !"£$%^&*()+={}[]:;@~#<>?,./¬ Chars', '0.5.0')
+        request = factory.DriverGenRequest([factory.DRIVER_TYPE_RESOURCE], 'Test-_Special !"£$%^&*()+={}[]:;@~#<>?,./¬ Chars', '0.5.0')
         self.assertEqual(request.module_name, 'testspecialchars')
 
     def test_default_helm_name(self):
-        request = factory.DriverGenRequest([factory.DRIVER_TYPE_VIM], 'Test-_Special !"£$%^&*()+={}[]:;@~#<>?,./¬ Chars', '0.5.0')
+        request = factory.DriverGenRequest([factory.DRIVER_TYPE_RESOURCE], 'Test-_Special !"£$%^&*()+={}[]:;@~#<>?,./¬ Chars', '0.5.0')
         self.assertEqual(request.helm_name, 'test-_special-chars')
 
     def test_default_docker_name(self):
-        request = factory.DriverGenRequest([factory.DRIVER_TYPE_VIM], 'Test-_Special !"£$%^&*()+={}[]:;@~#<>?,./¬ Chars', '0.5.0')
+        request = factory.DriverGenRequest([factory.DRIVER_TYPE_RESOURCE], 'Test-_Special !"£$%^&*()+={}[]:;@~#<>?,./¬ Chars', '0.5.0')
         self.assertEqual(request.docker_name, 'test-_special-chars')
 
     def __do_test_module_name_validation(self, invalid_value):
         module_name = 'invalid{0}driver'.format(invalid_value)
         with self.assertRaises(ValueError) as context:
-            factory.DriverGenRequest([factory.DRIVER_TYPE_VIM], 'Test Driver', '0.5.0', module_name=module_name)
+            factory.DriverGenRequest([factory.DRIVER_TYPE_RESOURCE], 'Test Driver', '0.5.0', module_name=module_name)
         self.assertEqual(str(context.exception), 'module_name must be a string with characters from a-z, A-Z, 0-9 but was: {0}'.format(module_name))
 
     def test_module_name_validation(self):
@@ -58,26 +57,26 @@ class TestDriverGenRequest(unittest.TestCase):
     def __do_test_helm_name_validation(self, invalid_value):
         helm_name = 'invalid{0}driver'.format(invalid_value)
         with self.assertRaises(ValueError) as context:
-            factory.DriverGenRequest([factory.DRIVER_TYPE_VIM], 'Test Driver', '0.5.0', helm_name=helm_name)
+            factory.DriverGenRequest([factory.DRIVER_TYPE_RESOURCE], 'Test Driver', '0.5.0', helm_name=helm_name)
         self.assertEqual(str(context.exception), 'helm_name must be a string with characters from a-z, A-Z, 0-9, dash (-) or underscore (_) but was: {0}'.format(helm_name))
 
     def test_helm_name_validation(self):
         for char in '!"£$%^&*()+={}[]:;@~#<>?,./¬ ':
             self.__do_test_helm_name_validation(char)
-        factory.DriverGenRequest([factory.DRIVER_TYPE_VIM], 'Test Driver', '0.5.0', helm_name='dashed-driver')
-        factory.DriverGenRequest([factory.DRIVER_TYPE_VIM], 'Test Driver', '0.5.0', helm_name='underscore_driver')
+        factory.DriverGenRequest([factory.DRIVER_TYPE_RESOURCE], 'Test Driver', '0.5.0', helm_name='dashed-driver')
+        factory.DriverGenRequest([factory.DRIVER_TYPE_RESOURCE], 'Test Driver', '0.5.0', helm_name='underscore_driver')
 
     def __do_test_docker_name_validation(self, invalid_value):
         docker_name = 'invalid{0}driver'.format(invalid_value)
         with self.assertRaises(ValueError) as context:
-            factory.DriverGenRequest([factory.DRIVER_TYPE_VIM], 'Test Driver', '0.5.0', docker_name=docker_name)
+            factory.DriverGenRequest([factory.DRIVER_TYPE_RESOURCE], 'Test Driver', '0.5.0', docker_name=docker_name)
         self.assertEqual(str(context.exception), 'docker_name must be a string with characters from a-z, A-Z, 0-9, dash (-) or underscore (_) but was: {0}'.format(docker_name))
 
     def test_helm_name_validation(self):
         for char in '!"£$%^&*()+={}[]:;@~#<>?,./¬ ':
             self.__do_test_docker_name_validation(char)
-        factory.DriverGenRequest([factory.DRIVER_TYPE_VIM], 'Test Driver', '0.5.0', docker_name='dashed-driver')
-        factory.DriverGenRequest([factory.DRIVER_TYPE_VIM], 'Test Driver', '0.5.0', docker_name='underscore_driver')
+        factory.DriverGenRequest([factory.DRIVER_TYPE_RESOURCE], 'Test Driver', '0.5.0', docker_name='dashed-driver')
+        factory.DriverGenRequest([factory.DRIVER_TYPE_RESOURCE], 'Test Driver', '0.5.0', docker_name='underscore_driver')
 
 
 class TestDriverProducer(unittest.TestCase):
@@ -89,20 +88,12 @@ class TestDriverProducer(unittest.TestCase):
         if os.path.exists(self.tmp_dir):
             shutil.rmtree(self.tmp_dir)
 
-    def test_produce_vimdriver(self):
-        request = factory.DriverGenRequest([factory.DRIVER_TYPE_VIM], 'Test Driver', '0.5.0', port=7777, module_name='tdriver', \
+    def test_produce_resourcedriver(self):
+        request = factory.DriverGenRequest([factory.DRIVER_TYPE_RESOURCE], 'Test Driver', '0.5.0', port=7777, module_name='tdriver', \
             description='unit test driver', docker_name='tddock', helm_name='tdhelm', helm_node_port='30777')
         producer = factory.DriverProducer(request, self.tmp_dir)
         producer.produce()
-        qa = DriverProductQA(EXPECTED_VIM_DRIVER, self.tmp_dir)
-        qa.check()
-
-    def test_produce_lifecycledriver(self):
-        request = factory.DriverGenRequest([factory.DRIVER_TYPE_LIFECYCLE], 'Test Driver', '0.5.0', port=7777, module_name='tdriver', \
-            description='unit test driver', docker_name='tddock', helm_name='tdhelm', helm_node_port='30777')
-        producer = factory.DriverProducer(request, self.tmp_dir)
-        producer.produce()
-        qa = DriverProductQA(EXPECTED_LIFECYCLE_DRIVER, self.tmp_dir)
+        qa = DriverProductQA(EXPECTED_RESOURCE_DRIVER, self.tmp_dir)
         qa.check()
 
 class DriverProductQA:

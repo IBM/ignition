@@ -1,6 +1,6 @@
 # Messaging
 
-Messaging is a core feature required by many of the Services expected in a VIM or Lifecycle driver. As a result, all of the Services listed below are enabled by default when using the `ignition.boot.api.build_vim_driver` or `ignition.boot.api.build_vnfc_driver` method. 
+Messaging is a core feature required by many of the Services expected in a driver. As a result, all of the Services listed below are enabled by default when using the `ignition.boot.api.build_resource_driver` function.
 
 In Ignition, messaging has been split down into 4 areas:
 
@@ -19,7 +19,7 @@ As a result there are 4 services that may be auto-configured:
 | KafkaDeliveryService | DeliveryCapability | -                     | bootstrap.messaging.delivery_enabled | Handles delivering messages to the desired Kafka topic                 |
 | KafkaInboxService    | InboxCapability    | -                     | bootstrap.messaging.inbox_enabled    | Handles watching desired Kafka topics for new messages                 |
 
-With these services in place, different types of messaging sending services can be created that re-use the functionality of posting and delivering them (for example see the InfrastructureMessagingService).
+With these services in place, different types of messaging sending services can be created that re-use the functionality of posting and delivering them (for example see the LifecycleMessagingService).
 
 ## Configuration Properties
 

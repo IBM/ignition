@@ -1,5 +1,6 @@
 import click
 import ignition.cli.cmd_create as cmd_create
+import ignition.cli.cmd_testdrive as cmd_testdrive
 import logging.config
 import os
 import yaml
@@ -13,6 +14,7 @@ def cli():
 def init_cli():
     setup_logging()
     cli.add_command(cmd_create.create)
+    cli.add_command(cmd_testdrive.testdrive)
     cli()
 
 def setup_logging(default_level=logging.INFO):

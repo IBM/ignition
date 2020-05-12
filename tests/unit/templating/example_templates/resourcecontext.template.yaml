@@ -1,8 +1,9 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ systemProperties.resourceName }}-{{ systemProperties.resourceId }}
+  name: {{ system_properties.resourceName }}-{{ system_properties.resourceId }}
 data:
   propA: {{ propA }}
-  dlType: {{ deploymentLocationInst.type }}
-  dlPropA: {{ deploymentLocationInst.properties.dlPropA }}
+  dlType: {{ deployment_location.type }}
+  dlPropA: {{ deployment_location.properties.dlPropA }}
+  reqPropA: {{ request_properties.reqA }}
