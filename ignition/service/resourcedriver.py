@@ -1,6 +1,7 @@
 from ignition.service.framework import Capability, Service, interface
 from ignition.service.config import ConfigurationPropertiesGroup, ConfigurationProperties
 from ignition.service.api import BaseController
+from ignition.model.failure import FailureDetails, FAILURE_CODE_INTERNAL_ERROR
 from ignition.model.lifecycle import LifecycleExecution, LifecycleExecuteResponse, lifecycle_execution_dict, lifecycle_execute_response_dict, STATUS_COMPLETE, STATUS_FAILED
 from ignition.model.references import FindReferenceResponse, FindReferenceResult, find_reference_response_dict
 from ignition.model.associated_topology import AssociatedTopology
@@ -318,11 +319,22 @@ class LifecycleExecutionMonitoringService(Service, LifecycleExecutionMonitoringC
             logger.debug('Request with ID {0} not found, the request will no longer be monitored'.format(request_id))
             return True
         except TemporaryResourceDriverError as e:
-            logger.exception('Temporary error occurred checking status of request with ID {0}. The monitoring job will be re-queued: {1}'.format(request_id, str(e)))
+            logger.exception('Temporary error occurred checking status of request with ID {0}. The job will be re-queued: {1}'.format(request_id, str(e)))
             return False
+        except Exception as e:
+            logger.exception('Unexpected error occurred checking status of request with ID {0}. A failure response will be posted and the job will NOT be re-queued: {1}'.format(request_id, str(e)))
+            lifecycle_execution_task = LifecycleExecution(request_id, STATUS_FAILED, FailureDetails(FAILURE_CODE_INTERNAL_ERROR, str(e)))
+            self.lifecycle_messaging_service.send_lifecycle_execution(lifecycle_execution_task)
+            return True
         status = lifecycle_execution_task.status
         if status in [STATUS_COMPLETE, STATUS_FAILED]:
             self.lifecycle_messaging_service.send_lifecycle_execution(lifecycle_execution_task)
+            if hasattr(self.handler, 'lifecycle_execution_monitoring_complete'):
+                try:
+                    logger.debug(f'Calling lifecycle_execution_monitoring_complete for request with ID: {0}'.format(request_id))
+                    self.handler.lifecycle_execution_monitoring_complete(request_id, deployment_location)
+                except Exception as e:
+                    logger.exception('Unexpected error occurred on lifecycle_execution_monitoring_complete for request with ID {0}. This error has no impact on the response: {1}'.format(request_id, str(e)))
             return True
         return False
 
