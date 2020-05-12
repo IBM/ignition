@@ -329,12 +329,12 @@ class LifecycleExecutionMonitoringService(Service, LifecycleExecutionMonitoringC
         status = lifecycle_execution_task.status
         if status in [STATUS_COMPLETE, STATUS_FAILED]:
             self.lifecycle_messaging_service.send_lifecycle_execution(lifecycle_execution_task)
-            if hasattr(self.handler, 'lifecycle_execution_monitoring_complete'):
+            if hasattr(self.handler, 'post_lifecycle_response'):
                 try:
-                    logger.debug(f'Calling lifecycle_execution_monitoring_complete for request with ID: {0}'.format(request_id))
-                    self.handler.lifecycle_execution_monitoring_complete(request_id, deployment_location)
+                    logger.debug(f'Calling post_lifecycle_response for request with ID: {0}'.format(request_id))
+                    self.handler.post_lifecycle_response(request_id, deployment_location)
                 except Exception as e:
-                    logger.exception('Unexpected error occurred on lifecycle_execution_monitoring_complete for request with ID {0}. This error has no impact on the response: {1}'.format(request_id, str(e)))
+                    logger.exception('Unexpected error occurred on post_lifecycle_response for request with ID {0}. This error has no impact on the response: {1}'.format(request_id, str(e)))
             return True
         return False
 
