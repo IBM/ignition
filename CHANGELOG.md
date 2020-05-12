@@ -1,5 +1,18 @@
 # Change Log
 
+## [1.2.0](https://github.com/accanto-systems/ignition/tree/1.2.0) (2020-05-12)
+[Full Changelog](https://github.com/accanto-systems/ignition/compare/1.1.0...1.2.0)
+
+**Implemented enhancements:**
+- Common Kubernetes deployment location [\#67](https://github.com/accanto-systems/ignition/issues/67)
+- Common templating tools [\#69](https://github.com/accanto-systems/ignition/issues/69)
+- Refactor render context builder keywords for system_properties, deployment_location and request_properties [\#72](https://github.com/accanto-systems/ignition/issues/72)
+- Refactor infrastructure and lifecycle APIs into single driver API [\#73](https://github.com/accanto-systems/ignition/issues/73)
+- Indicate syntax on templating capabiltiy [\#76](https://github.com/accanto-systems/ignition/issues/73)
+
+**Fixed bugs:**
+- Request Queue max.poll.interval.ms is not configurable [\#75](https://github.com/accanto-systems/ignition/issues/75)
+
 ## [1.1.0](https://github.com/accanto-systems/ignition/tree/1.1.0) (2020-03-24)
 [Full Changelog](https://github.com/accanto-systems/ignition/compare/1.0.0...1.1.0)
 
