@@ -35,7 +35,7 @@ class ErrorResponseConverter():
         self.handlers.append(HandlerEntry(exception_type, handler))
 
     def handle(self, exception):
-        logger.exception('API error occured: {0}'.format(exception))
+        logger.exception('API error occurred: {0}'.format(exception))
         error_response = {
             'localizedMessage': str(exception),
             'status': 500
