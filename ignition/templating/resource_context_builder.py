@@ -1,3 +1,4 @@
+from ignition.utils.propvaluemap import PropValueMap
 
 SYSTEM_PROPERTIES_KEY = 'system_properties'
 REQUEST_PROPERTIES_KEY = 'request_properties'
@@ -77,9 +78,22 @@ class ResourceContextBuilder:
         Returns:
             this builder
         """
-        for k,v in resource_properties.items():
-            self.__check_for_reserved_key(k)
-            self.result[k] = v
+        if isinstance(resource_properties, PropValueMap):
+            for k,v in resource_properties.items_with_types():
+                value_type = v.get('type')
+                value = v.get('value')
+                if value_type == 'key':
+                    value = {
+                        'keyName': v.get('keyName'),
+                        'publicKey': v.get('publicKey'),
+                        'privateKey': v.get('privateKey')
+                    }
+                self.__check_for_reserved_key(k)
+                self.result[k] = value
+        else:
+            for k,v in resource_properties.items():
+                self.__check_for_reserved_key(k)
+                self.result[k] = v
         return self
 
     def add_resource_property(self, key, value):
@@ -107,7 +121,21 @@ class ResourceContextBuilder:
         Returns:
             this builder
         """
-        self.result[SYSTEM_PROPERTIES_KEY].update(system_properties)
+        if isinstance(system_properties, PropValueMap):
+            parsed_system_properties = {}
+            for k,v in system_properties.items_with_types():
+                value_type = v.get('type')
+                value = v.get('value')
+                if value_type == 'key':
+                    value = {
+                        'keyName': v.get('keyName'),
+                        'publicKey': v.get('publicKey'),
+                        'privateKey': v.get('privateKey')
+                    }
+                parsed_system_properties[k] = value
+            self.result[SYSTEM_PROPERTIES_KEY].update(parsed_system_properties)
+        else:
+            self.result[SYSTEM_PROPERTIES_KEY].update(system_properties)
         return self
 
     def add_system_property(self, key, value):
@@ -134,7 +162,21 @@ class ResourceContextBuilder:
         Returns:
             this builder
         """
-        self.result[REQUEST_PROPERTIES_KEY].update(request_properties)
+        if isinstance(request_properties, PropValueMap):
+            parsed_request_properties = {}
+            for k,v in request_properties.items_with_types():
+                value_type = v.get('type')
+                value = v.get('value')
+                if value_type == 'key':
+                    value = {
+                        'keyName': v.get('keyName'),
+                        'publicKey': v.get('publicKey'),
+                        'privateKey': v.get('privateKey')
+                    }
+                parsed_request_properties[k] = value
+            self.result[REQUEST_PROPERTIES_KEY].update(parsed_request_properties)
+        else:
+            self.result[REQUEST_PROPERTIES_KEY].update(request_properties)
         return self
 
     def add_request_property(self, key, value):

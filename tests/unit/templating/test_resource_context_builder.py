@@ -253,6 +253,53 @@ class TestResourceContextBuilder(unittest.TestCase):
             builder.add_resource_property('deployment_location', 'ThisPropertyIsNotAllowed')
         self.assertEqual(str(context.exception), 'property with name \'deployment_location\' cannot be used as this is a reserved word')
 
+    def test_add_key_resource_property(self):
+        properties = PropValueMap({})
+        properties['myKey'] = {'type': 'key', 'keyName': 'theName', 'publicKey': 'thePublicPart', 'privateKey': 'ssshhh'}
+        builder = ResourceContextBuilder({}, properties, {}, {})
+        self.assertEqual(builder.result, {
+            'deployment_location': {},
+            'request_properties': {},
+            'system_properties': {},
+            'myKey': {
+                'keyName': 'theName',
+                'publicKey': 'thePublicPart',
+                'privateKey': 'ssshhh'
+            }
+        })
+
+    def test_add_key_system_property(self):
+        system_properties = PropValueMap({})
+        system_properties['myKey'] = {'type': 'key', 'keyName': 'theName', 'publicKey': 'thePublicPart', 'privateKey': 'ssshhh'}
+        builder = ResourceContextBuilder(system_properties, {}, {}, {})
+        self.assertEqual(builder.result, {
+            'deployment_location': {},
+            'request_properties': {},
+            'system_properties': {
+                'myKey': {
+                    'keyName': 'theName',
+                    'publicKey': 'thePublicPart',
+                    'privateKey': 'ssshhh'
+                }
+            }
+        })
+
+    def test_add_key_request_property(self):
+        request_properties = PropValueMap({})
+        request_properties['myKey'] = {'type': 'key', 'keyName': 'theName', 'publicKey': 'thePublicPart', 'privateKey': 'ssshhh'}
+        builder = ResourceContextBuilder({}, {}, request_properties, {})
+        self.assertEqual(builder.result, {
+            'deployment_location': {},
+            'system_properties': {},
+            'request_properties': {
+                'myKey': {
+                    'keyName': 'theName',
+                    'publicKey': 'thePublicPart',
+                    'privateKey': 'ssshhh'
+                }
+            }
+        })
+
     def test_set_deployment_location(self):
         system_properties, properties, request_properties, deployment_location = self.__example_values()
         builder = ResourceContextBuilder(system_properties, properties, request_properties, deployment_location)

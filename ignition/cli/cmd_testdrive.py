@@ -32,8 +32,8 @@ def execlifecycle(lifecycle, resource, url, driver_type, wait, max_wait, kafka, 
         exec_request = ExecLifecycleRequest(resource_state, lifecycle, driver_type, url, wait, kafka_endpoint=kafka, topic=topic, async_timeout=max_wait, request_properties=request_properties)
         exec_request.run()
     except Exception as e:
-        logger.exception(str(e))
-        click.echo('ERROR: {0}'.format(str(e)))
+        logger.exception(f'{e}')
+        click.echo(f'ERROR: {e}')
         exit(1)
 
 @testdrive.command(help='Make a find reference request against a driver')
@@ -47,6 +47,6 @@ def findreference(name, resource, url, driver_type):
         request = FindReferenceRequest(resource_state, name, driver_type, url)
         request.run()
     except Exception as e:
-        logger.exception(str(e))
-        click.echo('ERROR: {0}'.format(str(e)))
+        logger.exception(f'{e}')
+        click.echo(f'ERROR: {e}')
         exit(1)

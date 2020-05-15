@@ -28,8 +28,8 @@ def create(app_name, driver_types, version, port, description, module_name, dock
         request = factory.DriverGenRequest(parsed_driver_types, app_name, version, port=port, module_name=module_name, description=description, docker_name=docker_name, \
             helm_name=helm_name, helm_node_port=helm_node_port)
     except ValueError as e:
-        logger.exception(str(e))
-        click.echo('ERROR: {0}'.format(str(e)))
+        logger.exception(f'{e}')
+        click.echo(f'ERROR: {e}')
         exit(1)
     location = os.getcwd()
     producer = factory.DriverProducer(request, location)
@@ -38,6 +38,6 @@ def create(app_name, driver_types, version, port, description, module_name, dock
         producer.produce()
         click.echo('Complete!')
     except factory.ProducerError as e:
-        logger.exception(str(e))
-        click.echo('ERROR: {0}'.format(str(e)))
+        logger.exception(f'{e}')
+        click.echo(f'ERROR: {e}')
         exit(1)

@@ -42,5 +42,5 @@ Navigate to the Docker directry and build the image. Tag with the release versio
 
 ```
 cd docker
-docker build -t tddock:<release version number>
+docker build -t tddock:<release version number> .
 ```
