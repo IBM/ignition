@@ -1,5 +1,16 @@
 import unittest
-from ignition.model.associated_topology import AssociatedTopologyEntry, AssociatedTopology
+from ignition.model.associated_topology import AssociatedTopologyEntry, AssociatedTopology, RemovedTopologyEntry
+
+class TestRemovedTopologyEntry(unittest.TestCase):
+    
+    def test_from_dict(self):
+        data = None
+        entry = RemovedTopologyEntry.from_dict(data)
+        self.assertIsInstance(entry, RemovedTopologyEntry)
+
+    def test_to_dict(self):
+        entry = RemovedTopologyEntry()
+        self.assertIsNone(entry.to_dict())
 
 class TestAssociatedTopologyEntry(unittest.TestCase):
     
@@ -82,6 +93,12 @@ class TestAssociatedTopology(unittest.TestCase):
         topology.add_entry('A', '123', 'CustomType')
         out_entry = topology.get('A')
         self.assertEqual(out_entry, AssociatedTopologyEntry('123', 'CustomType'))
+
+    def test_add_removed(self):
+        topology = AssociatedTopology()
+        topology.add_removed('A')
+        out_entry = topology.get('A')
+        self.assertIsInstance(out_entry, RemovedTopologyEntry)
 
     def test_find_id(self):
         topology = AssociatedTopology()
