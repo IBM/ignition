@@ -67,10 +67,10 @@ class AssociatedTopology:
         return True
 
     def __str__(self):
-        return f'entries: {self.entries}'
+        return f'entries: {self._entries}'
 
     def __repr__(self):
-        return f'entries: {self.entries!r}'
+        return f'entries: {self._entries!r}'
 
 class RemovedTopologyEntry:
 
