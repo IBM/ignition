@@ -1,7 +1,9 @@
 # Change Log
 
-## [1.2.0](https://github.com/accanto-systems/ignition/tree/1.2.0) (2020-05-12)
-[Full Changelog](https://github.com/accanto-systems/ignition/compare/1.1.0...1.2.0)
+## [2.0.0](https://github.com/accanto-systems/ignition/tree/2.0.0) (2020-05-19)
+[Full Changelog](https://github.com/accanto-systems/ignition/compare/1.1.0...2.0.0)
+
+Works with ALM 2.2+
 
 **Implemented enhancements:**
 - Common Kubernetes deployment location [\#67](https://github.com/accanto-systems/ignition/issues/67)
@@ -9,9 +11,21 @@
 - Refactor render context builder keywords for system_properties, deployment_location and request_properties [\#72](https://github.com/accanto-systems/ignition/issues/72)
 - Refactor infrastructure and lifecycle APIs into single driver API [\#73](https://github.com/accanto-systems/ignition/issues/73)
 - Indicate syntax on templating capabiltiy [\#76](https://github.com/accanto-systems/ignition/issues/73)
+- Allow resource driver service to be notified when the lifecycle monitor has posted a response [\#78](https://github.com/accanto-systems/ignition/issues/78)
+- Templating services to support key properties [\#79](https://github.com/accanto-systems/ignition/issues/79)
+- Must include a notion of "removing" entries from Associated Topology [\#80](https://github.com/accanto-systems/ignition/issues/80)
+- Command utility to help with testing drivers [\#81](https://github.com/accanto-systems/ignition/issues/81)
 
 **Fixed bugs:**
 - Request Queue max.poll.interval.ms is not configurable [\#75](https://github.com/accanto-systems/ignition/issues/75)
+
+**Documentation:**
+- Docker image build instructions missing docker context path in command [\#65](https://github.com/accanto-systems/ignition/issues/65)
+
+Issues #67, #69, #72, #73, #75 and #76 were included in a 1.2.0 release but that release should have resulted in major version increase, so it is being phased out of this project's history. 
+
+## [1.2.0](https://github.com/accanto-systems/ignition/tree/1.1.0) (2020-05-12)
+Do not use this release, use 2.0.0 instead.
 
 ## [1.1.0](https://github.com/accanto-systems/ignition/tree/1.1.0) (2020-03-24)
 [Full Changelog](https://github.com/accanto-systems/ignition/compare/1.0.0...1.1.0)
