@@ -101,8 +101,8 @@ class KubernetesDeploymentLocation:
             {
                 'name': 'Test',
                 'properties': {
-                    'client_config': { ... },
-                    'default_object_namespace': 'default'
+                    'clientConfig': { ... },
+                    'defaultObjectNamespace': 'default'
                 }
             }
         """

@@ -10,8 +10,8 @@ class AssociatedTopology:
         self._entries = entries
 
     def __validate_entry(self, entry):
-        if not isinstance(entry, AssociatedTopologyEntry):
-            raise ValueError(f'Associated topology entry should an instance of {AssociatedTopologyEntry.__name__} but was {type(entry)}')
+        if not isinstance(entry, AssociatedTopologyEntry) and not isinstance(entry, RemovedTopologyEntry):
+            raise ValueError(f'Associated topology entry should an instance of {AssociatedTopologyEntry.__name__} or {RemovedTopologyEntry.__name__} but was {type(entry)}')
 
     def add(self, name, entry):
         self.__validate_entry(entry)
@@ -21,10 +21,14 @@ class AssociatedTopology:
         entry = AssociatedTopologyEntry(element_id, element_type)
         self._entries[name] = entry
 
+    def add_removed(self, name):
+        entry = RemovedTopologyEntry()
+        self._entries[name] = entry
+
     def find_id(self, element_id):
         results = {}
         for name, entry in self._entries.items():
-            if entry.element_id == element_id:
+            if not entry.removed and entry.element_id == element_id:
                 results[name] = entry
         return results
 
@@ -34,7 +38,7 @@ class AssociatedTopology:
     def find_type(self, element_type):
         results = {}
         for name, entry in self._entries.items():
-            if entry.element_type == element_type:
+            if not entry.removed and entry.element_type == element_type:
                 results[name] = entry
         return results
 
@@ -43,7 +47,10 @@ class AssociatedTopology:
         entries = {}
         if data is not None:
             for name, item in data.items():
-                entries[name] = AssociatedTopologyEntry.from_dict(item)
+                if item == None:
+                    entries[name] = RemovedTopologyEntry.from_dict(item)
+                else:
+                    entries[name] = AssociatedTopologyEntry.from_dict(item)
         return AssociatedTopology(entries)
     
     def to_dict(self):
@@ -60,7 +67,28 @@ class AssociatedTopology:
         return True
 
     def __str__(self):
-      return 'entries: {0._entries}'.format(self)
+        return f'entries: {self._entries}'
+
+    def __repr__(self):
+        return f'entries: {self._entries!r}'
+
+class RemovedTopologyEntry:
+
+    def __init__(self):
+        self.removed = True
+
+    @staticmethod
+    def from_dict(data):
+        return RemovedTopologyEntry()
+            
+    def to_dict(self):
+        return None
+
+    def __str__(self):
+        return f'{self.__class__.__name__}()'
+
+    def __repr__(self):
+        return f'{self.__class__.__name__}()'
 
 class AssociatedTopologyEntry:
 
@@ -71,6 +99,7 @@ class AssociatedTopologyEntry:
             raise ValueError('Associated topology entry missing \'element_type\'')
         self.element_id = element_id
         self.element_type = element_type
+        self.removed = False
 
     @staticmethod
     def from_dict(data):
@@ -100,4 +129,7 @@ class AssociatedTopologyEntry:
         return True
 
     def __str__(self):
-      return 'entry: {0.element_id} {0.element_type}'.format(self)
+        return f'{self.__class__.__name__}(entry: {self.element_id} {self.element_type})'
+
+    def __repr__(self):
+        return f'{self.__class__.__name__}(entry: {self.element_id!r} {self.element_type!r})'

@@ -1,5 +1,16 @@
 import unittest
-from ignition.model.associated_topology import AssociatedTopologyEntry, AssociatedTopology
+from ignition.model.associated_topology import AssociatedTopologyEntry, AssociatedTopology, RemovedTopologyEntry
+
+class TestRemovedTopologyEntry(unittest.TestCase):
+    
+    def test_from_dict(self):
+        data = None
+        entry = RemovedTopologyEntry.from_dict(data)
+        self.assertIsInstance(entry, RemovedTopologyEntry)
+
+    def test_to_dict(self):
+        entry = RemovedTopologyEntry()
+        self.assertIsNone(entry.to_dict())
 
 class TestAssociatedTopologyEntry(unittest.TestCase):
     
@@ -75,13 +86,19 @@ class TestAssociatedTopology(unittest.TestCase):
         topology = AssociatedTopology()
         with self.assertRaises(ValueError) as context:
             topology.add('A', 'not_an_entry')
-        self.assertEqual(str(context.exception), 'Associated topology entry should an instance of AssociatedTopologyEntry but was <class \'str\'>')
+        self.assertEqual(str(context.exception), 'Associated topology entry should an instance of AssociatedTopologyEntry or RemovedTopologyEntry but was <class \'str\'>')
 
     def test_add_entry(self):
         topology = AssociatedTopology()
         topology.add_entry('A', '123', 'CustomType')
         out_entry = topology.get('A')
         self.assertEqual(out_entry, AssociatedTopologyEntry('123', 'CustomType'))
+
+    def test_add_removed(self):
+        topology = AssociatedTopology()
+        topology.add_removed('A')
+        out_entry = topology.get('A')
+        self.assertIsInstance(out_entry, RemovedTopologyEntry)
 
     def test_find_id(self):
         topology = AssociatedTopology()
