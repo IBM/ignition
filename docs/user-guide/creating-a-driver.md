@@ -54,7 +54,7 @@ When creating a driver you must give it a name but you may also configure any of
 In the directory for your project, run the create command specifying the name of your driver  and the value to any options you wish to set:
 
 ```
-ignition create "My Driver"
+ignition create "My Driver" -t RESOURCE
 ```
 
 On completion you should see a directory structure including all of the generated files for your driver.
