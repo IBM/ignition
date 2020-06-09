@@ -181,11 +181,14 @@ class KafkaDeliveryService(Service, DeliveryCapability):
         self.bootstrap_servers = messaging_config.connection_address
         if self.bootstrap_servers is None:
             raise ValueError('connection_address not set on messaging_config')
+        self.api_version_auto_timeout_ms = messaging_config.api_version_auto_timeout_ms
+        if self.api_version_auto_timeout_ms is None:
+            self.api_version_auto_timeout_ms = 6000
         self.producer = None
 
     def __lazy_init_producer(self):
         if self.producer is None:
-            self.producer = KafkaProducer(bootstrap_servers=self.bootstrap_servers)
+            self.producer = KafkaProducer(bootstrap_servers=self.bootstrap_servers, api_version_auto_timeout_ms=self.api_version_auto_timeout_ms)
 
     def __on_send_success(self, record_metadata):
         logger.debug('Envelope successfully posted to {0} on partition {1} and offset {2}'.format(record_metadata.topic, record_metadata.partition, record_metadata.offset))
@@ -215,6 +218,9 @@ class KafkaInboxService(Service, InboxCapability):
         self.bootstrap_servers = messaging_config.connection_address
         if self.bootstrap_servers is None:
             raise ValueError('connection_address not set on messaging_config')
+        self.api_version_auto_timeout_ms = messaging_config.api_version_auto_timeout_ms
+        if self.api_version_auto_timeout_ms is None:
+            self.api_version_auto_timeout_ms = 6000
         self.active_threads = []
 
     def __thread_exit_func(self, thread, closing_error):
@@ -227,7 +233,7 @@ class KafkaInboxService(Service, InboxCapability):
                 _thread.interrupt_main()
 
     def watch_inbox(self, group_id, address, read_func):
-        thread = KafkaInboxThread(self.bootstrap_servers, group_id, address, read_func, self.__thread_exit_func)
+        thread = KafkaInboxThread(self.bootstrap_servers, self.api_version_auto_timeout_ms, group_id, address, read_func, self.__thread_exit_func)
         thread.setDaemon(True)
         self.active_threads.append(thread)
         try:
@@ -238,19 +244,21 @@ class KafkaInboxService(Service, InboxCapability):
 
 class KafkaInboxThread(threading.Thread):
 
-    def __init__(self, bootstrap_servers, group_id, topic, consumer_func, thread_exit_func):
+    def __init__(self, bootstrap_servers, api_version_auto_timeout_ms, group_id, topic, consumer_func, thread_exit_func):
         self.parent = threading.currentThread()
         self.bootstrap_servers = bootstrap_servers
+        self.api_version_auto_timeout_ms = api_version_auto_timeout_ms
         self.group_id = group_id
         self.topic = topic
         self.consumer_func = consumer_func
         self.thread_exit_func = thread_exit_func
+
         super().__init__()
 
     def run(self):
         logger.info('Starting watch on inbox topic: {0}'.format(self.topic))
         closing_error = None
-        consumer = KafkaConsumer(self.topic, bootstrap_servers=self.bootstrap_servers, group_id=self.group_id, enable_auto_commit=False)
+        consumer = KafkaConsumer(self.topic, bootstrap_servers=self.bootstrap_servers, group_id=self.group_id, enable_auto_commit=False, api_version_auto_timeout_ms=self.api_version_auto_timeout_ms, )
         try:
             for record in consumer:
                 logger.debug('Inbox ({0}) has received a new message: {1}'.format(self.topic, record))

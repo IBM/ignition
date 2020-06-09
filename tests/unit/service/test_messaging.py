@@ -30,7 +30,7 @@ class TestPostalService(unittest.TestCase):
 class TestKafkaDeliveryService(unittest.TestCase):
 
     def setUp(self):
-        self.mock_messaging_config = MagicMock(connection_address='test:9092')
+        self.mock_messaging_config = MagicMock(connection_address='test:9092', api_version_auto_timeout_ms=5000)
 
     def test_init_without_messaging_config_throws_error(self):
         with self.assertRaises(ValueError) as context:
@@ -48,7 +48,7 @@ class TestKafkaDeliveryService(unittest.TestCase):
         delivery_service = KafkaDeliveryService(messaging_config=self.mock_messaging_config)
         test_envelope = Envelope('test_topic', Message('test message'))
         delivery_service.deliver(test_envelope)
-        mock_kafka_producer_init.assert_called_once_with(bootstrap_servers='test:9092')
+        mock_kafka_producer_init.assert_called_once_with(bootstrap_servers='test:9092', api_version_auto_timeout_ms=5000)
         self.assertEqual(delivery_service.producer, mock_kafka_producer_init.return_value)
         mock_kafka_producer = mock_kafka_producer_init.return_value
         mock_kafka_producer.send.assert_called_once_with('test_topic', b'test message')
@@ -64,7 +64,7 @@ class TestKafkaDeliveryService(unittest.TestCase):
 class TestKafkaInboxService(unittest.TestCase):
 
     def setUp(self):
-        self.mock_messaging_config = MagicMock(connection_address='test:9092')
+        self.mock_messaging_config = MagicMock(connection_address='test:9092', api_version_auto_timeout_ms=5000)
 
     def test_init_without_messaging_config_throws_error(self):
         with self.assertRaises(ValueError) as context:
@@ -82,7 +82,7 @@ class TestKafkaInboxService(unittest.TestCase):
         inbox_service = KafkaInboxService(messaging_config=self.mock_messaging_config)
         mock_read_inbox_func = MagicMock()
         inbox_service.watch_inbox('test_group', 'test_topic', mock_read_inbox_func)
-        mock_kafka_inbox_thread_init.assert_called_once_with('test:9092', 'test_group', 'test_topic', mock_read_inbox_func, inbox_service._KafkaInboxService__thread_exit_func)
+        mock_kafka_inbox_thread_init.assert_called_once_with('test:9092', 5000, 'test_group', 'test_topic', mock_read_inbox_func, inbox_service._KafkaInboxService__thread_exit_func)
         mock_kafka_inbox_thread_init.return_value.start.assert_called_once()
 
     @patch('ignition.service.messaging.KafkaConsumer')
@@ -120,7 +120,7 @@ class TestKafkaInboxService(unittest.TestCase):
         time.sleep(0.01)
         try:
             self.assertEqual(len(inbox_service.active_threads), 1)
-            mock_kafka_consumer_init.assert_called_once_with('test_topic', bootstrap_servers='test:9092', group_id='test_group', enable_auto_commit=False)
+            mock_kafka_consumer_init.assert_called_once_with('test_topic', bootstrap_servers='test:9092', api_version_auto_timeout_ms=5000, group_id='test_group', enable_auto_commit=False)
             mock_kafka_consumer.__iter__.assert_called_once()
             mock_record_1.value.decode.assert_called_once_with('utf-8')
             mock_record_2.value.decode.assert_not_called()
