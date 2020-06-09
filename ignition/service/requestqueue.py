@@ -244,6 +244,9 @@ class KafkaConsumerFactory(Service):
         self.bootstrap_servers = messaging_config.connection_address
         if request_queue_config.topic.name is None or request_queue_config.topic.name == '':
             raise ValueError('request_queue_config.topic.name cannot be null')
+        self.api_version_auto_timeout_ms = messaging_config.api_version_auto_timeout_ms
+        if self.api_version_auto_timeout_ms is None:
+            self.api_version_auto_timeout_ms = 6000
         self.topic_name = request_queue_config.topic.name
         if request_queue_config.group_id is None or request_queue_config.group_id == '':
             raise ValueError('request_queue_config.group_id cannot be null')
@@ -251,7 +254,7 @@ class KafkaConsumerFactory(Service):
 
     def create_consumer(self, max_poll_interval_ms=MAX_POLL_INTERVAL):
         logger.debug("Creating Kafka consumer for bootstrap server {0} topic {1} group {2} max_poll_interval_ms {3}".format(self.bootstrap_servers, self.topic_name, self.group_id, max_poll_interval_ms))
-        return KafkaConsumer(self.topic_name, bootstrap_servers=self.bootstrap_servers, group_id=self.group_id, enable_auto_commit=False, max_poll_interval_ms=max_poll_interval_ms)
+        return KafkaConsumer(self.topic_name, bootstrap_servers=self.bootstrap_servers, group_id=self.group_id, enable_auto_commit=False, max_poll_interval_ms=max_poll_interval_ms, api_version_auto_timeout_ms=self.api_version_auto_timeout_ms)
 
 class KafkaLifecycleConsumerFactory(KafkaConsumerFactory, LifecycleConsumerFactoryCapability):
     """
