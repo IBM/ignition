@@ -1,5 +1,11 @@
 # Change Log
 
+## [2.0.1](https://github.com/accanto-systems/ignition/tree/2.0.1) (2020-06-09)
+[Full Changelog](https://github.com/accanto-systems/ignition/compare/2.0.0...2.0.1)
+
+**Fixed bugs:**
+- NoBrokersAvailable exceptions during Kafka sends and receives [\#84](https://github.com/accanto-systems/ignition/issues/84)
+
 ## [2.0.0](https://github.com/accanto-systems/ignition/tree/2.0.0) (2020-05-19)
 [Full Changelog](https://github.com/accanto-systems/ignition/compare/1.1.0...2.0.0)
 
