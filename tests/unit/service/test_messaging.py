@@ -158,7 +158,7 @@ class TestKafkaInboxService(unittest.TestCase):
         self.assertFalse(inbox_service.exited)
         inbox_service.watch_inbox('test_group', 'test_topic', mock_read_inbox_func)
         ready_for_message = True
-        time.sleep(0.01)
+        time.sleep(0.03)
         ## Indicates the exit func on inbox_service was called when in "test_mode"
         self.assertTrue(inbox_service.exited)
         mock_kafka_consumer.commit.assert_not_called()
