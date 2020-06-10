@@ -31,6 +31,7 @@ class MessagingProperties(ConfigurationPropertiesGroup, Service, Capability):
     def __init__(self):
         super().__init__('messaging')
         self.connection_address = None
+        self.api_version_auto_timeout_ms = None
         self.topics = TopicsProperties()
 
 
