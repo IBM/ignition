@@ -205,8 +205,10 @@ class KafkaDeliveryService(Service, DeliveryCapability):
         logger.debug('Delivering envelope to {0} with message content: {1}'.format(envelope.address, content))
         if key is None:
             self.producer.send(envelope.address, content).add_callback(self.__on_send_success).add_errback(self.__on_send_error)
+            self.producer.flush()
         else:
             self.producer.send(envelope.address, key=str.encode(key), value=content).add_callback(self.__on_send_success).add_errback(self.__on_send_error)
+            self.producer.flush()
 
 class KafkaInboxService(Service, InboxCapability):
 
