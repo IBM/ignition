@@ -1,6 +1,11 @@
 # Change Log
 
-## [2.0.1](https://github.com/accanto-systems/ignition/tree/2.0.1) (2020-06-09)
+## [2.0.2](https://github.com/accanto-systems/ignition/tree/2.0.2) (2020-06-10)
+[Full Changelog](https://github.com/accanto-systems/ignition/compare/2.0.1...2.0.2)
+
+Re-release of broken 2.0.1
+
+## [2.0.1](https://github.com/accanto-systems/ignition/tree/2.0.1) (2020-06-09) (BROKEN)
 [Full Changelog](https://github.com/accanto-systems/ignition/compare/2.0.0...2.0.1)
 
 **Fixed bugs:**
