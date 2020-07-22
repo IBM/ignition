@@ -32,6 +32,7 @@ class MessagingProperties(ConfigurationPropertiesGroup, Service, Capability):
         super().__init__('messaging')
         self.connection_address = None
         self.api_version_auto_timeout_ms = None
+        self.auto_flush = True
         self.topics = TopicsProperties()
 
 
@@ -185,6 +186,9 @@ class KafkaDeliveryService(Service, DeliveryCapability):
         self.api_version_auto_timeout_ms = messaging_config.api_version_auto_timeout_ms
         if self.api_version_auto_timeout_ms is None:
             self.api_version_auto_timeout_ms = 6000
+        self.auto_flush = messaging_config.auto_flush
+        if self.auto_flush is None:
+            self.auto_flush = True
         self.producer = None
 
     def __lazy_init_producer(self):
@@ -205,10 +209,12 @@ class KafkaDeliveryService(Service, DeliveryCapability):
         logger.debug('Delivering envelope to {0} with message content: {1}'.format(envelope.address, content))
         if key is None:
             self.producer.send(envelope.address, content).add_callback(self.__on_send_success).add_errback(self.__on_send_error)
-            self.producer.flush()
+            if self.auto_flush:
+                self.producer.flush()
         else:
             self.producer.send(envelope.address, key=str.encode(key), value=content).add_callback(self.__on_send_success).add_errback(self.__on_send_error)
-            self.producer.flush()
+            if self.auto_flush:
+                self.producer.flush()
 
 class KafkaInboxService(Service, InboxCapability):
 

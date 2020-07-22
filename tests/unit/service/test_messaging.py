@@ -55,6 +55,17 @@ class TestKafkaDeliveryService(unittest.TestCase):
         mock_kafka_producer.flush.assert_called_once()
 
     @patch('ignition.service.messaging.KafkaProducer')
+    def test_deliver_without_flush(self, mock_kafka_producer_init):
+        delivery_service = KafkaDeliveryService(messaging_config=MagicMock(connection_address='test:9092', api_version_auto_timeout_ms=5000, auto_flush=False))
+        test_envelope = Envelope('test_topic', Message('test message'))
+        delivery_service.deliver(test_envelope)
+        mock_kafka_producer_init.assert_called_once_with(bootstrap_servers='test:9092', api_version_auto_timeout_ms=5000)
+        self.assertEqual(delivery_service.producer, mock_kafka_producer_init.return_value)
+        mock_kafka_producer = mock_kafka_producer_init.return_value
+        mock_kafka_producer.send.assert_called_once_with('test_topic', b'test message')
+        mock_kafka_producer.flush.assert_not_called()
+
+    @patch('ignition.service.messaging.KafkaProducer')
     def test_deliver_throws_error_when_envelope_is_none(self, mock_kafka_producer_init):
         delivery_service = KafkaDeliveryService(messaging_config=self.mock_messaging_config)
         with self.assertRaises(ValueError) as context:
