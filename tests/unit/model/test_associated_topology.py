@@ -86,7 +86,7 @@ class TestAssociatedTopology(unittest.TestCase):
         topology = AssociatedTopology()
         with self.assertRaises(ValueError) as context:
             topology.add('A', 'not_an_entry')
-        self.assertEqual(str(context.exception), 'Associated topology entry should an instance of AssociatedTopologyEntry or RemovedTopologyEntry but was <class \'str\'>')
+        self.assertEqual(str(context.exception), 'Associated topology entry should be an instance of AssociatedTopologyEntry or RemovedTopologyEntry but was <class \'str\'>')
 
     def test_add_entry(self):
         topology = AssociatedTopology()
