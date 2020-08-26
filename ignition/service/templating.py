@@ -71,7 +71,7 @@ class ResourceTemplateContextCapability(Capability):
             resource_properties (dict or PropValueMap): dictionary of properties to include
             request_properties (dict or PropValueMap): dictionary of request properties to include
             deployment_location (dict): dictionary representing the deployment location details
-            associated_topology (dict): dictionary representing the infrastructure details
+            associated_topology (dict or AssociatedTopology): dictionary representing the associated topology details
 
         Returns:
             the context (dict)
@@ -102,7 +102,7 @@ class ResourceTemplateContextService(Service, ResourceTemplateContextCapability)
             resource_properties (dict or PropValueMap): dictionary of properties to include
             request_properties (dict or PropValueMap): dictionary of request properties to include
             deployment_location (dict): dictionary representing the deployment location details
-            associated_topology (dict): dictionary representing the infrastructure details
+            associated_topology (dict or AssociatedTopology): dictionary representing the associated topology details
 
         Returns:
             the context (dict)
