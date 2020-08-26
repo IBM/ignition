@@ -42,7 +42,8 @@ class TestResourceContextBuilder(unittest.TestCase):
                 'properties': {
                     'dlPropA': 'A DL Prop'
                 }
-            }
+            },
+            'associated_topology': {}
         })
 
     def test_init_with_prop_value_maps(self):
@@ -65,7 +66,8 @@ class TestResourceContextBuilder(unittest.TestCase):
                 'properties': {
                     'dlPropA': 'A DL Prop'
                 }
-            }
+            },
+            'associated_topology': {}
         })
 
     def test_add_resource_properties(self):
@@ -89,7 +91,8 @@ class TestResourceContextBuilder(unittest.TestCase):
                 'properties': {
                     'dlPropA': 'A DL Prop'
                 }
-            }
+            },
+            'associated_topology': {}
         })
 
     def test_add_resource_properties_from_prop_value_map(self):
@@ -113,7 +116,8 @@ class TestResourceContextBuilder(unittest.TestCase):
                 'properties': {
                     'dlPropA': 'A DL Prop'
                 }
-            }
+            },
+            'associated_topology': {}
         })
 
     
@@ -137,7 +141,8 @@ class TestResourceContextBuilder(unittest.TestCase):
                 'properties': {
                     'dlPropA': 'A DL Prop'
                 }
-            }
+            },
+            'associated_topology': {}
         })
 
     def test_add_system_properties(self):
@@ -161,7 +166,8 @@ class TestResourceContextBuilder(unittest.TestCase):
                 'properties': {
                     'dlPropA': 'A DL Prop'
                 }
-            }
+            },
+            'associated_topology': {}
         })
 
     def test_add_system_properties_from_prop_value_map(self):
@@ -185,7 +191,8 @@ class TestResourceContextBuilder(unittest.TestCase):
                 'properties': {
                     'dlPropA': 'A DL Prop'
                 }
-            }
+            },
+            'associated_topology': {}
         })
 
     def test_add_system_property(self):
@@ -208,7 +215,8 @@ class TestResourceContextBuilder(unittest.TestCase):
                 'properties': {
                     'dlPropA': 'A DL Prop'
                 }
-            }
+            },
+            'associated_topology': {}
         })
 
     def test_add_resource_properties_with_reserved_system_property_keyword(self):
@@ -265,7 +273,8 @@ class TestResourceContextBuilder(unittest.TestCase):
                 'keyName': 'theName',
                 'publicKey': 'thePublicPart',
                 'privateKey': 'ssshhh'
-            }
+            },
+            'associated_topology': {}
         })
 
     def test_add_key_system_property(self):
@@ -281,7 +290,8 @@ class TestResourceContextBuilder(unittest.TestCase):
                     'publicKey': 'thePublicPart',
                     'privateKey': 'ssshhh'
                 }
-            }
+            },
+            'associated_topology': {}
         })
 
     def test_add_key_request_property(self):
@@ -297,7 +307,8 @@ class TestResourceContextBuilder(unittest.TestCase):
                     'publicKey': 'thePublicPart',
                     'privateKey': 'ssshhh'
                 }
-            }
+            },
+            'associated_topology': {}
         })
 
     def test_set_deployment_location(self):
@@ -326,7 +337,8 @@ class TestResourceContextBuilder(unittest.TestCase):
                 'properties': {
                     'dlPropA': 'Alternative DL Prop'
                 }
-            }
+            },
+            'associated_topology': {}
         })
 
     def test_add_deployment_location_property(self):
@@ -349,7 +361,8 @@ class TestResourceContextBuilder(unittest.TestCase):
                     'dlPropA': 'A DL Prop',
                     'dlPropB': 'B DL Prop'
                 }
-            }
+            },
+            'associated_topology': {}
         })
 
     def test_deployment_location_property_not_hidden(self):
@@ -372,5 +385,6 @@ class TestResourceContextBuilder(unittest.TestCase):
                 'properties': {
                     'dlPropA': 'A DL Prop'
                 }
-            }
+            },
+            'associated_topology': {}
         })
