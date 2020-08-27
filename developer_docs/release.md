@@ -24,7 +24,7 @@ python3 -m pip --release --version <THE VERSION TO BE RELEASED> --post-version <
 
 For example:
 ```
-python3 -m pip --release --version 1.0.0 --post-version 1.0.1.dev0 --pypi-user accanto --pypi-pass mypass
+python3 build.py --release --version 1.0.0 --post-version 1.0.1.dev0 --pypi-user accanto --pypi-pass mypass
 ```
 
 Confirm the tags/commits were pushed to the repository origin.
