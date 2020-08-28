@@ -33,6 +33,8 @@ Confirm the tags/commits were pushed to the repository origin.
 
 Look at previous releases to see the format. Usually, we will list the issues fixed (make sure each issue is assigned to the milestone for the release) and include links to the Pypi location of the release.
 
+Also ensure the `-docs.tgz` file created by `build.py` is attached to the release. You should then delete this file from your machine to avoid accidentally pushing it into the repo.
+
 ## Close milestone
 
 Close the milestone for the release in the repository at: [https://github.com/IBM/ignition/milestones](https://github.com/IBM/ignition/milestones)
