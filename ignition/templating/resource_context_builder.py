@@ -1,8 +1,10 @@
 from ignition.utils.propvaluemap import PropValueMap
+from ignition.model import associated_topology
 
 SYSTEM_PROPERTIES_KEY = 'system_properties'
 REQUEST_PROPERTIES_KEY = 'request_properties'
 DEPLOYMENT_LOCATION_KEY = 'deployment_location'
+ASSOCIATED_TOPOLOGY_KEY = 'associated_topology'
 
 class ResourceContextBuilder:
     """
@@ -18,6 +20,7 @@ class ResourceContextBuilder:
             system_properties: {'resourceId': '123', 'resourceName': 'example'}
             deployment_location = {'name': 'example-location', 'type': 'test', 'properties': {'dlPropA': 'location property'}}
             request_properties: {'requestA': 'request valueA'}
+            associated_topology: {'infrastructureNameA': {'infrastructureId': 'a58b884d-1209-49e0-8966-13fcad548f4a', 'infrastructureType': 'Openstack'}}
         Result:
         {
             'propertyA' : 'valueA',
@@ -34,6 +37,12 @@ class ResourceContextBuilder:
             },
             'request_properties': {
                 'requestA': 'request_valueA'
+            },
+            associated_topology: {
+                'infrastructureNameA': {
+                    'infrastructureId': 'a58b884d-1209-49e0-8966-13fcad548f4a',
+                    'infrastructureType': 'Openstack'
+                }
             }
         }
 
@@ -41,7 +50,7 @@ class ResourceContextBuilder:
         result (dict): the context built with this instance
     """
 
-    def __init__(self, system_properties, resource_properties, request_properties, deployment_location):
+    def __init__(self, system_properties, resource_properties, request_properties, deployment_location, associated_topology = None):
         """
         Initiate a builder
 
@@ -50,22 +59,25 @@ class ResourceContextBuilder:
             resource_properties (dict or PropValueMap): dictionary of resource properties to include
             request_properties (dict or PropValueMap): dictionary of request properties to include
             deployment_location (dict): dictionary representing the deployment location details
+            associated_topology (dict): dictionary representing the infrastructure details
         """
         self.result = {
             SYSTEM_PROPERTIES_KEY: {},
             REQUEST_PROPERTIES_KEY: {},
-            DEPLOYMENT_LOCATION_KEY: {}
+            DEPLOYMENT_LOCATION_KEY: {},
+            ASSOCIATED_TOPOLOGY_KEY: {}
         }
         self.add_system_properties(system_properties)
         self.add_resource_properties(resource_properties)
         self.add_request_properties(request_properties)
         self.set_deployment_location(deployment_location)
+        self.set_associated_topology(associated_topology)
 
     def __reserved_key_error_msg(self, reserved_key):
         return f'property with name \'{reserved_key}\' cannot be used as this is a reserved word'
 
     def __check_for_reserved_key(self, key):
-        if key in [SYSTEM_PROPERTIES_KEY, DEPLOYMENT_LOCATION_KEY, REQUEST_PROPERTIES_KEY]:
+        if key in [SYSTEM_PROPERTIES_KEY, DEPLOYMENT_LOCATION_KEY, REQUEST_PROPERTIES_KEY, ASSOCIATED_TOPOLOGY_KEY]:
             raise ValueError(self.__reserved_key_error_msg(key))
 
     def add_resource_properties(self, resource_properties):
@@ -204,6 +216,20 @@ class ResourceContextBuilder:
             this builder
         """
         self.result[DEPLOYMENT_LOCATION_KEY] = deployment_location
+        return self
+    
+    def set_associated_topology(self, associated_topology):
+        """
+        Change the value of the associated topology
+
+        Args:
+            associated topology (dict): dictionary representing the associated topology details
+
+        Returns:
+            this builder
+        """
+        if associated_topology is not None:
+            self.result[ASSOCIATED_TOPOLOGY_KEY] = associated_topology.to_dict()
         return self
 
     def add_deployment_location_property(self, key, value):

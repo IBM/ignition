@@ -11,7 +11,7 @@ class AssociatedTopology:
 
     def __validate_entry(self, entry):
         if not isinstance(entry, AssociatedTopologyEntry) and not isinstance(entry, RemovedTopologyEntry):
-            raise ValueError(f'Associated topology entry should an instance of {AssociatedTopologyEntry.__name__} or {RemovedTopologyEntry.__name__} but was {type(entry)}')
+            raise ValueError(f'Associated topology entry should be an instance of {AssociatedTopologyEntry.__name__} or {RemovedTopologyEntry.__name__} but was {type(entry)}')
 
     def add(self, name, entry):
         self.__validate_entry(entry)
