@@ -2,10 +2,11 @@
 
 The following steps detail how an Ignition release is produced. This may only be performed by a user with admin rights to this Git repository and the Pypi repository.
 
-You will need to install the following python library:
+You will need to install the following python libraries:
 
 ```
 python3 -m pip install GitPython==3.1.3
+python3 -m pip install twine
 ```
 
 ## Ensure Milestone
