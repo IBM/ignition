@@ -1,5 +1,12 @@
 # Change Log
 
+## [2.0.3](https://github.com/accanto-systems/ignition/tree/2.0.3) (2020-09-15)
+[Full Changelog](https://github.com/accanto-systems/ignition/compare/2.0.2...2.0.3)
+
+**Implemented enhancements:**
+
+- Increase default api_version_auto_timeout_ms value for topic creation [\#94](https://github.com/accanto-systems/ignition/issues/94)
+
 ## [2.0.2](https://github.com/accanto-systems/ignition/tree/2.0.2) (2020-06-10)
 [Full Changelog](https://github.com/accanto-systems/ignition/compare/2.0.1...2.0.2)
 
