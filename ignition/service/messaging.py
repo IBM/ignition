@@ -60,8 +60,7 @@ class TopicCreator:
 
     def create_topic_if_needed(self, connection_address, topic_config_properties):
         if topic_config_properties.auto_create:
-            api_version_auto_timeout_ms = topic_config_properties.config.get('api_version_auto_timeout_ms', 10000)
-            admin_client = KafkaAdminClient(bootstrap_servers=connection_address, client_id='ignition', api_version_auto_timeout_ms=api_version_auto_timeout_ms)
+            admin_client = KafkaAdminClient(bootstrap_servers=connection_address, client_id='ignition')
             try:
                 logger.info("Creating topic {0} with replication factor {1}, partitions {2} and config {3}".format(topic_config_properties.name, topic_config_properties.replication_factor, topic_config_properties.num_partitions, topic_config_properties.config))
                 topic_list = [NewTopic(name=topic_config_properties.name, num_partitions=topic_config_properties.num_partitions, replication_factor=topic_config_properties.replication_factor, topic_configs=topic_config_properties.config)]
