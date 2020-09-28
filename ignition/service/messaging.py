@@ -41,7 +41,7 @@ class TopicsProperties(ConfigurationProperties, Service, Capability):
         self.lifecycle_execution_events = TopicConfigProperties(name='lm_vnfc_lifecycle_execution_events')
         # TODO externalize these properties by exposing them in a Properties class
         # No default name set on job_queue topic as this needs to be unique per driver
-        self.job_queue = TopicConfigProperties(auto_create=True, config={'retention.ms': 60000, 'message.timestamp.difference.max.ms': 60000, 'file.delete.delay.ms': 60000, 'api_version_auto_timeout_ms': 10000})
+        self.job_queue = TopicConfigProperties(auto_create=True, config={'retention.ms': 60000, 'message.timestamp.difference.max.ms': 60000, 'file.delete.delay.ms': 60000})
 
 
 class TopicConfigProperties(ConfigurationProperties):
