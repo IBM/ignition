@@ -1,5 +1,12 @@
 # Change Log
 
+## [2.0.4](https://github.com/accanto-systems/ignition/tree/2.0.4) (2020-09-30)
+[Full Changelog](https://github.com/accanto-systems/ignition/compare/2.0.3...2.0.4)
+
+**Implemented enhancements:**
+
+- Extend ResourceTemplateContextService to include associated topology [\#93](https://github.com/accanto-systems/ignition/issues/93)
+
 ## [2.0.3](https://github.com/accanto-systems/ignition/tree/2.0.3) (2020-09-15)
 [Full Changelog](https://github.com/accanto-systems/ignition/compare/2.0.2...2.0.3)
 
