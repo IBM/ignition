@@ -236,17 +236,15 @@ class KafkaConsumerFactory(Service):
     """
     A factory for creating Kafka request queue consumers
     """
-    def __init__(self, request_queue_config, messaging_config):
-        if messaging_config is None:
-            raise ValueError('messaging_config cannot be null')
-        if messaging_config.connection_address is None or messaging_config.connection_address == '':
-            raise ValueError('messaging_config.connection_address cannot be null')
-        self.bootstrap_servers = messaging_config.connection_address
+    def __init__(self, request_queue_config, messaging_properties):
+        if messaging_properties is None:
+            raise ValueError('messaging_properties cannot be null')
+        if messaging_properties.connection_address is None or messaging_properties.connection_address == '':
+            raise ValueError('messaging_properties.connection_address cannot be null')
+        self.messaging_config = messaging_properties.config
+        self.bootstrap_servers = messaging_properties.connection_address
         if request_queue_config.topic.name is None or request_queue_config.topic.name == '':
             raise ValueError('request_queue_config.topic.name cannot be null')
-        self.api_version_auto_timeout_ms = messaging_config.api_version_auto_timeout_ms
-        if self.api_version_auto_timeout_ms is None:
-            self.api_version_auto_timeout_ms = 6000
         self.topic_name = request_queue_config.topic.name
         if request_queue_config.group_id is None or request_queue_config.group_id == '':
             raise ValueError('request_queue_config.group_id cannot be null')
@@ -254,15 +252,24 @@ class KafkaConsumerFactory(Service):
 
     def create_consumer(self, max_poll_interval_ms=MAX_POLL_INTERVAL):
         logger.debug("Creating Kafka consumer for bootstrap server {0} topic {1} group {2} max_poll_interval_ms {3}".format(self.bootstrap_servers, self.topic_name, self.group_id, max_poll_interval_ms))
-        return KafkaConsumer(self.topic_name, bootstrap_servers=self.bootstrap_servers, group_id=self.group_id, enable_auto_commit=False, max_poll_interval_ms=max_poll_interval_ms, api_version_auto_timeout_ms=self.api_version_auto_timeout_ms)
+        # KafkaConsumer is picky about which keyword arguments are passed in, so build the parameters from KafkaProducer.DEFAULT_CONFIG
+        config = {key:self.messaging_config.get(key, None) for key in KafkaConsumer.DEFAULT_CONFIG if self.messaging_config.get(key, None) is not None}
+        config['bootstrap_servers'] = self.bootstrap_servers
+        config['group_id'] = self.group_id
+        config['enable_auto_commit'] = False
+        config['max_poll_interval_ms'] = max_poll_interval_ms
+        config['client_id'] = 'ignition'
+        return KafkaConsumer(self.topic_name, **config)
+
 
 class KafkaLifecycleConsumerFactory(KafkaConsumerFactory, LifecycleConsumerFactoryCapability):
     """
     A factory for creating Kafka lifecycle request queue consumers
     """
-    def __init__(self, request_queue_config, messaging_config):
-        super(KafkaLifecycleConsumerFactory, self).__init__(request_queue_config, messaging_config)
-
+    def __init__(self, request_queue_config, **kwargs):
+        if 'messaging_properties' not in kwargs:
+            raise ValueError('messaging_properties argument not provided')
+        super(KafkaLifecycleConsumerFactory, self).__init__(request_queue_config, kwargs.get('messaging_properties'))
 
 
 class KafkaLifecycleRequestQueueService(Service, LifecycleRequestQueueCapability):
@@ -270,8 +277,8 @@ class KafkaLifecycleRequestQueueService(Service, LifecycleRequestQueueCapability
     def __init__(self, **kwargs):
         if 'lifecycle_messaging_service' not in kwargs:
             raise ValueError('lifecycle_messaging_service argument not provided')
-        if 'messaging_config' not in kwargs:
-            raise ValueError('messaging_config argument not provided')
+        if 'messaging_properties' not in kwargs:
+            raise ValueError('messaging_properties argument not provided')
         if 'resource_driver_config' not in kwargs:
             raise ValueError('resource_driver_config argument not provided')
         if 'postal_service' not in kwargs:
@@ -281,12 +288,12 @@ class KafkaLifecycleRequestQueueService(Service, LifecycleRequestQueueCapability
         if 'lifecycle_consumer_factory' not in kwargs:
             raise ValueError('lifecycle_consumer_factory argument not provided')
 
-        messaging_config = kwargs.get('messaging_config')
+        messaging_properties = kwargs.get('messaging_properties')
         resource_driver_config = kwargs.get('resource_driver_config')
 
         self.lifecycle_messaging_service = kwargs.get('lifecycle_messaging_service')
         self.driver_files_manager = kwargs.get('driver_files_manager')
-        self.bootstrap_servers = messaging_config.connection_address
+        self.bootstrap_servers = messaging_properties.connection_address
         self.lifecycle_request_queue_config = resource_driver_config.lifecycle_request_queue
         self.postal_service = kwargs.get('postal_service')
         self.lifecycle_consumer_factory = kwargs.get('lifecycle_consumer_factory')

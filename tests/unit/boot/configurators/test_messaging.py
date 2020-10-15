@@ -47,7 +47,7 @@ class TestMessagingConfigurator(ConfiguratorTestCase):
         self.mock_service_register.get_service_offering_capability.return_value = None
         MessagingConfigurator().configure(configuration, self.mock_service_register)
         registered_service = self.assert_single_service_registered()
-        self.assert_service_registration_equal(registered_service, ServiceRegistration(KafkaDeliveryService, messaging_config=MessagingProperties))
+        self.assert_service_registration_equal(registered_service, ServiceRegistration(KafkaDeliveryService, messaging_properties=MessagingProperties))
 
     def test_configure_delivery_fails_when_already_registered(self):
         configuration = self.__bootstrap_config()
@@ -74,7 +74,7 @@ class TestMessagingConfigurator(ConfiguratorTestCase):
         self.mock_service_register.get_service_offering_capability.return_value = None
         MessagingConfigurator().configure(configuration, self.mock_service_register)
         registered_service = self.assert_single_service_registered()
-        self.assert_service_registration_equal(registered_service, ServiceRegistration(KafkaInboxService, messaging_config=MessagingProperties))
+        self.assert_service_registration_equal(registered_service, ServiceRegistration(KafkaInboxService, messaging_properties=MessagingProperties))
 
     def test_configure_inbox_fails_when_already_registered(self):
         configuration = self.__bootstrap_config()
