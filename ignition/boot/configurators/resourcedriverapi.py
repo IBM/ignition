@@ -116,7 +116,7 @@ class ResourceDriverServicesConfigurator():
                 raise ValueError('messaging.connection_address must be set when bootstrap.resource_driver.lifecycle_messaging_service_enabled')
             if messaging_config.topics.lifecycle_execution_events is None:
                 raise ValueError('messaging.topics.lifecycle_execution_events must be set when bootstrap.resource_driver.lifecycle_messaging_service_enabled')
-            TopicCreator().create_topic_if_needed(messaging_config.connection_address, messaging_config.topics.lifecycle_execution_events)
+            TopicCreator().create_topic_if_needed(messaging_config, messaging_config.topics.lifecycle_execution_events)
             service_register.add_service(ServiceRegistration(LifecycleMessagingService, postal_service=PostalCapability, topics_configuration=TopicsProperties))
         else:
             logger.debug('Disabled: bootstrapped Resource Driver Lifecycle Messaging Service')

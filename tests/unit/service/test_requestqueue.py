@@ -17,7 +17,6 @@ class TestRequestQueueService(unittest.TestCase):
         self.mock_postal_service = MagicMock()
         self.mock_lifecycle_messaging_service = MagicMock()
         self.mock_driver_files_manager = MagicMock()
-        self.mock_messaging_config = MagicMock(connection_address='test:9092')
 
     def test_kafka_request_queue_handler_null_request_id(self):
         mock_messaging_service = MagicMock()

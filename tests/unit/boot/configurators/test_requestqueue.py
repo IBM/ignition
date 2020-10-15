@@ -53,7 +53,7 @@ class TestRequestQueueConfigurator(ConfiguratorTestCase):
         RequestQueueConfigurator(self.mock_topic_creator).configure(configuration, self.mock_service_register)
         registered_service = self.assert_services_registered(2)
 
-        self.assert_service_registration_equal(registered_service[1], ServiceRegistration(KafkaLifecycleRequestQueueService, lifecycle_messaging_service=LifecycleMessagingCapability, messaging_config=MessagingProperties,
+        self.assert_service_registration_equal(registered_service[1], ServiceRegistration(KafkaLifecycleRequestQueueService, lifecycle_messaging_service=LifecycleMessagingCapability, messaging_properties=MessagingProperties,
                 resource_driver_config=ResourceDriverProperties, postal_service=PostalCapability, driver_files_manager=DriverFilesManagerCapability,
                 lifecycle_consumer_factory=LifecycleConsumerFactoryCapability))
 
@@ -64,16 +64,22 @@ class TestRequestQueueConfigurator(ConfiguratorTestCase):
         service_call = service_calls[0]
         service_call_args, kwargs = service_call
         self.assertEqual(len(service_call_args), 2)
-        connection_address = service_call_args[0]
-        self.assertEqual(connection_address, "kafka")
+        messaging_properties = service_call_args[0]
+        self.assertEqual(messaging_properties.connection_address, "kafka")
+        self.assertEqual(messaging_properties.config, {
+            'api_version_auto_timeout_ms': 5000,
+        })
         topic_config_properties = service_call_args[1]
         self.assertIsInstance(topic_config_properties, TopicConfigProperties)
 
         service_call = service_calls[1]
         service_call_args, kwargs = service_call
         self.assertEqual(len(service_call_args), 2)
-        connection_address = service_call_args[0]
-        self.assertEqual(connection_address, "kafka")
+        messaging_properties = service_call_args[0]
+        self.assertEqual(messaging_properties.connection_address, "kafka")
+        self.assertEqual(messaging_properties.config, {
+            'api_version_auto_timeout_ms': 5000,
+        })
         topic_config_properties = service_call_args[1]
         self.assertIsInstance(topic_config_properties, TopicConfigProperties)
 

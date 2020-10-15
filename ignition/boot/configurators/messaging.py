@@ -34,7 +34,7 @@ class MessagingConfigurator():
             if messaging_config.connection_address is None:
                 raise ValueError('messaging.connection_address must be set when bootstrap.messaging.delivery_enabled is True')
             validate_no_service_with_capability_exists(service_register, DeliveryCapability, 'Delivery Service', 'bootstrap.messaging.delivery_enabled')
-            service_register.add_service(ServiceRegistration(KafkaDeliveryService, messaging_config=MessagingProperties))
+            service_register.add_service(ServiceRegistration(KafkaDeliveryService, messaging_properties=MessagingProperties))
         else:
             logger.debug('Disabled: bootstrapped Messaging Delivery Service')
 
@@ -46,6 +46,6 @@ class MessagingConfigurator():
             if messaging_config.connection_address is None:
                 raise ValueError('messaging.connection_address must be set when bootstrap.messaging.inbox_enabled is True')
             validate_no_service_with_capability_exists(service_register, InboxCapability, 'Inbox Service', 'bootstrap.messaging.inbox_enabled')
-            service_register.add_service(ServiceRegistration(KafkaInboxService, messaging_config=MessagingProperties))
+            service_register.add_service(ServiceRegistration(KafkaInboxService, messaging_properties=MessagingProperties))
         else:
             logger.debug('Disabled: bootstrapped Messaging Inbox Service')
