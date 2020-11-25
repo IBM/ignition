@@ -5,7 +5,9 @@
 
 **Implemented enhancements:**
 
+- Expose Kafka Producer and Consumer Configuration [\#88](https://github.com/accanto-systems/ignition/issues/88)
 - Extend ResourceTemplateContextService to include associated topology [\#93](https://github.com/accanto-systems/ignition/issues/93)
+- Consistent NoBrokersAvailable exceptions on driver bootstrap in OCP Environments [\#97](https://github.com/accanto-systems/ignition/issues/97)
 
 ## [2.0.3](https://github.com/accanto-systems/ignition/tree/2.0.3) (2020-09-15)
 [Full Changelog](https://github.com/accanto-systems/ignition/compare/2.0.2...2.0.3)
