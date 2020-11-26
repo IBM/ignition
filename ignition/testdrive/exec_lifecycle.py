@@ -3,6 +3,7 @@ import yaml
 import logging
 import json
 import time
+import uuid
 import threading
 from threading import Lock
 from datetime import datetime
@@ -14,7 +15,20 @@ logging.getLogger('kafka').setLevel(logging.WARNING)
 
 class ExecLifecycleRequest:
 
-    def __init__(self, resource_state, lifecycle_name, driver_type, driver_endpoint, wait_async, request_properties=None, kafka_endpoint=None, topic='lm_vnfc_lifecycle_execution_events', async_timeout=900, quiet=False):
+    def __init__(self, 
+                    resource_state, 
+                    lifecycle_name, 
+                    driver_type, 
+                    driver_endpoint,
+                    wait_async, 
+                    request_properties=None, 
+                    kafka_endpoint=None, 
+                    topic='lm_vnfc_lifecycle_execution_events', 
+                    async_timeout=900, 
+                    quiet=False,
+                    tx_id=None, 
+                    process_id=None, 
+                    task_id=None):
         if resource_state is None:
             raise ValueError('resource_state must be provided')
         self.resource_state = resource_state
@@ -39,6 +53,9 @@ class ExecLifecycleRequest:
         self.async_timeout = async_timeout
         self.request_properties = request_properties if request_properties is not None else {}
         self.quiet = quiet
+        self.tx_id = tx_id or 'testdrive-tx-{0}'.format(str(uuid.uuid4()))
+        self.process_id = process_id or 'testdrive-process-{0}'.format(str(uuid.uuid4()))
+        self.task_id = task_id or 'testdrive-task-{0}'.format(str(uuid.uuid4()))
 
     def run(self):
         if self.wait_async is True:
@@ -60,6 +77,11 @@ class ExecLifecycleRequest:
         return response
 
     def _get_request_args(self):
+        headers = {
+            'X-Tracectx-TransactionId': self.tx_id,
+            'X-Tracectx-ProcessId': self.process_id,
+            'X-Tracectx-TaskId': self.task_id,
+        }
         return {
             'lifecycle_name': self.lifecycle_name,
             'driver_files': self.resource_state.base64_driver_files(self.driver_type),
@@ -67,7 +89,8 @@ class ExecLifecycleRequest:
             'resource_properties': self.resource_state.resource_properties,
             'request_properties': self.request_properties,
             'associated_topology': self.resource_state.associated_topology,
-            'deployment_location': self.resource_state.deployment_location
+            'deployment_location': self.resource_state.deployment_location,
+            'headers': headers
         }
 
     def _start_consumer_thread(self):
