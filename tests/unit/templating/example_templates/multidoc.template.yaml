@@ -5,6 +5,7 @@ metadata:
 data:
   dataA: {{ dataA }}
   dataB: {{ dataB }}
+  dataC: "This is {{ dataC }}"
 ---
 apiVersion: extensions/v1beta1
 kind: Ingress

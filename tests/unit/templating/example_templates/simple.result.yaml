@@ -4,4 +4,4 @@ metadata:
   name: testing
 data:
   dataA: TestA
-  dataB: TestB
+  dataB: 1

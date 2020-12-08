@@ -185,7 +185,13 @@ components:
       type: object
       properties:
         value:
-          type: string
+          anyOf:
+          - type: string
+          - type: number
+          - type: integer
+          - type: boolean
+          - type: array
+          - type: object
         type:
           type: string
     LifecycleExecutionAcceptedResponse:

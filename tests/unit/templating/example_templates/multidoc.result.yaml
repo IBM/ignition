@@ -5,6 +5,7 @@ metadata:
 data:
   dataA: TestA
   dataB: TestB
+  dataC: "This is True"
 ---
 apiVersion: extensions/v1beta1
 kind: Ingress
