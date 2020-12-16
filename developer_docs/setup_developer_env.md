@@ -43,9 +43,9 @@ Scripts\activate.ps1
 Scripts\activate
 ```
 
-## Install Ignition
+## Install Ignition 
 
-You may now install Ignition into your environment:
+You should install Ignition to make it's modules available for import. This is required to run the unit tests.
 
 ```
 python3 -m pip install --editable .
