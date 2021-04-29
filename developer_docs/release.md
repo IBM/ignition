@@ -21,6 +21,12 @@ Update the `CHANGELOG.md` file with a list of issues fixed by this release (see 
 
 Commit and push these changes.
 
+## Merge Develop to Master
+
+Development work is normally carried out on the `develop` branch. Merge this branch to `master`, by creating a PR, then perform the release from the `master` branch. This ensures the `master` branch is tagged correctly. 
+
+> Note: do NOT delete the `develop` branch
+
 ## Build and Release
 
 Run the `build.py` program to perform a release:
