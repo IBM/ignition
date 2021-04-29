@@ -4,3 +4,4 @@ dataB: TestB
 host: somehost
 serviceName: test
 servicePort: 7777
+dataC: True
