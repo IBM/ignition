@@ -2,34 +2,40 @@
 
 The following steps detail how an Ignition release is produced. This may only be performed by a user with admin rights to this Git repository and the Pypi repository.
 
-You will need to install the following python libraries:
+**Ensure you've followed the steps in [configure your development environment](setup_developer_env.md) as there are libraries required to complete the release.**
 
-```
-python3 -m pip install GitPython==3.1.3
-python3 -m pip install twine
-```
-
-## Ensure Milestone
+## 1. Ensure Milestone
 
 Ensure there is a milestone created for the release at: [https://github.com/IBM/ignition/milestones](https://github.com/IBM/ignition/milestones).
 
-Also ensure all issues going into this release are assigned to this milestone.
+Also ensure all issues going into this release are assigned to this milestone. **Move any issues from unreleased milestones into this release if the code has been merged**
 
-## Update CHANGLOG
+## 2. Update CHANGELOG (on develop)
 
 Update the `CHANGELOG.md` file with a list of issues fixed by this release (see other items in this file to get an idea of the desired format).
 
 Commit and push these changes.
 
-## Merge Develop to Master
+## 3. Merge Develop to Master
 
-Development work is normally carried out on the `develop` branch. Merge this branch to `master`, by creating a PR, then perform the release from the `master` branch. This ensures the `master` branch is tagged correctly. 
+Development work is normally carried out on the `develop` branch. Merge this branch to `master`, by creating a PR, 
+
+Then perform the release from the `master` branch. This ensures the `master` branch is tagged correctly. 
 
 > Note: do NOT delete the `develop` branch
 
-## Build and Release
+## 4. Build and Release (on master))
 
-Run the `build.py` program to perform a release:
+The `build.py` script automates the following steps: 
+
+- Update the release version in pkg_info.json
+- Build the Python whl for the library
+- Package Documentation
+- Push Whl to Pypi
+- Create a tagged commit in the git repository to mark this release
+
+
+To perform a release, run `build.py` and set the following options:
 
 ```
 python3 build.py --release --version <THE VERSION TO BE RELEASED> --post-version <VERSION TO BE USED AFTER THE RELEASE> --pypi-user <USERNAME FOR PYPI> --pypi-pass <PASSWORD FOR PYPI USER>
@@ -42,12 +48,23 @@ python3 build.py --release --version 1.0.0 --post-version 1.0.1.dev0 --pypi-user
 
 Confirm the tags/commits were pushed to the repository origin.
 
-## Update Release Notes
+## 5. Release artifacts
 
-Look at previous releases to see the format. Usually, we will list the issues fixed (make sure each issue is assigned to the milestone for the release) and include links to the Pypi location of the release. This is essentially the same content you have already added to `CHANGELOG.md` so just copy and paste the entry for this release, edit the header to say `Release Notes`.
+The Whl has been pushed to Pypi by the `build.py` script but the documentation must be uploaded manually to Github.
 
-Also ensure the `-docs.tgz` file created by `build.py` is attached to the release. You should then delete this file from your machine to avoid accidentally pushing it into the repo.
+Complete the following:
 
-## Close milestone
+- Visit the [releases](https://github.com/IBM/ignition/releases) section of the driver repository
+- Click `Draft a new release`
+- Input the version the `--version` option earlier as the tag e.g. 1.0.0
+- Use the same value for the `Release title` e.g. 1.0.0
+- Add release notes in the description of the release. Look at previous releases to see the format. Usually, we will list the issues fixed. This is essentially the same content you have already added to `CHANGELOG.md` so just copy and paste the entry for this release, edit the header to say `Release Notes`.
+- Attach the documentation `tgz` file produced by `build.py` in the root directory of this project
 
-Close the milestone for the release in the repository at: [https://github.com/IBM/ignition/milestones](https://github.com/IBM/ignition/milestones)
+## 6. Cleanup
+
+Complete the following steps to ensure development can continue as normal:
+
+- Merge `master` to `develop` (so any release updates and the post-version are copied over from master)
+- Close the Milestone for this release on [Github](https://github.com/IBM/ignition/milestones)
+- Create a new Milestone for next release (if one does not exist). Use the value of the `--post-version` option from earlier
