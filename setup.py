@@ -10,11 +10,11 @@ with open("DESCRIPTION.md", "r") as description_file:
 setup(
     name='ignition-framework',
     version=_pkg_info['version'],
-    author='Accanto Systems',
-    description='Stratoss Lifecycle Manager RM driver framework',
+    author='IBM',
+    description='IBM CP4NA RM driver framework',
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/accanto-systems/ignition",
+    url="https://github.com/IBM/ignition",
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: Apache Software License",
@@ -23,13 +23,13 @@ setup(
     packages=find_namespace_packages(include=['ignition*']),
     include_package_data=True,
     install_requires=[
-        'connexion[swagger-ui]>=2.2.0,<3.0',
-        'kafka-python>=1.4.6',
-        'networkx>=2.3',
-        'frozendict>=1.2',
-        'Jinja2>=2.7',
-        'requests==2.23.0',
-        'click>=7.0'
+        'connexion[swagger-ui]==2.7.0',
+        'kafka-python==2.0.2',
+        'networkx==2.5.1',
+        'frozendict==2.0.2',
+        'Jinja2==3.0.1',
+        'requests==2.25.0',
+        'click==8.0.1'
     ],
     entry_points='''
         [console_scripts]

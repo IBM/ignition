@@ -19,7 +19,7 @@ class HandlerEntry():
         if not callable(handler):
             raise ValueError('handler must be a callable type')
         handler_args = inspect.getfullargspec(handler).args
-        valid_handler = (len(handler_args) is 1) or (len(handler_args) is 2 and handler_args[0] is 'self')
+        valid_handler = (len(handler_args) == 1) or (len(handler_args) == 2 and handler_args[0] == 'self')
         if not valid_handler:
             raise ValueError('handler must accept a single argument (excluding self)')
         self.exception_type = exception_type
