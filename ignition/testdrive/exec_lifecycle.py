@@ -78,9 +78,9 @@ class ExecLifecycleRequest:
 
     def _get_request_args(self):
         headers = {
-            'X-Tracectx-TransactionId': self.tx_id,
-            'X-Tracectx-ProcessId': self.process_id,
-            'X-Tracectx-TaskId': self.task_id,
+            'x-tracectx-TransactionId': self.tx_id,
+            'x-tracectx-ProcessId': self.process_id,
+            'x-tracectx-TaskId': self.task_id,
         }
         return {
             'lifecycle_name': self.lifecycle_name,
