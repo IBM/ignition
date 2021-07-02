@@ -21,8 +21,10 @@ class MessagingProperties(ConfigurationPropertiesGroup, Service, Capability):
 
     Attributes:
     - connection_address:
-            the bootstrap servers string for the Kafka cluster to connect with
-                (required: when delivery.bootstrap_service is enabled)
+        the bootstrap servers string for the Kafka cluster to connect with
+            (required: when delivery.bootstrap_service is enabled)
+    - config:
+            configuration relating to the messaging backend e.g. Kafka.
     - topics:
             configuration of topics to be used by the Message Delivery service
                 (default: )
@@ -34,12 +36,24 @@ class MessagingProperties(ConfigurationPropertiesGroup, Service, Capability):
         self.api_version_auto_timeout_ms = None
         self.auto_flush = True
         self.topics = TopicsProperties()
+        self.config = {
+            'api_version_auto_timeout_ms': 5000
+        }
+
+    def __eq__(self, other):
+        if not type(self) == type(other):
+            return False
+        return self.connection_address == other.connection_address and self.config == other.config
+
+    def get_api_version_auto_timeout_ms(self):
+        return self.config.get('api_version_auto_timeout_ms', 5000)
 
 
 class TopicsProperties(ConfigurationProperties, Service, Capability):
 
     def __init__(self):
         self.lifecycle_execution_events = TopicConfigProperties(name='lm_vnfc_lifecycle_execution_events')
+        # TODO externalize these properties by exposing them in a Properties class
         # No default name set on job_queue topic as this needs to be unique per driver
         self.job_queue = TopicConfigProperties(auto_create=True, config={'retention.ms': 60000, 'message.timestamp.difference.max.ms': 60000, 'file.delete.delay.ms': 60000})
 
@@ -58,9 +72,13 @@ class TopicConfigProperties(ConfigurationProperties):
 
 class TopicCreator:
 
-    def create_topic_if_needed(self, connection_address, topic_config_properties):
+    def create_topic_if_needed(self, messaging_properties, topic_config_properties):
         if topic_config_properties.auto_create:
-            admin_client = KafkaAdminClient(bootstrap_servers=connection_address, client_id='ignition')
+            # KafkaAdminClient is picky about which keyword arguments are passed in, so build the parameters from KafkaAdminClient.DEFAULT_CONFIG
+            config = {key:messaging_properties.config.get(key, None) for key in KafkaAdminClient.DEFAULT_CONFIG if messaging_properties.config.get(key, None) is not None }
+            config['bootstrap_servers'] = messaging_properties.connection_address
+            config['client_id'] ='ignition'
+            admin_client = KafkaAdminClient(**config)
             try:
                 logger.info("Creating topic {0} with replication factor {1}, partitions {2} and config {3}".format(topic_config_properties.name, topic_config_properties.replication_factor, topic_config_properties.num_partitions, topic_config_properties.config))
                 topic_list = [NewTopic(name=topic_config_properties.name, num_partitions=topic_config_properties.num_partitions, replication_factor=topic_config_properties.replication_factor, topic_configs=topic_config_properties.config)]
@@ -74,6 +92,7 @@ class TopicCreator:
                     logger.debug("Exception closing Kafka admin client {0}".format(str(e)))
         else:
             logger.info("Not creating job queue topic {0}".format(topic_config_properties.name))
+
 
 ############################
 # Core Classes
@@ -177,23 +196,28 @@ class PostalService(Service, PostalCapability):
 class KafkaDeliveryService(Service, DeliveryCapability):
 
     def __init__(self, **kwargs):
-        if 'messaging_config' not in kwargs:
-            raise ValueError('messaging_config argument not provided')
-        messaging_config = kwargs.get('messaging_config')
-        self.bootstrap_servers = messaging_config.connection_address
+        if 'messaging_properties' not in kwargs:
+            raise ValueError('messaging_properties argument not provided')
+        messaging_properties = kwargs.get('messaging_properties')        
+        self.bootstrap_servers = messaging_properties.connection_address
         if self.bootstrap_servers is None:
             raise ValueError('connection_address not set on messaging_config')
-        self.api_version_auto_timeout_ms = messaging_config.api_version_auto_timeout_ms
+        self.messaging_config = messaging_properties.config
+        self.api_version_auto_timeout_ms = self.messaging_config.api_version_auto_timeout_ms
         if self.api_version_auto_timeout_ms is None:
             self.api_version_auto_timeout_ms = 6000
-        self.auto_flush = messaging_config.auto_flush
+        self.auto_flush = self.messaging_config.auto_flush
         if self.auto_flush is None:
             self.auto_flush = True
         self.producer = None
 
     def __lazy_init_producer(self):
         if self.producer is None:
-            self.producer = KafkaProducer(bootstrap_servers=self.bootstrap_servers, api_version_auto_timeout_ms=self.api_version_auto_timeout_ms)
+            # KafkaProducer is picky about which keyword arguments are passed in, so build the parameters from KafkaProducer.DEFAULT_CONFIG
+            config = {key:self.messaging_config.get(key, None) for key in KafkaProducer.DEFAULT_CONFIG if self.messaging_config.get(key, None) is not None}
+            config['bootstrap_servers'] = self.bootstrap_servers
+            config['client_id'] = 'ignition'
+            self.producer = KafkaProducer(**config)
 
     def __on_send_success(self, record_metadata):
         logger.debug('Envelope successfully posted to {0} on partition {1} and offset {2}'.format(record_metadata.topic, record_metadata.partition, record_metadata.offset))
@@ -216,20 +240,19 @@ class KafkaDeliveryService(Service, DeliveryCapability):
             if self.auto_flush:
                 self.producer.flush()
 
+
 class KafkaInboxService(Service, InboxCapability):
 
     def __init__(self, test_mode=False, **kwargs):
         self.test_mode = test_mode
         self.exited = False
-        if 'messaging_config' not in kwargs:
-            raise ValueError('messaging_config argument not provided')
-        messaging_config = kwargs.get('messaging_config')
-        self.bootstrap_servers = messaging_config.connection_address
+        if 'messaging_properties' not in kwargs:
+            raise ValueError('messaging_properties argument not provided')
+        messaging_properties = kwargs.get('messaging_properties')
+        self.bootstrap_servers = messaging_properties.connection_address
+        self.messaging_config = messaging_properties.config
         if self.bootstrap_servers is None:
-            raise ValueError('connection_address not set on messaging_config')
-        self.api_version_auto_timeout_ms = messaging_config.api_version_auto_timeout_ms
-        if self.api_version_auto_timeout_ms is None:
-            self.api_version_auto_timeout_ms = 6000
+            raise ValueError('connection_address not set on messaging_properties')
         self.active_threads = []
 
     def __thread_exit_func(self, thread, closing_error):
@@ -242,7 +265,7 @@ class KafkaInboxService(Service, InboxCapability):
                 _thread.interrupt_main()
 
     def watch_inbox(self, group_id, address, read_func):
-        thread = KafkaInboxThread(self.bootstrap_servers, self.api_version_auto_timeout_ms, group_id, address, read_func, self.__thread_exit_func)
+        thread = KafkaInboxThread(self.bootstrap_servers, group_id, address, read_func, self.__thread_exit_func, self.messaging_config)
         thread.setDaemon(True)
         self.active_threads.append(thread)
         try:
@@ -253,21 +276,29 @@ class KafkaInboxService(Service, InboxCapability):
 
 class KafkaInboxThread(threading.Thread):
 
-    def __init__(self, bootstrap_servers, api_version_auto_timeout_ms, group_id, topic, consumer_func, thread_exit_func):
+    def __init__(self, bootstrap_servers, group_id, topic, consumer_func, thread_exit_func, messaging_config):
         self.parent = threading.currentThread()
         self.bootstrap_servers = bootstrap_servers
-        self.api_version_auto_timeout_ms = api_version_auto_timeout_ms
         self.group_id = group_id
         self.topic = topic
         self.consumer_func = consumer_func
         self.thread_exit_func = thread_exit_func
+        self.messaging_config = messaging_config
 
         super().__init__()
 
     def run(self):
         logger.info('Starting watch on inbox topic: {0}'.format(self.topic))
         closing_error = None
-        consumer = KafkaConsumer(self.topic, bootstrap_servers=self.bootstrap_servers, group_id=self.group_id, enable_auto_commit=False, api_version_auto_timeout_ms=self.api_version_auto_timeout_ms, )
+
+        # KafkaConsumer is picky about which keyword arguments are passed in, so build the parameters from KafkaProducer.DEFAULT_CONFIG
+        config = {key:self.messaging_config.get(key, None) for key in KafkaConsumer.DEFAULT_CONFIG if self.messaging_config.get(key, None) is not None }
+        config['bootstrap_servers'] = self.bootstrap_servers
+        config['group_id'] = self.group_id
+        config['enable_auto_commit'] = False
+        config['client_id'] = 'ignition'
+        consumer = KafkaConsumer(self.topic, **config)
+
         try:
             for record in consumer:
                 logger.debug('Inbox ({0}) has received a new message: {1}'.format(self.topic, record))

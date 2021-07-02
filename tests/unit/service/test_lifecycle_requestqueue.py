@@ -34,7 +34,9 @@ class TestLifecycleRequestQueueService(unittest.TestCase):
         self.mock_postal_service = MagicMock()
         self.mock_lifecycle_messaging_service = MagicMock()
         self.mock_driver_files_manager = MagicMock()
-        self.mock_messaging_config = MagicMock(connection_address='test:9092')
+        # self.messaging_properties = MessagingProperties()
+        # self.messaging_properties.connection_address = 'test:9092'
+        self.mock_messaging_properties = MagicMock(connection_address='test:9092', config={'api_version_auto_timeout_ms':5000})
 
     def assert_request_posted(self, topic, request):
         self.mock_postal_service.post.assert_called_once()
@@ -67,38 +69,41 @@ class TestLifecycleRequestQueueService(unittest.TestCase):
 
     def test_init_without_lifecycle_messaging_service_throws_error(self):
         with self.assertRaises(ValueError) as context:
-            KafkaLifecycleRequestQueueService(driver_files_manager=self.mock_driver_files_manager, postal_service=self.mock_postal_service, resource_driver_config=ResourceDriverProperties(), messaging_config=self.mock_messaging_config)
+            KafkaLifecycleRequestQueueService(driver_files_manager=self.mock_driver_files_manager, postal_service=self.mock_postal_service, resource_driver_config=ResourceDriverProperties(), messaging_properties=self.mock_messaging_properties)
         self.assertEqual(str(context.exception), 'lifecycle_messaging_service argument not provided')
 
     def test_init_without_driver_files_manager_throws_error(self):
         with self.assertRaises(ValueError) as context:
-            KafkaLifecycleRequestQueueService(lifecycle_messaging_service=self.mock_lifecycle_messaging_service, postal_service=self.mock_postal_service, resource_driver_config=ResourceDriverProperties(), messaging_config=self.mock_messaging_config)
+            KafkaLifecycleRequestQueueService(lifecycle_messaging_service=self.mock_lifecycle_messaging_service, postal_service=self.mock_postal_service, resource_driver_config=ResourceDriverProperties(), messaging_properties=self.mock_messaging_properties)
         self.assertEqual(str(context.exception), 'driver_files_manager argument not provided')
 
     def test_init_without_messaging_config_throws_error(self):
         with self.assertRaises(ValueError) as context:
             KafkaLifecycleRequestQueueService(lifecycle_messaging_service=self.mock_lifecycle_messaging_service, driver_files_manager=self.mock_driver_files_manager, postal_service=self.mock_postal_service, resource_driver_config=ResourceDriverProperties())
-        self.assertEqual(str(context.exception), 'messaging_config argument not provided')
+        self.assertEqual(str(context.exception), 'messaging_properties argument not provided')
 
     def test_init_without_resource_driver_config_throws_error(self):
         with self.assertRaises(ValueError) as context:
-            KafkaLifecycleRequestQueueService(lifecycle_messaging_service=self.mock_lifecycle_messaging_service, driver_files_manager=self.mock_driver_files_manager, postal_service=self.mock_postal_service, messaging_config=self.mock_messaging_config)
+            KafkaLifecycleRequestQueueService(lifecycle_messaging_service=self.mock_lifecycle_messaging_service, driver_files_manager=self.mock_driver_files_manager, postal_service=self.mock_postal_service, messaging_properties=self.mock_messaging_properties)
         self.assertEqual(str(context.exception), 'resource_driver_config argument not provided')
 
     def test_init_without_postal_service_throws_error(self):
         with self.assertRaises(ValueError) as context:
-            KafkaLifecycleRequestQueueService(lifecycle_messaging_service=self.mock_lifecycle_messaging_service, driver_files_manager=self.mock_driver_files_manager, resource_driver_config=ResourceDriverProperties(), messaging_config=self.mock_messaging_config)
+            KafkaLifecycleRequestQueueService(lifecycle_messaging_service=self.mock_lifecycle_messaging_service, driver_files_manager=self.mock_driver_files_manager, resource_driver_config=ResourceDriverProperties(), messaging_properties=self.mock_messaging_properties)
         self.assertEqual(str(context.exception), 'postal_service argument not provided')
 
     def test_init_KafkaLifecycleConsumerFactory_fails_when_messaging_connection_address_not_set(self):
-        messaging_conf = MessagingProperties()
-        messaging_conf.connection_address = None
+        messaging_properties = MessagingProperties()
+        messaging_properties.connection_address = None
+        messaging_properties.config = {
+            'api_version_auto_timeout_ms': 5000
+        }
         resource_driver_config = ResourceDriverProperties()
         with self.assertRaises(ValueError) as context:
-            KafkaLifecycleConsumerFactory(resource_driver_config, messaging_conf)
+            KafkaLifecycleConsumerFactory(resource_driver_config, messaging_properties=messaging_properties)
 
     def test_queue_lifecycle_request_missing_request_id(self):
-        requestqueue_service = KafkaLifecycleRequestQueueService(lifecycle_messaging_service=self.mock_lifecycle_messaging_service, postal_service=self.mock_postal_service, driver_files_manager=self.mock_driver_files_manager, resource_driver_config=self.resource_driver_config, messaging_config=self.mock_messaging_config, lifecycle_consumer_factory=MagicMock())
+        requestqueue_service = KafkaLifecycleRequestQueueService(lifecycle_messaging_service=self.mock_lifecycle_messaging_service, postal_service=self.mock_postal_service, driver_files_manager=self.mock_driver_files_manager, resource_driver_config=self.resource_driver_config, messaging_properties=self.mock_messaging_properties, lifecycle_consumer_factory=MagicMock())
 
         request = {
             "template": "template",
@@ -126,7 +131,7 @@ class TestLifecycleRequestQueueService(unittest.TestCase):
         self.mock_postal_service.post.assert_not_called()
 
     def test_queue_lifecycle_request_null_request_id(self):
-        requestqueue_service = KafkaLifecycleRequestQueueService(lifecycle_messaging_service=self.mock_lifecycle_messaging_service, postal_service=self.mock_postal_service, driver_files_manager=self.mock_driver_files_manager, resource_driver_config=self.resource_driver_config, messaging_config=self.mock_messaging_config, lifecycle_consumer_factory=MagicMock())
+        requestqueue_service = KafkaLifecycleRequestQueueService(lifecycle_messaging_service=self.mock_lifecycle_messaging_service, postal_service=self.mock_postal_service, driver_files_manager=self.mock_driver_files_manager, resource_driver_config=self.resource_driver_config, messaging_properties=self.mock_messaging_properties, lifecycle_consumer_factory=MagicMock())
 
         request = {
             "request_id": None,
@@ -159,7 +164,7 @@ class TestLifecycleRequestQueueService(unittest.TestCase):
         mock_kafka_lifecycle_consumer_factory = MagicMock()
         mock_kafka_lifecycle_consumer_factory.create_consumer.return_value = mock_kafka_lifecycle_consumer
 
-        request_queue_service = KafkaLifecycleRequestQueueService(lifecycle_messaging_service=self.mock_lifecycle_messaging_service, postal_service=self.mock_postal_service, driver_files_manager=self.mock_driver_files_manager, resource_driver_config=self.resource_driver_config, messaging_config=self.mock_messaging_config, lifecycle_consumer_factory=mock_kafka_lifecycle_consumer_factory)
+        request_queue_service = KafkaLifecycleRequestQueueService(lifecycle_messaging_service=self.mock_lifecycle_messaging_service, postal_service=self.mock_postal_service, driver_files_manager=self.mock_driver_files_manager, resource_driver_config=self.resource_driver_config, messaging_properties=self.mock_messaging_properties, lifecycle_consumer_factory=mock_kafka_lifecycle_consumer_factory)
 
         mock_kafka_lifecycle_consumer.poll.return_value = {
             TopicPartition('lifecycle_request_queue', 0): [
@@ -249,7 +254,7 @@ class TestLifecycleRequestQueueService(unittest.TestCase):
         mock_kafka_lifecycle_consumer_factory = MagicMock()
         mock_kafka_lifecycle_consumer_factory.create_consumer.return_value = mock_kafka_lifecycle_consumer
 
-        request_queue_service = KafkaLifecycleRequestQueueService(lifecycle_messaging_service=self.mock_lifecycle_messaging_service, postal_service=self.mock_postal_service, driver_files_manager=self.mock_driver_files_manager, resource_driver_config=self.resource_driver_config, messaging_config=self.mock_messaging_config, lifecycle_consumer_factory=mock_kafka_lifecycle_consumer_factory)
+        request_queue_service = KafkaLifecycleRequestQueueService(lifecycle_messaging_service=self.mock_lifecycle_messaging_service, postal_service=self.mock_postal_service, driver_files_manager=self.mock_driver_files_manager, resource_driver_config=self.resource_driver_config, messaging_properties=self.mock_messaging_properties, lifecycle_consumer_factory=mock_kafka_lifecycle_consumer_factory)
 
         request = {
            "lifecycle_name": "Configure",
@@ -283,7 +288,7 @@ class TestLifecycleRequestQueueService(unittest.TestCase):
         mock_kafka_lifecycle_consumer_factory = MagicMock()
         mock_kafka_lifecycle_consumer_factory.create_consumer.return_value = mock_kafka_lifecycle_consumer
 
-        request_queue_service = KafkaLifecycleRequestQueueService(lifecycle_messaging_service=self.mock_lifecycle_messaging_service, postal_service=self.mock_postal_service, driver_files_manager=self.mock_driver_files_manager, resource_driver_config=self.resource_driver_config, messaging_config=self.mock_messaging_config, lifecycle_consumer_factory=mock_kafka_lifecycle_consumer_factory)
+        request_queue_service = KafkaLifecycleRequestQueueService(lifecycle_messaging_service=self.mock_lifecycle_messaging_service, postal_service=self.mock_postal_service, driver_files_manager=self.mock_driver_files_manager, resource_driver_config=self.resource_driver_config, messaging_properties=self.mock_messaging_properties, lifecycle_consumer_factory=mock_kafka_lifecycle_consumer_factory)
 
         request = {
            "request_id": "123",
@@ -319,7 +324,7 @@ class TestLifecycleRequestQueueService(unittest.TestCase):
         mock_kafka_lifecycle_consumer_factory = MagicMock()
         mock_kafka_lifecycle_consumer_factory.create_consumer.return_value = mock_kafka_lifecycle_consumer
 
-        request_queue_service = KafkaLifecycleRequestQueueService(lifecycle_messaging_service=self.mock_lifecycle_messaging_service, postal_service=self.mock_postal_service, driver_files_manager=self.mock_driver_files_manager, resource_driver_config=self.resource_driver_config, messaging_config=self.mock_messaging_config, lifecycle_consumer_factory=mock_kafka_lifecycle_consumer_factory)
+        request_queue_service = KafkaLifecycleRequestQueueService(lifecycle_messaging_service=self.mock_lifecycle_messaging_service, postal_service=self.mock_postal_service, driver_files_manager=self.mock_driver_files_manager, resource_driver_config=self.resource_driver_config, messaging_properties=self.mock_messaging_properties, lifecycle_consumer_factory=mock_kafka_lifecycle_consumer_factory)
 
         request = {
            "request_id": "123",
@@ -356,7 +361,7 @@ class TestLifecycleRequestQueueService(unittest.TestCase):
         mock_kafka_lifecycle_consumer_factory = MagicMock()
         mock_kafka_lifecycle_consumer_factory.create_consumer.return_value = mock_kafka_lifecycle_consumer
 
-        request_queue_service = KafkaLifecycleRequestQueueService(lifecycle_messaging_service=self.mock_lifecycle_messaging_service, postal_service=self.mock_postal_service, driver_files_manager=self.mock_driver_files_manager, resource_driver_config=self.resource_driver_config, messaging_config=self.mock_messaging_config, lifecycle_consumer_factory=mock_kafka_lifecycle_consumer_factory)
+        request_queue_service = KafkaLifecycleRequestQueueService(lifecycle_messaging_service=self.mock_lifecycle_messaging_service, postal_service=self.mock_postal_service, driver_files_manager=self.mock_driver_files_manager, resource_driver_config=self.resource_driver_config, messaging_properties=self.mock_messaging_properties, lifecycle_consumer_factory=mock_kafka_lifecycle_consumer_factory)
 
         request = {
            "request_id": "123",
@@ -391,7 +396,7 @@ class TestLifecycleRequestQueueService(unittest.TestCase):
         mock_kafka_lifecycle_consumer_factory = MagicMock()
         mock_kafka_lifecycle_consumer_factory.create_consumer.return_value = mock_kafka_lifecycle_consumer
 
-        request_queue_service = KafkaLifecycleRequestQueueService(lifecycle_messaging_service=self.mock_lifecycle_messaging_service, postal_service=self.mock_postal_service, driver_files_manager=self.mock_driver_files_manager, resource_driver_config=self.resource_driver_config, messaging_config=self.mock_messaging_config, lifecycle_consumer_factory=mock_kafka_lifecycle_consumer_factory)
+        request_queue_service = KafkaLifecycleRequestQueueService(lifecycle_messaging_service=self.mock_lifecycle_messaging_service, postal_service=self.mock_postal_service, driver_files_manager=self.mock_driver_files_manager, resource_driver_config=self.resource_driver_config, messaging_properties=self.mock_messaging_properties, lifecycle_consumer_factory=mock_kafka_lifecycle_consumer_factory)
 
         request = {
            "request_id": "123",
@@ -426,7 +431,7 @@ class TestLifecycleRequestQueueService(unittest.TestCase):
         mock_kafka_lifecycle_consumer_factory = MagicMock()
         mock_kafka_lifecycle_consumer_factory.create_consumer.return_value = mock_kafka_lifecycle_consumer
 
-        request_queue_service = KafkaLifecycleRequestQueueService(lifecycle_messaging_service=self.mock_lifecycle_messaging_service, postal_service=self.mock_postal_service, driver_files_manager=self.mock_driver_files_manager, resource_driver_config=self.resource_driver_config, messaging_config=self.mock_messaging_config, lifecycle_consumer_factory=mock_kafka_lifecycle_consumer_factory)
+        request_queue_service = KafkaLifecycleRequestQueueService(lifecycle_messaging_service=self.mock_lifecycle_messaging_service, postal_service=self.mock_postal_service, driver_files_manager=self.mock_driver_files_manager, resource_driver_config=self.resource_driver_config, messaging_properties=self.mock_messaging_properties, lifecycle_consumer_factory=mock_kafka_lifecycle_consumer_factory)
 
         request = {
            "request_id": "123",
@@ -461,7 +466,7 @@ class TestLifecycleRequestQueueService(unittest.TestCase):
         mock_kafka_lifecycle_consumer_factory = MagicMock()
         mock_kafka_lifecycle_consumer_factory.create_consumer.return_value = mock_kafka_lifecycle_consumer
 
-        request_queue_service = KafkaLifecycleRequestQueueService(lifecycle_messaging_service=self.mock_lifecycle_messaging_service, postal_service=self.mock_postal_service, driver_files_manager=self.mock_driver_files_manager, resource_driver_config=self.resource_driver_config, messaging_config=self.mock_messaging_config, lifecycle_consumer_factory=mock_kafka_lifecycle_consumer_factory)
+        request_queue_service = KafkaLifecycleRequestQueueService(lifecycle_messaging_service=self.mock_lifecycle_messaging_service, postal_service=self.mock_postal_service, driver_files_manager=self.mock_driver_files_manager, resource_driver_config=self.resource_driver_config, messaging_properties=self.mock_messaging_properties, lifecycle_consumer_factory=mock_kafka_lifecycle_consumer_factory)
 
         request = {
            "request_id": "123",
@@ -496,7 +501,7 @@ class TestLifecycleRequestQueueService(unittest.TestCase):
         mock_kafka_lifecycle_consumer_factory = MagicMock()
         mock_kafka_lifecycle_consumer_factory.create_consumer.return_value = mock_kafka_lifecycle_consumer
 
-        request_queue_service = KafkaLifecycleRequestQueueService(lifecycle_messaging_service=self.mock_lifecycle_messaging_service, postal_service=self.mock_postal_service, driver_files_manager=self.mock_driver_files_manager, resource_driver_config=self.resource_driver_config, messaging_config=self.mock_messaging_config, lifecycle_consumer_factory=mock_kafka_lifecycle_consumer_factory)
+        request_queue_service = KafkaLifecycleRequestQueueService(lifecycle_messaging_service=self.mock_lifecycle_messaging_service, postal_service=self.mock_postal_service, driver_files_manager=self.mock_driver_files_manager, resource_driver_config=self.resource_driver_config, messaging_properties=self.mock_messaging_properties, lifecycle_consumer_factory=mock_kafka_lifecycle_consumer_factory)
 
         request = {
            "request_id": "123",

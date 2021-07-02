@@ -13,9 +13,9 @@ class DriverClient(BaseClient):
             raise ValueError('driver_endpoint must be provided to create Driver Client')
         self.driver_endpoint = driver_endpoint.rstrip('/')
 
-    def execute_lifecycle(self, lifecycle_name, driver_files, system_properties, resource_properties, request_properties, associated_topology, deployment_location):
+    def execute_lifecycle(self, lifecycle_name, driver_files, system_properties, resource_properties, request_properties, associated_topology, deployment_location, headers=None):
         url = '{0}/api/driver/lifecycle/execute'.format(self.driver_endpoint)
-        headers = {}
+        headers = headers or {}
         body = {
             'lifecycleName': lifecycle_name,
             'driverFiles': driver_files,

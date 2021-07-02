@@ -6,6 +6,7 @@ import json
 import argparse
 import git
 import getpass
+import platform
 
 PKG_ROOT = 'ignition'
 PKG_INFO = 'pkg_info.json'
@@ -246,7 +247,12 @@ class Builder:
             docs_output = DOCS_FORMAT.format(version=self.vars.version)
             docs_output_file = docs_output + '.tgz'
             transform_command = 's/{0}/{1}/'.format(DOCS_DIR, docs_output)
-            s.run_cmd('tar', '-cvzf', docs_output_file, DOCS_DIR+'/', '--transform', transform_command)
+            # Note that a system running on Mac will return 'Darwin' for platform.system()
+            if platform.system() == 'Darwin':
+                transform_command = '/{0}/{1}/'.format(DOCS_DIR, docs_output)                
+                s.run_cmd('tar', '-cvz', '-s', transform_command, '-f', docs_output_file, DOCS_DIR+'/')
+            else:
+                s.run_cmd('tar', '-cvzf', docs_output_file, DOCS_DIR+'/', '--transform', transform_command)
 
 def main():
   builder = Builder()

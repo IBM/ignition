@@ -6,6 +6,7 @@ from ignition.service.queue import JobQueueCapability, MessagingJobQueueService,
 from ignition.service.messaging import MessagingProperties, TopicsProperties, PostalCapability, InboxCapability
 from ignition.service.framework import ServiceRegistration
 
+
 class TestJobQueueConfigurator(ConfiguratorTestCase):
 
     def __bootstrap_config(self):
@@ -78,5 +79,7 @@ class TestJobQueueConfigurator(ConfiguratorTestCase):
         self.mock_service_register.get_service_offering_capability.return_value = None
         JobQueueConfigurator().configure(configuration, self.mock_service_register)
         mock_topic_creator_init.assert_called_once()
-        mock_topic_creator_init.return_value.create_topic_if_needed.assert_called_once_with('testaddr', configuration.property_groups.get_property_group(MessagingProperties).topics.job_queue)
+        messaging_properties = MessagingProperties()
+        messaging_properties.connection_address = 'testaddr'
+        mock_topic_creator_init.return_value.create_topic_if_needed.assert_called_once_with(messaging_properties, configuration.property_groups.get_property_group(MessagingProperties).topics.job_queue)
 

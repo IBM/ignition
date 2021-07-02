@@ -30,8 +30,8 @@ class RequestQueueConfigurator():
 
             if auto_config.resource_driver.api_enabled is True:
                 validate_no_service_with_capability_exists(service_register, LifecycleRequestQueueCapability, 'Lifecycle Request Queue', 'bootstrap.request_queue.enabled')
-                service_register.add_service(ServiceRegistration(KafkaLifecycleConsumerFactory, resource_driver_config.lifecycle_request_queue, messaging_config=MessagingProperties))
-                service_register.add_service(ServiceRegistration(KafkaLifecycleRequestQueueService, lifecycle_messaging_service=LifecycleMessagingCapability, messaging_config=MessagingProperties, resource_driver_config=ResourceDriverProperties,
+                service_register.add_service(ServiceRegistration(KafkaLifecycleConsumerFactory, resource_driver_config.lifecycle_request_queue, messaging_properties=MessagingProperties))
+                service_register.add_service(ServiceRegistration(KafkaLifecycleRequestQueueService, lifecycle_messaging_service=LifecycleMessagingCapability, messaging_properties=MessagingProperties, resource_driver_config=ResourceDriverProperties,
                     postal_service=PostalCapability, driver_files_manager=DriverFilesManagerCapability, lifecycle_consumer_factory=LifecycleConsumerFactoryCapability))
         else:
             logger.debug('Disabled: bootstrapped Request Queue Service')
@@ -48,5 +48,5 @@ class RequestQueueConfigurator():
             lifecycle_request_queue_config.topic.name = LIFECYCLE_REQUEST_QUEUE_TOPIC.format(safe_topic_name)
             lifecycle_request_queue_config.failed_topic.name = FAILED_REQUEST_QUEUE.format(lifecycle_request_queue_config.topic.name)
 
-        self.topic_creator.create_topic_if_needed(messaging_config.connection_address, lifecycle_request_queue_config.topic)
-        self.topic_creator.create_topic_if_needed(messaging_config.connection_address, lifecycle_request_queue_config.failed_topic)
+        self.topic_creator.create_topic_if_needed(messaging_config, lifecycle_request_queue_config.topic)
+        self.topic_creator.create_topic_if_needed(messaging_config, lifecycle_request_queue_config.failed_topic)

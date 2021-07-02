@@ -33,7 +33,7 @@ class JobQueueConfigurator():
                 # Replace spaces with underscore
                 safe_topic_name = safe_topic_name.replace(' ', '_')
                 messaging_config.topics.job_queue.name = '{0}_job_queue'.format(safe_topic_name)
-            TopicCreator().create_topic_if_needed(messaging_config.connection_address, messaging_config.topics.job_queue)
+            TopicCreator().create_topic_if_needed(messaging_config, messaging_config.topics.job_queue)
             service_register.add_service(ServiceRegistration(MessagingJobQueueService, job_queue_config=JobQueueProperties, postal_service=PostalCapability, inbox_service=InboxCapability, topics_config=TopicsProperties, messaging_config=MessagingProperties))
         else:
             logger.debug('Disabled: bootstrapped Job Queue Service')

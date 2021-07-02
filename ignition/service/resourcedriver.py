@@ -265,7 +265,8 @@ class ResourceDriverService(Service, ResourceDriverServiceCapability):
                 'resource_properties': resource_properties,
                 'request_properties': request_properties,
                 'associated_topology': associated_topology,
-                'deployment_location': deployment_location
+                'deployment_location': deployment_location,
+                'logging_context': dict(logging_context.get_all())
             })
             execute_response = LifecycleExecuteResponse(request_id)
         else:

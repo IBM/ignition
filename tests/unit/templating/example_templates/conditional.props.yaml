@@ -1,3 +1,4 @@
 network_type: complex_network
 network_name: mynetwork
 name: ConditionalTest
+add_network: True

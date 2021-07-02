@@ -2,76 +2,69 @@
 
 The following steps detail how an Ignition release is produced. This may only be performed by a user with admin rights to this Git repository and the Pypi repository.
 
-## 1. Setting the Version
+**Ensure you've followed the steps in [configure your development environment](setup_developer_env.md) as there are libraries required to complete the release.**
 
-1.1 Start by setting the version of the release in `ignition/pkg_info.json` (push this change to Github and let the CI build execute):
+## 1. Ensure Milestone
 
-```
-{
-  "version": "<release version number>"
-}
-```
+Ensure there is a milestone created for the release at: [https://github.com/IBM/ignition/milestones](https://github.com/IBM/ignition/milestones).
 
-1.2 Tag the commit with the new version in Git
+Also ensure all issues going into this release are assigned to this milestone. **Move any issues from unreleased milestones into this release if the code has been merged**
 
-## 2. Build Python Wheel
+## 2. Update CHANGELOG (on develop)
 
-Build the python wheel by navigating to the Ignition root directory and executing:
+Update the `CHANGELOG.md` file with a list of issues fixed by this release (see other items in this file to get an idea of the desired format).
 
-```
-python3 setup.py bdist_wheel
-```
+Commit and push these changes.
 
-The whl file is created in `dist/`
+## 3. Merge Develop to Master
 
-## 3. Upload to Pypi
+Development work is normally carried out on the `develop` branch. Merge this branch to `master`, by creating a PR, 
 
-Upload the whl file to pypi using `twine` (note: this command will ask for your pypi repository access credentials)
+Then perform the release from the `master` branch. This ensures the `master` branch is tagged correctly. 
 
-```
-python3 -m twine upload dist/<whl file>.whl
-```
+> Note: do NOT delete the `develop` branch
 
-## 4. Package the docs
+## 4. Build and Release (on master))
 
-Create a TAR of the docs directory:
+The `build.py` script automates the following steps: 
 
-```
-tar -cvzf ignition-framework-<release version number>-docs.tgz docs/ --transform s/docs/ignition-framework-<release version number>-docs/
-```
+- Update the release version in pkg_info.json
+- Build the Python whl for the library
+- Package Documentation
+- Push Whl to Pypi
+- Create a tagged commit in the git repository to mark this release
 
-## 5. Create release on Github
 
-5.1 Navigate to Releases on the Github repository for this project and create a new release.
-
-5.2 Ensure the version tag and title correspond with the version number set in the pkg_info file earlier
-
-5.3 Attach the docs archive to the release
-
-## 6. Generate Release Notes
-
-Release notes are produced by updating the CHANGELOG.md, then copying the section for this version to the description field in the created Github release.
-
-The CHANGELOG is updated using [github-changelog-generator](https://github.com/github-changelog-generator/github-changelog-generator#why-should-i-care)
-
-6.1 Update CHANGELOG.md
+To perform a release, run `build.py` and set the following options:
 
 ```
-github_changelog_generator accanto-systems/ignition
+python3 build.py --release --version <THE VERSION TO BE RELEASED> --post-version <VERSION TO BE USED AFTER THE RELEASE> --pypi-user <USERNAME FOR PYPI> --pypi-pass <PASSWORD FOR PYPI USER>
 ```
 
-6.2 Commit the updated CHANGELOG.md
-
-6.3 Copy the section for the newly released version from CHANGELOG.md into the description of the release created on Github
-
-## 7. Set next development version
-
-Set the version of the next development version in `ignition/pkg_info.json` (push this change to Github).
-
-Usually the next dev version should be an minor increment of the previous, with `dev0` added. For example, after releasing 0.1.0 it would be:
-
+For example:
 ```
-{
-  "version": "0.2.0.dev0"
-}
+python3 build.py --release --version 1.0.0 --post-version 1.0.1.dev0 --pypi-user accanto --pypi-pass mypass
 ```
+
+Confirm the tags/commits were pushed to the repository origin.
+
+## 5. Release artifacts
+
+The Whl has been pushed to Pypi by the `build.py` script but the documentation must be uploaded manually to Github.
+
+Complete the following:
+
+- Visit the [releases](https://github.com/IBM/ignition/releases) section of the driver repository
+- Click `Draft a new release`
+- Input the version the `--version` option earlier as the tag e.g. 1.0.0
+- Use the same value for the `Release title` e.g. 1.0.0
+- Add release notes in the description of the release. Look at previous releases to see the format. Usually, we will list the issues fixed. This is essentially the same content you have already added to `CHANGELOG.md` so just copy and paste the entry for this release, edit the header to say `Release Notes`.
+- Attach the documentation `tgz` file produced by `build.py` in the root directory of this project
+
+## 6. Cleanup
+
+Complete the following steps to ensure development can continue as normal:
+
+- Merge `master` to `develop` (so any release updates and the post-version are copied over from master)
+- Close the Milestone for this release on [Github](https://github.com/IBM/ignition/milestones)
+- Create a new Milestone for next release (if one does not exist). Use the value of the `--post-version` option from earlier

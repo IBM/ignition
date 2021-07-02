@@ -20,8 +20,8 @@ PRIVATE_KEY_SUFFIX = '-----END RSA PRIVATE KEY-----'
 PRIVATE_KEY_REGEX = re.compile('{0}(.*?){1}'.format(PRIVATE_KEY_PREFIX, PRIVATE_KEY_SUFFIX), flags=re.DOTALL)
 OBFUSCATED_PRIVATE_KEY = '***obfuscated private key***'
 
-LM_HTTP_HEADER_PREFIX = "X-Tracectx-"
-LOGGING_CONTEXT_KEY_PREFIX = "traceCtx."
+LM_HTTP_HEADER_PREFIX = "x-tracectx-"
+LOGGING_CONTEXT_KEY_PREFIX = "tracectx."
 LM_HTTP_HEADER_TXNID = "TransactionId".lower()
 LM_HTTP_HEADER_PROCESS_ID = "ProcessId".lower()
 

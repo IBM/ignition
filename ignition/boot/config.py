@@ -14,6 +14,7 @@ class BootProperties(ConfigurationPropertiesGroup):
         self.request_queue = BootRequestQueueProperties()
         self.templating = BootTemplatingProperties()
         self.movedapis = BootMovedApisProperties()
+        self.progress_event_log = BootProgressEventLogProperties()
 
 class BootMovedApisProperties(ConfigurationProperties):
     
@@ -39,7 +40,6 @@ class BootRequestQueueProperties(ConfigurationProperties):
 
     def __init__(self):
         self.enabled = False
-
 
 class BootResourceDriverProperties(ConfigurationProperties):
 
@@ -72,6 +72,11 @@ class BootTemplatingProperties(ConfigurationProperties):
         self.service_enabled = False
         self.resource_context_service_enabled = False
 
+class BootProgressEventLogProperties(ConfigurationProperties):
+    
+    def __init__(self):
+        self.service_enabled = False
+        self.serializer_service_enabled = False
 
 class ApiProperties(ConfigurationPropertiesGroup, Service, Capability):
 

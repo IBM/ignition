@@ -58,7 +58,8 @@ class TestResourceTemplateContextService(unittest.TestCase):
                 'properties': {
                     'dlPropA': 'A DL Prop'
                 }
-            }
+            },
+            'associated_topology': {}
         })
 
     def test_extension(self):
@@ -100,5 +101,6 @@ class TestResourceTemplateContextService(unittest.TestCase):
                     'dlPropA': 'A DL Prop',
                     'ExtDlPropA': 'A DL Prop'
                 }
-            }
+            },
+            'associated_topology': {}
         })
