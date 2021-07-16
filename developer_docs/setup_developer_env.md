@@ -1,64 +1,99 @@
 # Setup Developer Environment
 
-To develop Ignition you need Python v3.6.9+ (install using instructions suitable for your operating system).
+These docs help you get a full dev environment setup for working on Ignition.
 
-## Pip/Setup
+## Install Python
 
-Once installed, make sure you have the latest `pip`, `setuptools` and `wheel`:
+You need Python3.9+ and pip. Install those according to the instructions for your operating system. 
 
-```
-python3 -m pip install -U pip setuptools wheel
-```
-
-It's also recommended that you create a [virtualenv](https://virtualenv.pypa.io/en/latest/) to manage an isolated Python env for this project:
-
-Install virtualenv:
+For Ubuntu, you can do this:
 
 ```
-python3 -m pip install virtualenv
+sudo apt update
+sudo apt install software-properties-common
+sudo add-apt-repository ppa:deadsnakes/ppa
+sudo apt install python3.9
+sudo apt install python3.9-distutils
+sudo apt install libpython3.9-dev
+python3.9 --version
 ```
 
-## Virtualenv
+If you run `python3 --version` and get a different version then you need to do the following, replacing `3.6` with the major and minor version you have:
 
-Create a virtualenv (do this from the root of your Ignition clone):
+```
+sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.6 1
+sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.9 2
+sudo update-alternatives --config python3
+```
+
+Enter 2 for python3.9
+
+For pip, use:
+
+```
+sudo apt install python3-pip
+```
+
+## Install base libraries
+
+Once you have Python, you should upgrade and install the following:
+
+```
+python3 -m pip install --upgrade pip setuptools wheel virtualenv
+```
+
+## Create Virtual Environment
+
+Virtual environments keep your python libraries isolated so it's best to create one for each python project you work on. Create one for this driver project in this repo with the name of `env`, as this is already in the `.gitignore` file so won't be added on commits.
 
 ```
 python3 -m virtualenv env
 ```
 
-The virtualenv should be activated in your terminal when working on Ignition:
+Activate the environment:
 
-(Unix/Mac)
 ```
 source env/bin/activate
 ```
 
-(Windows Powershell)
-```
-Scripts\activate.ps1
-```
+For windows:
 
-(Windows Other)
 ```
-Scripts\activate
+env\Scripts\activate.bat
 ```
 
 ## Install Ignition 
 
 You should install Ignition to make it's modules available for import. This is required to run the unit tests.
 
+It's best to use `--editable` so changes you make to the framework are picked up (note: if you add new dependencies you will need to re-install):
+
 ```
 python3 -m pip install --editable .
 ```
 
-Use the `--editable` flag to avoid re-installing on every change you make. 
+## Install the build dependencies
+
+If you want to use the `build.py` script to automate builds, you should install the requirements:
+
+```
+python3 -m pip install -r build-requirements.txt
+```
+
+Check the help option for build.py to see what it can do:
+
+```
+python3 build.py --help
+```
+
+Note: `--release` is reserved for maintainers capable of building a release.
 
 ## Build Ignition
 
-To build Ignition (to distribute/use in a driver project), you need to build a whl:
+To build Ignition (to distribute/use in a driver project), you need to build a whl, the `build.py` script handles this for you:
 
 ```
-python3 setup.py bdist_wheel
+python3 build.py
 ```
 
 The `.whl` file will be created in the `dist` directory at the root of the project. This `.whl` file can be transferred and used to install this version of Ignition with pip elsewhere.

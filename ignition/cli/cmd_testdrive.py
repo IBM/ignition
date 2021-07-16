@@ -22,9 +22,9 @@ def testdrive():
 @click.option('--kafka', '-k', type=str, show_default=True, default='kafka:9092', help='Endpoint for connection to Kafka broker (required if --wait-async/-w is enabled)')
 @click.option('--topic', '-t', type=str, show_default=True, default='lm_vnfc_lifecycle_execution_events', help='Kafka topic to consume async responses (required if --wait-async/-w is enabled)')
 @click.option('--set', 'set_request_properties', nargs=2, type=click.Tuple([str,str]), multiple=True, help='Request properties passed to the driver')
-@click.option('--txId', 'tx_id', type=str, help='Set the "X-Tracectx-TransactionId" header on the request. If not set, one will be generated')
-@click.option('--processId', 'process_id', type=str, help='Set the "X-Tracectx-ProcessId" header on the request. If not set, one will be generated')
-@click.option('--taskId', 'task_id', type=str, help='Set the "X-Tracectx-TaskId" header on the request. If not set, one will be generated')
+@click.option('--txId', 'tx_id', type=str, help='Set the "x-tracectx-TransactionId" header on the request. If not set, one will be generated')
+@click.option('--processId', 'process_id', type=str, help='Set the "x-tracectx-ProcessId" header on the request. If not set, one will be generated')
+@click.option('--taskId', 'task_id', type=str, help='Set the "x-tracectx-TaskId" header on the request. If not set, one will be generated')
 def execlifecycle(lifecycle, resource, url, driver_type, wait, max_wait, kafka, topic, set_request_properties, tx_id, process_id, task_id):
     try:
         request_properties = {}
