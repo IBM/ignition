@@ -1,5 +1,16 @@
 # Change Log
 
+## [3.0.1](https://github.com/IBM/ignition/tree/3.0.1) (2021-07-16)
+[Full Changelog](https://github.com/IBM/ignition/compare/3.0.0...3.0.1)
+
+**Implemented enhancements:**
+
+- Uplift third party dependencies [\#104](https://github.com/IBM/ignition/issues/104)
+
+**Fixed bugs:**
+
+- Use tracectx instead of traceCtx in log fields [\#106](https://github.com/IBM/ignition/issues/106)
+
 ## [3.0.0](https://github.com/IBM/ignition/tree/3.0.0) (2021-04-29)
 [Full Changelog](https://github.com/IBM/ignition/compare/2.0.4...3.0.0)
 
