@@ -1,5 +1,16 @@
 # Change Log
 
+## [3.1.0](https://github.com/IBM/ignition/tree/3.1.0) (2021-08-13)
+[Full Changelog](https://github.com/IBM/ignition/compare/3.0.1...3.1.0)
+
+**Implemented enhancements:**
+
+- Uplift third party dependencies [\#111](https://github.com/IBM/ignition/issues/111)
+
+**Fixed bugs:**
+
+- None
+
 ## [3.0.1](https://github.com/IBM/ignition/tree/3.0.1) (2021-07-16)
 [Full Changelog](https://github.com/IBM/ignition/compare/3.0.0...3.0.1)
 
