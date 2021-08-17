@@ -2,16 +2,19 @@ STATUS_IN_PROGRESS = 'IN_PROGRESS'
 STATUS_COMPLETE = 'COMPLETE'
 STATUS_FAILED = 'FAILED'
 STATUS_UNKNOWN = 'UNKNOWN'
+LIFECYCLE_MESSAGE_VERSION = "1.0.0"
 
 class LifecycleExecuteResponse():
 
-    def __init__(self, request_id, associated_topology=None):
+    def __init__(self, request_id, associated_topology=None, message_version=None):
         self.request_id = request_id
         self.associated_topology = associated_topology
+        self.message_version = LIFECYCLE_MESSAGE_VERSION
 
 def lifecycle_execute_response_dict(execute_response):
     message = {
-        'requestId': execute_response.request_id
+        'requestId': execute_response.request_id,
+        'message_version': execute_response.message_version
     }
     if execute_response.associated_topology is not None:
         message['associatedTopology'] = execute_response.associated_topology.to_dict()
@@ -21,15 +24,16 @@ def lifecycle_execute_response_dict(execute_response):
 
 class LifecycleExecution():
 
-    def __init__(self, request_id, status, failure_details=None, outputs=None, associated_topology=None):
+    def __init__(self, request_id, status, failure_details=None, outputs=None, associated_topology=None, message_version=None):
         self.request_id = request_id
         self.status = status
         self.failure_details = failure_details
         self.outputs = outputs
         self.associated_topology = associated_topology
+        self.message_version = LIFECYCLE_MESSAGE_VERSION
 
     def __str__(self):
-      return f'request_id: {self.request_id} status: {self.status} failure_details: {self.failure_details} outputs: {self.outputs} associated_topology: {self.associated_topology}'
+      return f'request_id: {self.request_id} status: {self.status} failure_details: {self.failure_details} outputs: {self.outputs} associated_topology: {self.associated_topology} message_version = {self.message_version}'
 
 def lifecycle_execution_dict(lifecycle_execution):
     message = {
@@ -37,7 +41,7 @@ def lifecycle_execution_dict(lifecycle_execution):
         'status': lifecycle_execution.status
     }
     if lifecycle_execution.failure_details is not None:
-        message['failureDetails'] = { 
+        message['failureDetails'] = {
             'failureCode': lifecycle_execution.failure_details.failure_code,
             'description': lifecycle_execution.failure_details.description
         }
@@ -49,4 +53,6 @@ def lifecycle_execution_dict(lifecycle_execution):
         message['associatedTopology'] = lifecycle_execution.associated_topology.to_dict()
     else:
         message['associatedTopology'] = {}
+        
+    message['message_version'] = lifecycle_execution.message_version
     return message

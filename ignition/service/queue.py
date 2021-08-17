@@ -5,6 +5,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+QUEUE_MESSAGE_VERSION = "1.0.0"
 ############################
 # Config
 ############################
@@ -23,11 +24,11 @@ class JobQueueProperties(ConfigurationPropertiesGroup, Service, Capability):
         self.consumer_group_id = 'job_queue_consumer'
 
 class JobQueueCapability(Capability):
-    
+
     @interface
     def queue_job(self, job):
         pass
-    
+
     @interface
     def register_job_handler(self, job_type, handler_func):
         pass
@@ -47,11 +48,11 @@ class RequestQueueProperties(ConfigurationPropertiesGroup, Service, Capability):
         self.consumer_group_id = 'job_queue_consumer'
 
 class JobQueueCapability(Capability):
-    
+
     @interface
     def queue_job(self, job):
         pass
-    
+
     @interface
     def register_job_handler(self, job_type, handler_func):
         pass
@@ -59,6 +60,7 @@ class JobQueueCapability(Capability):
 class MessagingJobQueueService(Service, JobQueueCapability):
 
     JOB_TYPE_KEY = 'job_type'
+    message_version = QUEUE_MESSAGE_VERSION
 
     def __init__(self, **kwargs):
         if 'job_queue_config' not in kwargs:
@@ -99,7 +101,7 @@ class MessagingJobQueueService(Service, JobQueueCapability):
             logger.exception('Ignoring job as an error occurred whilst attempting to read it: {0}'.format(job_definition_str))
             return None
         return self.__handle_job(job_definition)
-        
+
     def __handle_job(self, job_definition):
         requeue = False
         job_type = job_definition.get(self.JOB_TYPE_KEY, None)
@@ -130,10 +132,11 @@ class MessagingJobQueueService(Service, JobQueueCapability):
             raise ValueError('job_definition must have a job_type key')
         if job_definition[self.JOB_TYPE_KEY] is None:
             raise ValueError('job_definition must have a job_type value (not None)')
+        job_definition['message_version'] = self.message_version
         msg_content = JsonContent(job_definition).get()
         msg = Message(msg_content)
         self.postal_service.post(Envelope(self.job_queue_topic.name, msg))
-    
+
     def register_job_handler(self, job_type, handler_func):
         if job_type in self.job_handlers:
             raise ValueError('Handler for job_type \'{0}\' has already been registered'.format(job_type))
