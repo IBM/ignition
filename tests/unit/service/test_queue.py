@@ -79,7 +79,7 @@ class TestMessagingJobQueueService(unittest.TestCase):
         envelope_arg = args[0]
         self.assertIsInstance(envelope_arg, Envelope)
         self.assertEqual(envelope_arg.address, 'job_queue')
-        self.assertEqual(envelope_arg.message.content, b'{"job_type": "test_job", "message_version": "1.0.0"}')
+        self.assertEqual(envelope_arg.message.content, b'{"job_type": "test_job", "version": "1.0.0"}')
 
     def test_queue_job_without_type_throws_error(self):
         job_queue_service = MessagingJobQueueService(job_queue_config=self.job_queue_config, postal_service=self.mock_postal_service, inbox_service=self.mock_inbox_service, topics_config=self.mock_topics_config, messaging_config=MessagingProperties)
@@ -94,31 +94,31 @@ class TestMessagingJobQueueService(unittest.TestCase):
         job_queue_service = MessagingJobQueueService(job_queue_config=self.job_queue_config, postal_service=self.mock_postal_service, inbox_service=self.mock_inbox_service, topics_config=self.mock_topics_config, messaging_config=MessagingProperties)
         mock_handler_func = MagicMock()
         job_queue_service.register_job_handler('test_job', mock_handler_func)
-        job_queue_service._MessagingJobQueueService__received_next_job_handler('{"job_type": "test_job", "message_version": "1.0.0"}')
-        mock_handler_func.assert_called_once_with({'job_type': 'test_job', "message_version": "1.0.0"})
+        job_queue_service._MessagingJobQueueService__received_next_job_handler('{"job_type": "test_job", "version": "1.0.0"}')
+        mock_handler_func.assert_called_once_with({'job_type': 'test_job', "version": "1.0.0"})
 
     def test_next_job_handler_requeues_job_if_handler_func_returns_not_finished(self):
         job_queue_service = MessagingJobQueueService(job_queue_config=self.job_queue_config, postal_service=self.mock_postal_service, inbox_service=self.mock_inbox_service, topics_config=self.mock_topics_config, messaging_config=MessagingProperties)
         mock_handler_func = MagicMock()
         mock_handler_func.return_value = False
         job_queue_service.register_job_handler('test_job', mock_handler_func)
-        job_queue_service._MessagingJobQueueService__received_next_job_handler('{"job_type": "test_job", "message_version": "1.0.0"}')
-        mock_handler_func.assert_called_once_with({'job_type': 'test_job', "message_version": "1.0.0"})
+        job_queue_service._MessagingJobQueueService__received_next_job_handler('{"job_type": "test_job", "version": "1.0.0"}')
+        mock_handler_func.assert_called_once_with({'job_type': 'test_job', "version": "1.0.0"})
         self.mock_postal_service.post.assert_called_once()
         args, kwargs = self.mock_postal_service.post.call_args
         self.assertEqual(len(args), 1)
         envelope_arg = args[0]
         self.assertIsInstance(envelope_arg, Envelope)
         self.assertEqual(envelope_arg.address, 'job_queue')
-        self.assertEqual(envelope_arg.message.content, b'{"job_type": "test_job", "message_version": "1.0.0"}')
+        self.assertEqual(envelope_arg.message.content, b'{"job_type": "test_job", "version": "1.0.0"}')
 
     def test_next_job_handler_does_not_requeue_job_when_finished(self):
         job_queue_service = MessagingJobQueueService(job_queue_config=self.job_queue_config, postal_service=self.mock_postal_service, inbox_service=self.mock_inbox_service, topics_config=self.mock_topics_config, messaging_config=MessagingProperties)
         mock_handler_func = MagicMock()
         mock_handler_func.return_value = True
         job_queue_service.register_job_handler('test_job', mock_handler_func)
-        job_queue_service._MessagingJobQueueService__received_next_job_handler('{"job_type": "test_job", "message_version": "1.0.0"}')
-        mock_handler_func.assert_called_once_with({'job_type': 'test_job', "message_version": "1.0.0"})
+        job_queue_service._MessagingJobQueueService__received_next_job_handler('{"job_type": "test_job", "version": "1.0.0"}')
+        mock_handler_func.assert_called_once_with({'job_type': 'test_job', "version": "1.0.0"})
         self.mock_postal_service.post.assert_not_called()
 
     def test_next_job_handler_does_not_requeue_when_handler_func_throws_exception(self):
@@ -126,8 +126,8 @@ class TestMessagingJobQueueService(unittest.TestCase):
         mock_handler_func = MagicMock()
         mock_handler_func.side_effect = ValueError('Fake error')
         job_queue_service.register_job_handler('test_job', mock_handler_func)
-        job_queue_service._MessagingJobQueueService__received_next_job_handler('{"job_type": "test_job", "message_version": "1.0.0"}')
-        mock_handler_func.assert_called_once_with({'job_type': 'test_job', "message_version": "1.0.0"})
+        job_queue_service._MessagingJobQueueService__received_next_job_handler('{"job_type": "test_job", "version": "1.0.0"}')
+        mock_handler_func.assert_called_once_with({'job_type': 'test_job', "version": "1.0.0"})
         self.mock_postal_service.post.assert_not_called()
 
     def test_next_job_handler_does_nothing_when_no_job_type(self):
@@ -135,13 +135,13 @@ class TestMessagingJobQueueService(unittest.TestCase):
         mock_handler_func = MagicMock()
         mock_handler_func.return_value = True
         job_queue_service.register_job_handler('test_job', mock_handler_func)
-        result = job_queue_service._MessagingJobQueueService__received_next_job_handler('{"not_job_type": "test_job", "message_version":"1.0.0"}')
+        result = job_queue_service._MessagingJobQueueService__received_next_job_handler('{"not_job_type": "test_job", "version":"1.0.0"}')
         self.mock_postal_service.post.assert_not_called()
         self.assertIsNone(result)
 
     def test_next_job_handler_requeues_job_when_no_handler_registered(self):
         job_queue_service = MessagingJobQueueService(job_queue_config=self.job_queue_config, postal_service=self.mock_postal_service, inbox_service=self.mock_inbox_service, topics_config=self.mock_topics_config, messaging_config=MessagingProperties)
-        result = job_queue_service._MessagingJobQueueService__received_next_job_handler('{"job_type": "test_job", "message_version": "1.0.0"}')
+        result = job_queue_service._MessagingJobQueueService__received_next_job_handler('{"job_type": "test_job", "version": "1.0.0"}')
         self.assertIsNone(result)
         self.mock_postal_service.post.assert_called_once()
         args, kwargs = self.mock_postal_service.post.call_args
@@ -149,4 +149,4 @@ class TestMessagingJobQueueService(unittest.TestCase):
         envelope_arg = args[0]
         self.assertIsInstance(envelope_arg, Envelope)
         self.assertEqual(envelope_arg.address, 'job_queue')
-        self.assertEqual(envelope_arg.message.content, b'{"job_type": "test_job", "message_version": "1.0.0"}')
+        self.assertEqual(envelope_arg.message.content, b'{"job_type": "test_job", "version": "1.0.0"}')

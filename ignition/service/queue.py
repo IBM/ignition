@@ -60,7 +60,7 @@ class JobQueueCapability(Capability):
 class MessagingJobQueueService(Service, JobQueueCapability):
 
     JOB_TYPE_KEY = 'job_type'
-    message_version = QUEUE_MESSAGE_VERSION
+    version = QUEUE_MESSAGE_VERSION
 
     def __init__(self, **kwargs):
         if 'job_queue_config' not in kwargs:
@@ -132,7 +132,7 @@ class MessagingJobQueueService(Service, JobQueueCapability):
             raise ValueError('job_definition must have a job_type key')
         if job_definition[self.JOB_TYPE_KEY] is None:
             raise ValueError('job_definition must have a job_type value (not None)')
-        job_definition['message_version'] = self.message_version
+        job_definition['version'] = self.version
         msg_content = JsonContent(job_definition).get()
         msg = Message(msg_content)
         self.postal_service.post(Envelope(self.job_queue_topic.name, msg))

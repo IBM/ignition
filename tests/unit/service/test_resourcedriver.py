@@ -51,7 +51,7 @@ class TestResourceDriverApiService(unittest.TestCase):
             }
         })
         mock_service.execute_lifecycle.assert_called_once_with('Start', b'123', {'resourceId': { 'type': 'string', 'value': '1'}, 'b': { 'type': 'integer', 'value': 1} }, {'a': { 'type': 'string', 'value': '2'}, 'b': { 'type': 'integer', 'value': 2}}, {'reqA': {'type': 'string', 'value': '3'}, 'reqB': {'type': 'boolean', 'value': True}}, [{'id': 'abc', 'name': 'Test', 'type': 'Testing'}], {'name': 'test'})
-        self.assertEqual(response, {'requestId': '123', 'associatedTopology': {}, "message_version": "1.0.0"})
+        self.assertEqual(response, {'requestId': '123', 'associatedTopology': {}, "version": "1.0.0"})
         self.assertEqual(code, 202)
         logging_context.set_from_headers.assert_called_once()
 
@@ -139,7 +139,7 @@ class TestResourceDriverApiService(unittest.TestCase):
             }
         })
         mock_service.execute_lifecycle.assert_called_once_with('Start', b'123', {'resourceId': { 'type': 'string', 'value': '1'}}, {}, {'reqA': {'type': 'string', 'value': '3'}}, [{'id': 'abc', 'name': 'Test', 'type': 'Testing'}], {'name': 'test'})
-        self.assertEqual(response, {'requestId': '123', 'associatedTopology': {}, "message_version": "1.0.0"})
+        self.assertEqual(response, {'requestId': '123', 'associatedTopology': {}, "version": "1.0.0"})
         self.assertEqual(code, 202)
 
     @patch('ignition.service.resourcedriver.logging_context')
@@ -158,7 +158,7 @@ class TestResourceDriverApiService(unittest.TestCase):
             }
         })
         mock_service.execute_lifecycle.assert_called_once_with('Start', b'123', {'resourceId': { 'type': 'string', 'value': '1'}}, {'a': { 'type': 'string', 'value': '2'}}, {}, [{'id': 'abc', 'name': 'Test', 'type': 'Testing'}], {'name': 'test'})
-        self.assertEqual(response, {'requestId': '123', 'associatedTopology': {}, "message_version": "1.0.0"})
+        self.assertEqual(response, {'requestId': '123', 'associatedTopology': {}, "version": "1.0.0"})
         self.assertEqual(code, 202)
 
     @patch('ignition.service.resourcedriver.logging_context')
@@ -177,7 +177,7 @@ class TestResourceDriverApiService(unittest.TestCase):
             }
         })
         mock_service.execute_lifecycle.assert_called_once_with('Start', b'123', {'resourceId': { 'type': 'string', 'value': '1'}}, {'a': { 'type': 'string', 'value': '2'}}, {'reqA': {'type': 'string', 'value': '3'}}, {}, {'name': 'test'})
-        self.assertEqual(response, {'requestId': '123', 'associatedTopology': {}, "message_version": "1.0.0"})
+        self.assertEqual(response, {'requestId': '123', 'associatedTopology': {}, "version": "1.0.0"})
         self.assertEqual(code, 202)
 
 class TestResourceDriverService(unittest.TestCase):
@@ -565,7 +565,7 @@ class TestLifecycleMessagingService(unittest.TestCase):
         self.assertIsInstance(envelope_arg, Envelope)
         self.assertEqual(envelope_arg.address, self.mock_topics_configuration.lifecycle_execution_events.name)
         self.assertIsInstance(envelope_arg.message, Message)
-        self.assertEqual(envelope_arg.message.content, b'{"requestId": "req123", "status": "FAILED", "failureDetails": {"failureCode": "INTERNAL_ERROR", "description": "because it was meant to fail"}, "outputs": {}, "associatedTopology": {}, "message_version": "1.0.0"}')
+        self.assertEqual(envelope_arg.message.content, b'{"requestId": "req123", "status": "FAILED", "failureDetails": {"failureCode": "INTERNAL_ERROR", "description": "because it was meant to fail"}, "outputs": {}, "associatedTopology": {}, "version": "1.0.0"}')
 
     def test_send_lifecycle_execution_throws_error_when_task_is_none(self):
         messaging_service = LifecycleMessagingService(postal_service=self.mock_postal_service, topics_configuration=self.mock_topics_configuration)

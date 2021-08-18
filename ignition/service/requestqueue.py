@@ -63,7 +63,7 @@ class Request():
         self.partition = partition
         self.offset = offset
         self.exception_as_str = None
-        self.message_version = REQUEST_MESSAGE_VERSION
+        self.version = REQUEST_MESSAGE_VERSION
 
     def as_new_dict(self):
         return JsonContent.read(self.message_as_str).dict_val
