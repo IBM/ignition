@@ -54,7 +54,7 @@ class Request():
     def from_kafka_message(message, topic, partition):
         return Request(message.value.decode('utf-8'), topic, partition, message.offset)
 
-    def __init__(self, message_as_str, topic, partition, offset):
+    def __init__(self, message_as_str, topic, partition, offset, version=REQUEST_MESSAGE_VERSION):
         self.message_as_str = message_as_str
         self.request_as_json = JsonContent.read(message_as_str)
         self.request_as_dict = self.request_as_json.dict_val
@@ -63,7 +63,7 @@ class Request():
         self.partition = partition
         self.offset = offset
         self.exception_as_str = None
-        self.version = REQUEST_MESSAGE_VERSION
+        self.version = version
 
     def as_new_dict(self):
         return JsonContent.read(self.message_as_str).dict_val
@@ -76,7 +76,7 @@ class Request():
         self.request_as_dict['exception'] = self.exception_as_str
 
     def __str__(self):
-        return 'request_id: {0.request_id} topic: {0.topic} partition: {0.partition} offset: {0.offset}'.format(self)
+        return 'request_id: {0.request_id} topic: {0.topic} partition: {0.partition} offset: {0.offset} version: {0.version}'.format(self)
 
 
 
@@ -209,6 +209,7 @@ class KafkaLifecycleRequestQueueHandler(KafkaRequestQueueHandler):
             request_as_dict['system_properties'] = PropValueMap(request_as_dict['system_properties'])
             request_as_dict['request_properties'] = PropValueMap(request_as_dict['request_properties'])
             request_as_dict['associated_topology'] = AssociatedTopology.from_dict(request_as_dict['associated_topology'])
+            request_as_dict['version'] = REQUEST_MESSAGE_VERSION
 
             self.lifecycle_request_handler.handle_request(request_as_dict)
         except Exception as e:

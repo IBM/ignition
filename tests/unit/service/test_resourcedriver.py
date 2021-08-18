@@ -47,10 +47,11 @@ class TestResourceDriverApiService(unittest.TestCase):
                 'requestProperties': self.__props_with_types({'reqA': '3', 'reqB': True}),
                 'associatedTopology': [{'id': 'abc', 'name': 'Test', 'type': 'Testing'}],
                 'driverFiles': b'123',
-                'deploymentLocation': {'name': 'test'}
+                'deploymentLocation': {'name': 'test'},
+                'version': '1.0.0'
             }
         })
-        mock_service.execute_lifecycle.assert_called_once_with('Start', b'123', {'resourceId': { 'type': 'string', 'value': '1'}, 'b': { 'type': 'integer', 'value': 1} }, {'a': { 'type': 'string', 'value': '2'}, 'b': { 'type': 'integer', 'value': 2}}, {'reqA': {'type': 'string', 'value': '3'}, 'reqB': {'type': 'boolean', 'value': True}}, [{'id': 'abc', 'name': 'Test', 'type': 'Testing'}], {'name': 'test'})
+        mock_service.execute_lifecycle.assert_called_once_with('Start', b'123', {'resourceId': { 'type': 'string', 'value': '1'}, 'b': { 'type': 'integer', 'value': 1} }, {'a': { 'type': 'string', 'value': '2'}, 'b': { 'type': 'integer', 'value': 2}}, {'reqA': {'type': 'string', 'value': '3'}, 'reqB': {'type': 'boolean', 'value': True}}, [{'id': 'abc', 'name': 'Test', 'type': 'Testing'}], {'name': 'test'}, '1.0.0')
         self.assertEqual(response, {'requestId': '123', 'associatedTopology': {}, "version": "1.0.0"})
         self.assertEqual(code, 202)
         logging_context.set_from_headers.assert_called_once()
@@ -135,10 +136,11 @@ class TestResourceDriverApiService(unittest.TestCase):
                 'requestProperties': self.__props_with_types({'reqA': '3'}),
                 'associatedTopology': [{'id': 'abc', 'name': 'Test', 'type': 'Testing'}],
                 'driverFiles': b'123',
-                'deploymentLocation': {'name': 'test'}
+                'deploymentLocation': {'name': 'test'},
+                'version': '1.0.0'
             }
         })
-        mock_service.execute_lifecycle.assert_called_once_with('Start', b'123', {'resourceId': { 'type': 'string', 'value': '1'}}, {}, {'reqA': {'type': 'string', 'value': '3'}}, [{'id': 'abc', 'name': 'Test', 'type': 'Testing'}], {'name': 'test'})
+        mock_service.execute_lifecycle.assert_called_once_with('Start', b'123', {'resourceId': { 'type': 'string', 'value': '1'}}, {}, {'reqA': {'type': 'string', 'value': '3'}}, [{'id': 'abc', 'name': 'Test', 'type': 'Testing'}], {'name': 'test'}, '1.0.0')
         self.assertEqual(response, {'requestId': '123', 'associatedTopology': {}, "version": "1.0.0"})
         self.assertEqual(code, 202)
 
@@ -154,10 +156,11 @@ class TestResourceDriverApiService(unittest.TestCase):
                 'resourceProperties': self.__props_with_types({'a': '2'}),
                 'associatedTopology': [{'id': 'abc', 'name': 'Test', 'type': 'Testing'}],
                 'driverFiles': b'123',
-                'deploymentLocation': {'name': 'test'}
+                'deploymentLocation': {'name': 'test'},
+                'version': '1.0.0'
             }
         })
-        mock_service.execute_lifecycle.assert_called_once_with('Start', b'123', {'resourceId': { 'type': 'string', 'value': '1'}}, {'a': { 'type': 'string', 'value': '2'}}, {}, [{'id': 'abc', 'name': 'Test', 'type': 'Testing'}], {'name': 'test'})
+        mock_service.execute_lifecycle.assert_called_once_with('Start', b'123', {'resourceId': { 'type': 'string', 'value': '1'}}, {'a': { 'type': 'string', 'value': '2'}}, {}, [{'id': 'abc', 'name': 'Test', 'type': 'Testing'}], {'name': 'test'}, '1.0.0')
         self.assertEqual(response, {'requestId': '123', 'associatedTopology': {}, "version": "1.0.0"})
         self.assertEqual(code, 202)
 
@@ -173,10 +176,11 @@ class TestResourceDriverApiService(unittest.TestCase):
                 'resourceProperties': self.__props_with_types({'a': '2'}),
                 'requestProperties': self.__props_with_types({'reqA': '3'}),
                 'driverFiles': b'123',
-                'deploymentLocation': {'name': 'test'}
+                'deploymentLocation': {'name': 'test'},
+                'version': '1.0.0'
             }
         })
-        mock_service.execute_lifecycle.assert_called_once_with('Start', b'123', {'resourceId': { 'type': 'string', 'value': '1'}}, {'a': { 'type': 'string', 'value': '2'}}, {'reqA': {'type': 'string', 'value': '3'}}, {}, {'name': 'test'})
+        mock_service.execute_lifecycle.assert_called_once_with('Start', b'123', {'resourceId': { 'type': 'string', 'value': '1'}}, {'a': { 'type': 'string', 'value': '2'}}, {'reqA': {'type': 'string', 'value': '3'}}, {}, {'name': 'test'}, '1.0.0')
         self.assertEqual(response, {'requestId': '123', 'associatedTopology': {}, "version": "1.0.0"})
         self.assertEqual(code, 202)
 
@@ -319,8 +323,9 @@ class TestResourceDriverService(unittest.TestCase):
         request_properties = self.__propvaluemap({'reqPropA': 'reqValueA', 'reqPropB': True})
         associated_topology = {'Test': {'id': '123', 'type': 'TestType'}}
         deployment_location = {'name': 'TestDl'}
-        result = service.execute_lifecycle(lifecycle_name, driver_files, system_properties, resource_properties, request_properties, associated_topology, deployment_location)
-        mock_service_driver.execute_lifecycle.assert_called_once_with(lifecycle_name, mock_script_tree, self.__propvaluemap(system_properties), self.__propvaluemap(resource_properties), self.__propvaluemap(request_properties), AssociatedTopology.from_dict(associated_topology), deployment_location)
+        version = '1.0.0'
+        result = service.execute_lifecycle(lifecycle_name, driver_files, system_properties, resource_properties, request_properties, associated_topology, deployment_location, version)
+        mock_service_driver.execute_lifecycle.assert_called_once_with(lifecycle_name, mock_script_tree, self.__propvaluemap(system_properties), self.__propvaluemap(resource_properties), self.__propvaluemap(request_properties), AssociatedTopology.from_dict(associated_topology), deployment_location, version)
         self.assertEqual(result, execute_response)
 
     def test_execute_uses_file_manager(self):
@@ -340,9 +345,10 @@ class TestResourceDriverService(unittest.TestCase):
         request_properties = {'reqPropA': 'reqValueA', 'reqPropB': True}
         associated_topology = {'Test': {'id': '123', 'type': 'TestType'}}
         deployment_location = {'name': 'TestDl'}
-        result = service.execute_lifecycle(lifecycle_name, driver_files, system_properties, resource_properties, request_properties, associated_topology, deployment_location)
+        version = '1.0.0'
+        result = service.execute_lifecycle(lifecycle_name, driver_files, system_properties, resource_properties, request_properties, associated_topology, deployment_location, version)
         mock_driver_files_manager.build_tree.assert_called_once_with(ANY, driver_files)
-        mock_service_driver.execute_lifecycle.assert_called_once_with(lifecycle_name, mock_script_tree, self.__propvaluemap(system_properties), self.__propvaluemap(resource_properties), self.__propvaluemap(request_properties), AssociatedTopology.from_dict(associated_topology), deployment_location)
+        mock_service_driver.execute_lifecycle.assert_called_once_with(lifecycle_name, mock_script_tree, self.__propvaluemap(system_properties), self.__propvaluemap(resource_properties), self.__propvaluemap(request_properties), AssociatedTopology.from_dict(associated_topology), deployment_location, version)
         self.assertEqual(result, execute_response)
 
     def test_execute_uses_monitor_when_async_enabled(self):
