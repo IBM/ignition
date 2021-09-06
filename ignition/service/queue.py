@@ -60,9 +60,8 @@ class JobQueueCapability(Capability):
 class MessagingJobQueueService(Service, JobQueueCapability):
 
     JOB_TYPE_KEY = 'job_type'
-    version = QUEUE_MESSAGE_VERSION
 
-    def __init__(self, **kwargs):
+    def __init__(self, version=QUEUE_MESSAGE_VERSION, **kwargs):
         if 'job_queue_config' not in kwargs:
             raise ValueError('job_queue_config argument not provided')
         self.job_queue_config = kwargs.get('job_queue_config')
@@ -83,6 +82,7 @@ class MessagingJobQueueService(Service, JobQueueCapability):
         self.messaging_config = kwargs.get('messaging_config')
         if self.messaging_config is None:
             raise ValueError('messaging_config argument not provided')
+        self.version = version
         self.job_handlers = {}
         self.__init_watch_for_jobs()
 
