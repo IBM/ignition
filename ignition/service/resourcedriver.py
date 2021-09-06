@@ -7,7 +7,7 @@ from ignition.model.references import FindReferenceResponse, FindReferenceResult
 from ignition.model.associated_topology import AssociatedTopology
 from ignition.service.messaging import Message, Envelope, JsonContent, TopicConfigProperties
 from ignition.service.requestqueue import MAX_POLL_INTERVAL
-from ignition.service.requestqueue import REQUEST_MESSAGE_VERSION
+#from ignition.service.requestqueue import REQUEST_MESSAGE_VERSION
 from ignition.utils.file import DirectoryTree
 from ignition.api.exceptions import ApiException
 from ignition.service.logging import logging_context
@@ -87,7 +87,7 @@ class LifecycleRequestQueueProperties(ConfigurationProperties, Service, Capabili
 class ResourceDriverHandlerCapability(Capability):
 
     @interface
-    def execute_lifecycle(self, lifecycle_name, driver_files, system_properties, resource_properties, request_properties, associated_topology, deployment_location, version=REQUEST_MESSAGE_VERSION):
+    def execute_lifecycle(self, lifecycle_name, driver_files, system_properties, resource_properties, request_properties, associated_topology, deployment_location):#, version=REQUEST_MESSAGE_VERSION
         """
         Execute a lifecycle transition/operation for a Resource.
         This method should return immediate response of the request being accepted,
@@ -156,7 +156,7 @@ class ResourceDriverApiCapability(Capability):
 class ResourceDriverServiceCapability(Capability):
 
     @interface
-    def execute_lifecycle(self, lifecycle_name, driver_files, system_properties, resource_properties, request_properties, associated_topology, deployment_location, version=REQUEST_MESSAGE_VERSION):
+    def execute_lifecycle(self, lifecycle_name, driver_files, system_properties, resource_properties, request_properties, associated_topology, deployment_location):# version=REQUEST_MESSAGE_VERSION
         pass
 
     @interface
@@ -193,7 +193,7 @@ class ResourceDriverApiService(Service, ResourceDriverApiCapability, BaseControl
         if 'service' not in kwargs:
             raise ValueError('No service instance provided')
         self.service = kwargs.get('service')
-        self.version = REQUEST_MESSAGE_VERSION
+        #self.version = REQUEST_MESSAGE_VERSION
 
     def execute_lifecycle(self, **kwarg):
         try:
@@ -208,8 +208,8 @@ class ResourceDriverApiService(Service, ResourceDriverApiCapability, BaseControl
             request_properties = self.get_body_field(body, 'requestProperties', {})
             associated_topology = self.get_body_field(body, 'associatedTopology', {})
             deployment_location = self.get_body_required_field(body, 'deploymentLocation')
-            version = self.version
-            execute_response = self.service.execute_lifecycle(lifecycle_name, driver_files, system_properties, resource_properties, request_properties, associated_topology, deployment_location, version)
+            #version = self.version
+            execute_response = self.service.execute_lifecycle(lifecycle_name, driver_files, system_properties, resource_properties, request_properties, associated_topology, deployment_location)#, version)
             response = lifecycle_execute_response_dict(execute_response)
             return (response, 202)
         finally:
@@ -257,12 +257,12 @@ class ResourceDriverService(Service, ResourceDriverServiceCapability):
                 raise ValueError('lifecycle_request_queue argument not provided (required when lifecycle_request_queue.enabled is True)')
             self.lifecycle_request_queue = kwargs.get('lifecycle_request_queue')
 
-    def execute_lifecycle(self, lifecycle_name, driver_files, system_properties, resource_properties, request_properties, associated_topology, deployment_location, version=REQUEST_MESSAGE_VERSION):
+    def execute_lifecycle(self, lifecycle_name, driver_files, system_properties, resource_properties, request_properties, associated_topology, deployment_location):#version=REQUEST_MESSAGE_VERSION
         if self.async_requests_enabled:
             request_id = str(uuid.uuid4())
             self.lifecycle_request_queue.queue_lifecycle_request({
                 'request_id': request_id,
-                'version': version,
+                #'version': version,
                 'lifecycle_name': lifecycle_name,
                 'driver_files': driver_files,
                 'system_properties': system_properties,
@@ -277,7 +277,7 @@ class ResourceDriverService(Service, ResourceDriverServiceCapability):
             file_name = '{0}'.format(str(uuid.uuid4()))
             driver_files_tree = self.driver_files_manager.build_tree(file_name, driver_files)
             associated_topology = AssociatedTopology.from_dict(associated_topology)
-            execute_response = self.handler.execute_lifecycle(lifecycle_name, driver_files_tree, PropValueMap(system_properties), PropValueMap(resource_properties), PropValueMap(request_properties), associated_topology, deployment_location, version)
+            execute_response = self.handler.execute_lifecycle(lifecycle_name, driver_files_tree, PropValueMap(system_properties), PropValueMap(resource_properties), PropValueMap(request_properties), associated_topology, deployment_location)#, version)
             if self.async_enabled is True:
                 self.__async_lifecycle_execution_completion(execute_response.request_id, deployment_location)
         return execute_response
