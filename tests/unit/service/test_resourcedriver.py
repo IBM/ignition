@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import patch, MagicMock, ANY
 from ignition.api.exceptions import BadRequest
-from ignition.service.resourcedriver import (ResourceDriverApiService, ResourceDriverService, LifecycleExecutionMonitoringService, LifecycleMessagingService, 
+from ignition.service.resourcedriver import (ResourceDriverApiService, ResourceDriverService, LifecycleExecutionMonitoringService, LifecycleMessagingService,
                         DriverFilesManagerService, TemporaryResourceDriverError, RequestNotFoundError)
 from ignition.model.lifecycle import LifecycleExecuteResponse, LifecycleExecution
 from ignition.model.references import FindReferenceResponse
@@ -16,7 +16,7 @@ import base64
 from ignition.utils.propvaluemap import PropValueMap
 
 class TestResourceDriverApiService(unittest.TestCase):
-    
+
     def __props_with_types(self, orig_props):
         props = {}
         for k, v in orig_props.items():
@@ -39,19 +39,20 @@ class TestResourceDriverApiService(unittest.TestCase):
         mock_service = MagicMock()
         mock_service.execute_lifecycle.return_value = LifecycleExecuteResponse('123')
         controller = ResourceDriverApiService(service=mock_service)
-        response, code = controller.execute_lifecycle(**{ 
-            'body': { 
-                'lifecycleName': 'Start', 
+        response, code = controller.execute_lifecycle(**{
+            'body': {
+                'lifecycleName': 'Start',
                 'systemProperties': self.__props_with_types({'resourceId': '1', 'b': 1}),
                 'resourceProperties': self.__props_with_types({'a': '2', 'b': 2}),
                 'requestProperties': self.__props_with_types({'reqA': '3', 'reqB': True}),
                 'associatedTopology': [{'id': 'abc', 'name': 'Test', 'type': 'Testing'}],
-                'driverFiles': b'123', 
-                'deploymentLocation': {'name': 'test'} 
-            } 
+                'driverFiles': b'123',
+                'deploymentLocation': {'name': 'test'},
+                'version': '1.0.0'
+            }
         })
         mock_service.execute_lifecycle.assert_called_once_with('Start', b'123', {'resourceId': { 'type': 'string', 'value': '1'}, 'b': { 'type': 'integer', 'value': 1} }, {'a': { 'type': 'string', 'value': '2'}, 'b': { 'type': 'integer', 'value': 2}}, {'reqA': {'type': 'string', 'value': '3'}, 'reqB': {'type': 'boolean', 'value': True}}, [{'id': 'abc', 'name': 'Test', 'type': 'Testing'}], {'name': 'test'})
-        self.assertEqual(response, {'requestId': '123', 'associatedTopology': {}})
+        self.assertEqual(response, {'requestId': '123', 'associatedTopology': {}, "version": "1.0.0"})
         self.assertEqual(code, 202)
         logging_context.set_from_headers.assert_called_once()
 
@@ -60,15 +61,15 @@ class TestResourceDriverApiService(unittest.TestCase):
         mock_service = MagicMock()
         controller = ResourceDriverApiService(service=mock_service)
         with self.assertRaises(BadRequest) as context:
-            controller.execute_lifecycle(**{ 
-                'body': { 
+            controller.execute_lifecycle(**{
+                'body': {
                     'systemProperties': self.__props_with_types({'resourceId': '1'}),
                     'resourceProperties': self.__props_with_types({'a': '2'}),
                     'requestProperties': self.__props_with_types({'reqA': '3'}),
                     'associatedTopology': [{'id': 'abc', 'name': 'Test', 'type': 'Testing'}],
-                    'driverFiles': b'123', 
-                    'deploymentLocation': {'name': 'test'} 
-                } 
+                    'driverFiles': b'123',
+                    'deploymentLocation': {'name': 'test'}
+                }
             })
         self.assertEqual(str(context.exception), '\'lifecycleName\' is a required field but was not found in the request data body')
 
@@ -77,15 +78,15 @@ class TestResourceDriverApiService(unittest.TestCase):
         mock_service = MagicMock()
         controller = ResourceDriverApiService(service=mock_service)
         with self.assertRaises(BadRequest) as context:
-            controller.execute_lifecycle(**{ 
-                'body': { 
+            controller.execute_lifecycle(**{
+                'body': {
                     'lifecycleName': 'Start',
                     'systemProperties': self.__props_with_types({'resourceId': '1'}),
                     'resourceProperties': self.__props_with_types({'a': '2'}),
                     'requestProperties': self.__props_with_types({'reqA': '3'}),
                     'associatedTopology': [{'id': 'abc', 'name': 'Test', 'type': 'Testing'}],
-                    'deploymentLocation': {'name': 'test'} 
-                } 
+                    'deploymentLocation': {'name': 'test'}
+                }
             })
         self.assertEqual(str(context.exception), '\'driverFiles\' is a required field but was not found in the request data body')
 
@@ -94,15 +95,15 @@ class TestResourceDriverApiService(unittest.TestCase):
         mock_service = MagicMock()
         controller = ResourceDriverApiService(service=mock_service)
         with self.assertRaises(BadRequest) as context:
-            controller.execute_lifecycle(**{ 
-                'body': { 
-                    'lifecycleName': 'Start', 
+            controller.execute_lifecycle(**{
+                'body': {
+                    'lifecycleName': 'Start',
                     'systemProperties': self.__props_with_types({'resourceId': '1'}),
                     'resourceProperties': self.__props_with_types({'a': '2'}),
                     'requestProperties': self.__props_with_types({'reqA': '3'}),
                     'associatedTopology': [{'id': 'abc', 'name': 'Test', 'type': 'Testing'}],
                     'driverFiles': b'123'
-                } 
+                }
             })
         self.assertEqual(str(context.exception), '\'deploymentLocation\' is a required field but was not found in the request data body')
 
@@ -111,15 +112,15 @@ class TestResourceDriverApiService(unittest.TestCase):
         mock_service = MagicMock()
         controller = ResourceDriverApiService(service=mock_service)
         with self.assertRaises(BadRequest) as context:
-            controller.execute_lifecycle(**{ 
-                'body': { 
-                    'lifecycleName': 'Start', 
+            controller.execute_lifecycle(**{
+                'body': {
+                    'lifecycleName': 'Start',
                     'resourceProperties': self.__props_with_types({'a': '2'}),
                     'requestProperties': self.__props_with_types({'reqA': '3'}),
                     'associatedTopology': [{'id': 'abc', 'name': 'Test', 'type': 'Testing'}],
-                    'driverFiles': b'123', 
-                    'deploymentLocation': {'name': 'test'} 
-                } 
+                    'driverFiles': b'123',
+                    'deploymentLocation': {'name': 'test'}
+                }
             })
         self.assertEqual(str(context.exception), '\'systemProperties\' is a required field but was not found in the request data body')
 
@@ -128,37 +129,39 @@ class TestResourceDriverApiService(unittest.TestCase):
         mock_service = MagicMock()
         mock_service.execute_lifecycle.return_value = LifecycleExecuteResponse('123')
         controller = ResourceDriverApiService(service=mock_service)
-        response, code = controller.execute_lifecycle(**{ 
-            'body': { 
-                'lifecycleName': 'Start', 
+        response, code = controller.execute_lifecycle(**{
+            'body': {
+                'lifecycleName': 'Start',
                 'systemProperties': self.__props_with_types({'resourceId': '1'}),
                 'requestProperties': self.__props_with_types({'reqA': '3'}),
                 'associatedTopology': [{'id': 'abc', 'name': 'Test', 'type': 'Testing'}],
-                'driverFiles': b'123', 
-                'deploymentLocation': {'name': 'test'} 
-            } 
+                'driverFiles': b'123',
+                'deploymentLocation': {'name': 'test'},
+                'version': '1.0.0'
+            }
         })
         mock_service.execute_lifecycle.assert_called_once_with('Start', b'123', {'resourceId': { 'type': 'string', 'value': '1'}}, {}, {'reqA': {'type': 'string', 'value': '3'}}, [{'id': 'abc', 'name': 'Test', 'type': 'Testing'}], {'name': 'test'})
-        self.assertEqual(response, {'requestId': '123', 'associatedTopology': {}})
+        self.assertEqual(response, {'requestId': '123', 'associatedTopology': {}, "version": "1.0.0"})
         self.assertEqual(code, 202)
-    
+
     @patch('ignition.service.resourcedriver.logging_context')
     def test_execute_missing_request_properties(self, logging_context):
         mock_service = MagicMock()
         mock_service.execute_lifecycle.return_value = LifecycleExecuteResponse('123')
         controller = ResourceDriverApiService(service=mock_service)
-        response, code = controller.execute_lifecycle(**{ 
-            'body': { 
-                'lifecycleName': 'Start', 
+        response, code = controller.execute_lifecycle(**{
+            'body': {
+                'lifecycleName': 'Start',
                 'systemProperties': self.__props_with_types({'resourceId': '1'}),
                 'resourceProperties': self.__props_with_types({'a': '2'}),
                 'associatedTopology': [{'id': 'abc', 'name': 'Test', 'type': 'Testing'}],
-                'driverFiles': b'123', 
-                'deploymentLocation': {'name': 'test'} 
-            } 
+                'driverFiles': b'123',
+                'deploymentLocation': {'name': 'test'},
+                'version': '1.0.0'
+            }
         })
         mock_service.execute_lifecycle.assert_called_once_with('Start', b'123', {'resourceId': { 'type': 'string', 'value': '1'}}, {'a': { 'type': 'string', 'value': '2'}}, {}, [{'id': 'abc', 'name': 'Test', 'type': 'Testing'}], {'name': 'test'})
-        self.assertEqual(response, {'requestId': '123', 'associatedTopology': {}})
+        self.assertEqual(response, {'requestId': '123', 'associatedTopology': {}, "version": "1.0.0"})
         self.assertEqual(code, 202)
 
     @patch('ignition.service.resourcedriver.logging_context')
@@ -166,18 +169,19 @@ class TestResourceDriverApiService(unittest.TestCase):
         mock_service = MagicMock()
         mock_service.execute_lifecycle.return_value = LifecycleExecuteResponse('123')
         controller = ResourceDriverApiService(service=mock_service)
-        response, code = controller.execute_lifecycle(**{ 
-            'body': { 
-                'lifecycleName': 'Start', 
+        response, code = controller.execute_lifecycle(**{
+            'body': {
+                'lifecycleName': 'Start',
                 'systemProperties': self.__props_with_types({'resourceId': '1'}),
                 'resourceProperties': self.__props_with_types({'a': '2'}),
                 'requestProperties': self.__props_with_types({'reqA': '3'}),
-                'driverFiles': b'123', 
-                'deploymentLocation': {'name': 'test'} 
-            } 
+                'driverFiles': b'123',
+                'deploymentLocation': {'name': 'test'},
+                'version': '1.0.0'
+            }
         })
         mock_service.execute_lifecycle.assert_called_once_with('Start', b'123', {'resourceId': { 'type': 'string', 'value': '1'}}, {'a': { 'type': 'string', 'value': '2'}}, {'reqA': {'type': 'string', 'value': '3'}}, {}, {'name': 'test'})
-        self.assertEqual(response, {'requestId': '123', 'associatedTopology': {}})
+        self.assertEqual(response, {'requestId': '123', 'associatedTopology': {}, "version": "1.0.0"})
         self.assertEqual(code, 202)
 
 class TestResourceDriverService(unittest.TestCase):
@@ -407,7 +411,7 @@ class TestLifecycleExecutionMonitoringService(unittest.TestCase):
         self.mock_job_queue = MagicMock()
         self.mock_lifecycle_messaging_service = MagicMock()
         self.mock_driver = MagicMock()
-    
+
     def test_init_without_job_queue_throws_error(self):
         with self.assertRaises(ValueError) as context:
             LifecycleExecutionMonitoringService(lifecycle_messaging_service=self.mock_lifecycle_messaging_service, handler=self.mock_driver)
@@ -441,7 +445,7 @@ class TestLifecycleExecutionMonitoringService(unittest.TestCase):
         with self.assertRaises(ValueError) as context:
             monitoring_service.monitor_execution(None, {'name': 'TestDl'})
         self.assertEqual(str(context.exception), 'Cannot monitor task when request_id is not given')
-        
+
     def test_monitor_execution_throws_error_when_deployment_location_is_none(self):
         monitoring_service = LifecycleExecutionMonitoringService(job_queue_service=self.mock_job_queue, lifecycle_messaging_service=self.mock_lifecycle_messaging_service, handler=self.mock_driver)
         with self.assertRaises(ValueError) as context:
@@ -493,7 +497,7 @@ class TestLifecycleExecutionMonitoringService(unittest.TestCase):
         self.assertEqual(job_finished, True)
         self.mock_driver.get_lifecycle_execution.assert_called_once_with('req123', {'name': 'TestDl'})
         self.mock_lifecycle_messaging_service.send_lifecycle_execution.assert_called_once_with(self.mock_driver.get_lifecycle_execution.return_value)
-        
+
     def test_job_handler_sends_message_when_task_failed(self):
         self.mock_driver.get_lifecycle_execution.return_value = LifecycleExecution('req123', 'FAILED', None)
         monitoring_service = LifecycleExecutionMonitoringService(job_queue_service=self.mock_job_queue, lifecycle_messaging_service=self.mock_lifecycle_messaging_service, handler=self.mock_driver)
@@ -505,7 +509,7 @@ class TestLifecycleExecutionMonitoringService(unittest.TestCase):
         self.assertEqual(job_finished, True)
         self.mock_driver.get_lifecycle_execution.assert_called_once_with('req123', {'name': 'TestDl'})
         self.mock_lifecycle_messaging_service.send_lifecycle_execution.assert_called_once_with(self.mock_driver.get_lifecycle_execution.return_value)
-        
+
     def test_job_handler_ignores_job_without_request_id(self):
         monitoring_service = LifecycleExecutionMonitoringService(job_queue_service=self.mock_job_queue, lifecycle_messaging_service=self.mock_lifecycle_messaging_service, handler=self.mock_driver)
         job_finished = monitoring_service.job_handler({
@@ -565,8 +569,8 @@ class TestLifecycleMessagingService(unittest.TestCase):
         self.assertIsInstance(envelope_arg, Envelope)
         self.assertEqual(envelope_arg.address, self.mock_topics_configuration.lifecycle_execution_events.name)
         self.assertIsInstance(envelope_arg.message, Message)
-        self.assertEqual(envelope_arg.message.content, b'{"requestId": "req123", "status": "FAILED", "failureDetails": {"failureCode": "INTERNAL_ERROR", "description": "because it was meant to fail"}, "outputs": {}, "associatedTopology": {}}')
-    
+        self.assertEqual(envelope_arg.message.content, b'{"requestId": "req123", "status": "FAILED", "failureDetails": {"failureCode": "INTERNAL_ERROR", "description": "because it was meant to fail"}, "outputs": {}, "associatedTopology": {}, "version": "1.0.0"}')
+
     def test_send_lifecycle_execution_throws_error_when_task_is_none(self):
         messaging_service = LifecycleMessagingService(postal_service=self.mock_postal_service, topics_configuration=self.mock_topics_configuration)
         with self.assertRaises(ValueError) as context:
@@ -619,4 +623,3 @@ class TestDriverFilesManagerService(unittest.TestCase):
         self.assertTrue(os.path.exists(os.path.join(self.tmp_workspace, 'test', 'lib')))
         self.assertTrue(os.path.exists(os.path.join(self.tmp_workspace, 'test', 'lib', 'lib1.sh')))
         self.assertFalse(os.path.exists(os.path.join(self.tmp_workspace, 'test', 'oldlib', 'stop.sh')))
-        
