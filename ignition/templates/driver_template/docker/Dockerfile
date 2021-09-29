@@ -24,4 +24,4 @@ WORKDIR /home/{(app.module_name)}
 
 EXPOSE {(app.port)}
 
-CMD gunicorn -w $NUM_PROCESSES -b :$DRIVER_PORT "tdriver:create_wsgi_app()"
+CMD gunicorn -w $NUM_PROCESSES -b :$DRIVER_PORT "{(app.module_name)}:create_wsgi_app()"

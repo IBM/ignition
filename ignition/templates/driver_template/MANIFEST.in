@@ -1,3 +1,2 @@
 include {(app.module_name)}/pkg_info.json
 include {(app.module_name)}/config/*.yml
-include {(app.module_name)}/bin/*
