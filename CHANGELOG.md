@@ -189,10 +189,6 @@ Do not use this release, use 2.0.0 instead.
 - Find API should not return 400 when nothing is found [\#6](https://github.com/IBM/ignition/issues/6)
 - Not found response to return 400 code instead of 404 [\#4](https://github.com/IBM/ignition/issues/4)
 
-**Fixed bugs:**
-
-- Jobs not sent to Kafka queue when running in uwsgi  [\#2](https://github.com/IBM/ignition/issues/2)
-
 **Merged pull requests:**
 
 - Fixes \#6 by changing the Find Infrastructure API to return an empty result when no matching infrastructure is found [\#7](https://github.com/IBM/ignition/pull/7) ([dvaccarosenna](https://github.com/dvaccarosenna))

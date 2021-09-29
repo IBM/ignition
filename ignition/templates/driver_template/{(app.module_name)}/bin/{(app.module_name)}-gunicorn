@@ -1,3 +1,0 @@
-#!/usr/bin/env bash
-
-gunicorn -w $NUM_PROCESSES -b :$DRIVER_PORT "{(app.module_name)}:create_wsgi_app()"
