@@ -26,7 +26,6 @@ This file defines the metadata of the Python package to be built, including any 
 
 This file also specifies the entry points to the application, so a user may run the driver on the command line after installation:
     - `{(app.module_name)}-dev` for a development server
-    - `{(app.module_name)}` (`{(app.module_name)}-gunicorn`/`{(app.module_name)}-uswgi`) for a production server
 
 To build a distributable package of your application you will need the `setuptools` and `wheel` Python modules:
 
