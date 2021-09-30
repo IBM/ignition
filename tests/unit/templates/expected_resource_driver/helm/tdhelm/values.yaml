@@ -22,12 +22,8 @@ app:
       ## as top level fields in the Elasticsearch index.
       LOG_TYPE: logstash
 
-      ## configuration for WSGI container
-      ## WSGI_CONTAINER can be uwsgi or gunicorn
-      WSGI_CONTAINER: uwsgi
       ## the number of processes and threads to spawn to handle requests
       NUM_PROCESSES: "4"
-      NUM_THREADS: "2"
 
     ## default_config.yml (driver configuration) overrides
     override:

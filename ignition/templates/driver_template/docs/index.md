@@ -50,9 +50,7 @@ The following table lists configurable parameters of the chart:
 | app.config.log.level | Level of log messages output by the driver | INFO |
 | app.config.env | Environment variables to be passed to the driver | (See below) |
 | app.config.env.LOG_TYPE | Log format (leave as logstash) | logstash |
-| app.config.env.WSGI_CONTAINER | WSGI container implementation used by the driver (uwsgi or gunicorn) | uwsgi |
-| app.config.env.NUM_PROCESSES | Number of processes started by the WSGI container | 4 |
-| app.config.env.NUM_THREADS | Number of threads per process | 2 |
+| app.config.env.NUM_PROCESSES | Number of processes started by the Gunicorn container | 4 |
 | app.config.override | Map to set [Application Configuration)[#app-configuration] properties | See connection_address below and [Application Configuration)[#app-configuration] properties |
 | app.config.override.message.connection_address | Kafka address. Default set to address of Kafka installed as standard with LM | foundation-kafka:9092 |
 | app.affinity | Affinity settings | A pod anti-affinity rule is configured to inform Kubernetes it is preferable to deploy the pods on different Nodes |
