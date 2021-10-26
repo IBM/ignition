@@ -89,8 +89,56 @@ paths:
               examples:
                 example:
                   $ref: "#/components/examples/ExampleExecuteErrorResponse"
+  /lifecycle/execute/{request_id}:
+    parameters:
+      - name: request_id
+        in: path
+        required: true
+        description: |
+          A unique ID assigned to an individual Cloud Provider account.
+          This is the used throughout the application to identify the account
+        schema:
+          $ref: '#/components/schemas/RequestId'
+    post:
+      tags:
+        - lifecycle
+      summary: Get Lifecycle Transition/Operation
+      description: >-
+        Get Lifecycle Transition/Operation. If accepted, a response should be returned immediately with a unique requestId used to identify messages for this process later.
+        The completion of the request (regardless of whether it was successful or not) should be returned via Kafka (with a message of type LifecycleExecutionAsyncResponse from the schema)
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GetLifecycleExecution"
+      operationId: .get_lifecycle_execution
+      responses:
+        "200":
+          description: Request accepted (async examples shown for information but they will never be returned via this API, they are returned on Kafka topics instead)
+          content:
+            application/json:
+              schema:
+                $ref:  "#/components/schemas/LifecycleExecutionAsyncResponse"
+              # examples:
+              #   response:
+              #     $ref: "#/components/examples/ExampleLifecycleExecutionAcceptedResponse"
+              #   async-response:
+              #     $ref: "#/components/examples/ExampleLifecycleExecutionAsyncResponse"
+              #   failed-async-reponse:
+              #     $ref: "#/components/examples/ExampleFailedLifecycleExecutionAsyncResponse"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                example:
+                  $ref: "#/components/examples/ExampleExecuteErrorResponse"
 components:
   schemas:
+    RequestId:
+      type: string
     ErrorResponse:
       type: object
       properties:
@@ -194,6 +242,18 @@ components:
           - type: object
         type:
           type: string
+    GetLifecycleExecution:
+      type: object
+      properties:
+        requestId:
+          type: string
+          description: ID associated to the request handling the execution
+        deploymentLocation:
+          description: External elements associated to the Resource during the acceptance of this request
+          $ref: "#/components/schemas/DeploymentLocation"
+      required:
+        - requestId
+        - deploymentLocation
     LifecycleExecutionAcceptedResponse:
       type: object
       properties:

@@ -153,10 +153,18 @@ class ResourceDriverApiCapability(Capability):
     def find_reference(self, **kwarg):
         pass
 
+    @interface
+    def get_lifecycle_execution(self, request_id, deployment_location):
+        pass
+
 class ResourceDriverServiceCapability(Capability):
 
     @interface
     def execute_lifecycle(self, lifecycle_name, driver_files, system_properties, resource_properties, request_properties, associated_topology, deployment_location):
+        pass
+
+    @interface
+    def get_lifecycle_execution(self, request_id, deployment_location):
         pass
 
     @interface
@@ -228,6 +236,23 @@ class ResourceDriverApiService(Service, ResourceDriverApiCapability, BaseControl
         finally:
             logging_context.clear()
 
+    def get_lifecycle_execution(self, **kwarg):
+        try:
+            logging_context.set_from_headers()
+
+            body = self.get_body(kwarg)
+            logger.debug('Handling get_lifecycle_execution request with body %s', body)
+            if not 'requestId' in kwarg:
+                raise Exception(f'Missing requestId')
+            request_id = kwarg.get('requestId', None)
+            if request_id is None:
+                raise Exception(f'Missing requestId')
+            deployment_location = self.get_body_required_field(body, 'deploymentLocation')
+            service_find_response = self.service.get_lifecycle_execution(request_id, deployment_location)
+            response = find_reference_response_dict(service_find_response)
+            return (response, 200)
+        finally:
+            logging_context.clear()
 
 class ResourceDriverService(Service, ResourceDriverServiceCapability):
     """
@@ -278,6 +303,9 @@ class ResourceDriverService(Service, ResourceDriverServiceCapability):
             if self.async_enabled is True:
                 self.__async_lifecycle_execution_completion(execute_response.request_id, deployment_location)
         return execute_response
+
+    def get_lifecycle_execution(self, request_id, deployment_location):
+        return self.handler.get_lifecycle_execution(request_id, deployment_location)
 
     def find_reference(self, instance_name, driver_files, deployment_location):
         file_name = '{0}'.format(str(uuid.uuid4()))
