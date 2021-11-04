@@ -144,7 +144,7 @@ class TestKafkaInboxService(unittest.TestCase):
             mock_read_inbox_func.assert_called_once_with(mock_record_1.value.decode.return_value)
             mock_kafka_consumer.commit.assert_called_once()
             ready_for_second_message = True
-            time.sleep(0.01)
+            time.sleep(1)
             mock_record_2.value.decode.assert_called_once_with('utf-8')
             mock_read_inbox_func.assert_called_with(mock_record_2.value.decode.return_value)
             mock_kafka_consumer.commit.assert_has_calls([call(), call()])
