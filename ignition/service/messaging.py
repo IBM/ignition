@@ -218,16 +218,21 @@ class KafkaDeliveryService(Service, DeliveryCapability):
         logger.error('Error sending envelope', exc_info=excp)
 
     def deliver(self, envelope, key=None):
-        if envelope is None:
+        try:
+            if envelope is None:
+                raise ValueError('An envelope must be passed to deliver a message')
+            self.__lazy_init_producer()
+            content = envelope.message.content
+            logger.debug('Delivering envelope to {0} with message content: {1}'.format(envelope.address, content))
+            if key is None:
+                self.producer.send(envelope.address, content).add_callback(self.__on_send_success).add_errback(self.__on_send_error)
+            else:
+                self.producer.send(envelope.address, key=str.encode(key), value=content).add_callback(self.__on_send_success).add_errback(self.__on_send_error)
+        except Exception as e:
             raise ValueError('An envelope must be passed to deliver a message')
-        self.__lazy_init_producer()
-        content = envelope.message.content
-        logger.debug('Delivering envelope to {0} with message content: {1}'.format(envelope.address, content))
-        if key is None:
-            self.producer.send(envelope.address, content).add_callback(self.__on_send_success).add_errback(self.__on_send_error)
-        else:
-            self.producer.send(envelope.address, key=str.encode(key), value=content).add_callback(self.__on_send_success).add_errback(self.__on_send_error)
-
+        finally:
+            self.__lazy_init_producer()
+            self.producer.close()
 
 class KafkaInboxService(Service, InboxCapability):
 
