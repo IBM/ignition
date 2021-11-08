@@ -217,7 +217,6 @@ class KafkaDeliveryService(Service, DeliveryCapability):
             self.producer = KafkaProducer(**config)
     
     def __close_producer(self):
-        print("Closing Producer")
         self.producer.flush()
         self.producer.close()
 
