@@ -7,7 +7,7 @@ from ignition.service.config import ConfigurationPropertiesGroup, ConfigurationP
 from kafka import KafkaProducer, KafkaConsumer
 from kafka.admin import KafkaAdminClient, NewTopic
 from kafka.errors import BrokerResponseError, TopicAlreadyExistsError
-from signal import signal, getsignal, SIGINT, SIGTERM, SIGQUIT, SIGCHLD, SIG_IGN, SIG_DFL
+from signal import signal, SIGTERM
 
 logger = logging.getLogger(__name__)
 
@@ -201,7 +201,7 @@ class KafkaDeliveryService(Service, DeliveryCapability):
     def __init__(self, **kwargs):
         if 'messaging_properties' not in kwargs:
             raise ValueError('messaging_properties argument not provided')
-        messaging_properties = kwargs.get('messaging_properties')        
+        messaging_properties = kwargs.get('messaging_properties')
         self.bootstrap_servers = messaging_properties.connection_address
         if self.bootstrap_servers is None:
             raise ValueError('connection_address not set on messaging_properties')
