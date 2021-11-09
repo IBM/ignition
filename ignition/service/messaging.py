@@ -7,7 +7,7 @@ from ignition.service.config import ConfigurationPropertiesGroup, ConfigurationP
 from kafka import KafkaProducer, KafkaConsumer
 from kafka.admin import KafkaAdminClient, NewTopic
 from kafka.errors import BrokerResponseError, TopicAlreadyExistsError
-from signal import signal, getsignal, SIGINT, SIGTERM, SIGQUIT, SIGCHLD, SIG_IGN, SIG_DFL 
+from signal import signal, getsignal, SIGINT, SIGTERM, SIGQUIT, SIGCHLD, SIG_IGN, SIG_DFL
 
 logger = logging.getLogger(__name__)
 
@@ -193,9 +193,9 @@ class PostalService(Service, PostalCapability):
             self.delivery_service.deliver(envelope, key=key)
 
 class KafkaDeliveryService(Service, DeliveryCapability):
-    
+
     def sigterm_handler(self, sig, frame):
-        logger.debug('sigterm_handler')
+        logger.debug('KafkaDeliveryService sigterm_handler triggered. Closing Kafka producer.')
         self.__close_producer()
 
     def __init__(self, **kwargs):
@@ -207,6 +207,7 @@ class KafkaDeliveryService(Service, DeliveryCapability):
             raise ValueError('connection_address not set on messaging_properties')
         self.messaging_config = messaging_properties.config
         self.producer = None
+        signal(SIGTERM, self.sigterm_handler)
 
     def __lazy_init_producer(self):
         if self.producer is None:
@@ -215,10 +216,11 @@ class KafkaDeliveryService(Service, DeliveryCapability):
             config['bootstrap_servers'] = self.bootstrap_servers
             config['client_id'] = 'ignition'
             self.producer = KafkaProducer(**config)
-    
+
     def __close_producer(self):
-        self.producer.flush()
-        self.producer.close()
+        if self.producer is not None:
+            self.producer.flush()
+            self.producer.close()
 
     def __on_send_success(self, record_metadata):
         logger.debug('Envelope successfully posted to {0} on partition {1} and offset {2}'.format(record_metadata.topic, record_metadata.partition, record_metadata.offset))
@@ -227,21 +229,15 @@ class KafkaDeliveryService(Service, DeliveryCapability):
         logger.error('Error sending envelope', exc_info=excp)
 
     def deliver(self, envelope, key=None):
-        try:
-            if envelope is None:
-                raise ValueError('An envelope must be passed to deliver a message')
-            self.__lazy_init_producer()
-            content = envelope.message.content
-            logger.debug('Delivering envelope to {0} with message content: {1}'.format(envelope.address, content))
-            if key is None:
-                self.producer.send(envelope.address, content).add_callback(self.__on_send_success).add_errback(self.__on_send_error)
-            else:
-                self.producer.send(envelope.address, key=str.encode(key), value=content).add_callback(self.__on_send_success).add_errback(self.__on_send_error)
-            
-            signal(SIGTERM, self.sigterm_handler)
-            
-        except Exception as e:
-            raise ValueError('An envelope must be passed to deliver a message') 
+        if envelope is None:
+            raise ValueError('An envelope must be passed to deliver a message')
+        self.__lazy_init_producer()
+        content = envelope.message.content
+        logger.debug('Delivering envelope to {0} with message content: {1}'.format(envelope.address, content))
+        if key is None:
+            self.producer.send(envelope.address, content).add_callback(self.__on_send_success).add_errback(self.__on_send_error)
+        else:
+            self.producer.send(envelope.address, key=str.encode(key), value=content).add_callback(self.__on_send_success).add_errback(self.__on_send_error)
 
 class KafkaInboxService(Service, InboxCapability):
 
