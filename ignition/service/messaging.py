@@ -7,6 +7,7 @@ from ignition.service.config import ConfigurationPropertiesGroup, ConfigurationP
 from kafka import KafkaProducer, KafkaConsumer
 from kafka.admin import KafkaAdminClient, NewTopic
 from kafka.errors import BrokerResponseError, TopicAlreadyExistsError
+from signal import signal, SIGTERM
 
 logger = logging.getLogger(__name__)
 
@@ -193,15 +194,20 @@ class PostalService(Service, PostalCapability):
 
 class KafkaDeliveryService(Service, DeliveryCapability):
 
+    def sigterm_handler(self, sig, frame):
+        logger.debug('KafkaDeliveryService sigterm_handler triggered. Closing Kafka producer.')
+        self.__close_producer()
+
     def __init__(self, **kwargs):
         if 'messaging_properties' not in kwargs:
             raise ValueError('messaging_properties argument not provided')
-        messaging_properties = kwargs.get('messaging_properties')        
+        messaging_properties = kwargs.get('messaging_properties')
         self.bootstrap_servers = messaging_properties.connection_address
         if self.bootstrap_servers is None:
             raise ValueError('connection_address not set on messaging_properties')
         self.messaging_config = messaging_properties.config
         self.producer = None
+        signal(SIGTERM, self.sigterm_handler)
 
     def __lazy_init_producer(self):
         if self.producer is None:
@@ -210,6 +216,11 @@ class KafkaDeliveryService(Service, DeliveryCapability):
             config['bootstrap_servers'] = self.bootstrap_servers
             config['client_id'] = 'ignition'
             self.producer = KafkaProducer(**config)
+
+    def __close_producer(self):
+        if self.producer is not None:
+            self.producer.flush()
+            self.producer.close()
 
     def __on_send_success(self, record_metadata):
         logger.debug('Envelope successfully posted to {0} on partition {1} and offset {2}'.format(record_metadata.topic, record_metadata.partition, record_metadata.offset))
@@ -227,7 +238,6 @@ class KafkaDeliveryService(Service, DeliveryCapability):
             self.producer.send(envelope.address, content).add_callback(self.__on_send_success).add_errback(self.__on_send_error)
         else:
             self.producer.send(envelope.address, key=str.encode(key), value=content).add_callback(self.__on_send_success).add_errback(self.__on_send_error)
-
 
 class KafkaInboxService(Service, InboxCapability):
 
