@@ -4,10 +4,6 @@ ARG DRIVER_PORT
 ENV DRIVER_PORT ${DRIVER_PORT:-{(app.port)}}
 ARG NUM_PROCESSES
 ENV NUM_PROCESSES ${NUM_PROCESSES:-4}
-ARG NUM_THREADS
-ENV NUM_THREADS ${NUM_THREADS:-2}
-ARG WSGI_CONTAINER
-ENV WSGI_CONTAINER ${WSGI_CONTAINER:-uwsgi}
 
 COPY whls/*.whl /whls/
 
@@ -28,4 +24,4 @@ WORKDIR /home/{(app.module_name)}
 
 EXPOSE {(app.port)}
 
-CMD ["{(app.module_name)}"]
+CMD gunicorn -w $NUM_PROCESSES -b :$DRIVER_PORT "{(app.module_name)}:create_wsgi_app()"

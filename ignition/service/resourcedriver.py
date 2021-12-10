@@ -7,6 +7,7 @@ from ignition.model.references import FindReferenceResponse, FindReferenceResult
 from ignition.model.associated_topology import AssociatedTopology
 from ignition.service.messaging import Message, Envelope, JsonContent, TopicConfigProperties
 from ignition.service.requestqueue import MAX_POLL_INTERVAL
+#from ignition.service.requestqueue import REQUEST_MESSAGE_VERSION
 from ignition.utils.file import DirectoryTree
 from ignition.api.exceptions import ApiException
 from ignition.service.logging import logging_context
@@ -42,7 +43,7 @@ class InfrastructureNotFoundError(ResourceDriverError):
 
 class RequestNotFoundError(ResourceDriverError):
     status_code = 400
-    
+
 class InvalidDriverFilesError(ResourceDriverError):
     status_code = 400
 
@@ -117,7 +118,7 @@ class ResourceDriverHandlerCapability(Capability):
         :param str request_id: identifier of the request to check
         :param dict deployment_location: the deployment location the Resource is assigned to
         :return: an ignition.model.lifecycle.LifecycleExecution
-        
+
         :raises:
             ignition.service.resourcedriver.RequestNotFoundError: if no request with the given request_id exists
             ignition.service.resourcedriver.TemporaryResourceDriverError: there is an issue handling this request at this time, an attempt should be made again at a later time
@@ -125,7 +126,7 @@ class ResourceDriverHandlerCapability(Capability):
         """
         pass
 
-    @interface 
+    @interface
     def find_reference(self, instance_name, driver_files, deployment_location):
         """
         Find a Resource, returning the necessary property output values and internal resources from those instances
@@ -226,7 +227,7 @@ class ResourceDriverApiService(Service, ResourceDriverApiCapability, BaseControl
             return (response, 200)
         finally:
             logging_context.clear()
-            
+
 
 class ResourceDriverService(Service, ResourceDriverServiceCapability):
     """

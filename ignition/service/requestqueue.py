@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 MAX_POLL_INTERVAL = 2700000
+REQUEST_MESSAGE_VERSION = "1.0.0"
 
 class InfrastructureRequestQueueCapability(Capability):
     @interface
@@ -53,7 +54,7 @@ class Request():
     def from_kafka_message(message, topic, partition):
         return Request(message.value.decode('utf-8'), topic, partition, message.offset)
 
-    def __init__(self, message_as_str, topic, partition, offset):
+    def __init__(self, message_as_str, topic, partition, offset, version=REQUEST_MESSAGE_VERSION):
         self.message_as_str = message_as_str
         self.request_as_json = JsonContent.read(message_as_str)
         self.request_as_dict = self.request_as_json.dict_val
@@ -62,6 +63,7 @@ class Request():
         self.partition = partition
         self.offset = offset
         self.exception_as_str = None
+        self.version = version
 
     def as_new_dict(self):
         return JsonContent.read(self.message_as_str).dict_val
@@ -74,7 +76,7 @@ class Request():
         self.request_as_dict['exception'] = self.exception_as_str
 
     def __str__(self):
-        return 'request_id: {0.request_id} topic: {0.topic} partition: {0.partition} offset: {0.offset}'.format(self)
+        return 'request_id: {0.request_id} topic: {0.topic} partition: {0.partition} offset: {0.offset} version: {0.version}'.format(self)
 
 
 
@@ -88,7 +90,7 @@ class KafkaRequestQueueHandler():
         self.request_queue_config = request_queue_config
         self.requests_consumer = kafka_consumer_factory.create_consumer(request_queue_config.max_poll_interval_ms)
 
-    
+
     def process_request(self):
         """
         Process a single request from the request queue. If processed successfully, the Kafka topic offsets
@@ -314,4 +316,3 @@ class KafkaLifecycleRequestQueueService(Service, LifecycleRequestQueueCapability
 
     def close(self):
         pass
-

@@ -17,12 +17,10 @@ setup(
     include_package_data=True,
     install_requires=[
         'ignition-framework==IGNITION_VERSION',
-        'uwsgi>=2.0.18,<3.0',
         'gunicorn>=19.9.0,<20.0'
     ],
     entry_points='''
         [console_scripts]
         tdriver-dev=tdriver.__main__:main
-    ''',
-    scripts=['tdriver/bin/tdriver-uwsgi', 'tdriver/bin/tdriver-gunicorn', 'tdriver/bin/tdriver']
+    '''
 )

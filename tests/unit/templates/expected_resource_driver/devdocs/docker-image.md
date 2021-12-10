@@ -3,10 +3,10 @@
 The Docker image for this driver includes the following features:
 
 - Installs the driver from a `whl` file created with standard Python setuptools
-- Runs the `tdriver` command to start the driver application with a uwsgi container (standard for Python production applications)
+- Runs the `gunicorn -w $NUM_PROCESSES -b :$DRIVER_PORT "tdriver:create_wsgi_app()"` command to start the driver application with a Gunicorn container (standard for Python production applications)
 - Supports installing a development version of Ignition from a `whl` file
 - Supports configuring the exposed port for the driver at both build and runtime
-- Supports configuring the uWSGI container implementation used at both build and runtime (also includes configuring the number of processes and threads used by uWSGI container)
+- Supports configuring the Gunicorn container implementation used at both build and runtime (also includes configuring the number of processes used by Gunicorn container)
 
 ## Build Docker Image
 

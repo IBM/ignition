@@ -1,5 +1,17 @@
 # Change Log
 
+## [3.2.0](https://github.com/IBM/ignition/tree/3.2.0) (2021-12-10)
+[Full Changelog](https://github.com/IBM/ignition/compare/3.1.0...3.2.0)
+
+**Implemented enhancements:**
+
+- Ensure Kafka messages are flushed on shutdown and the producer is closed [\#119](https://github.com/IBM/ignition/issues/119)
+
+**Removed Features:**
+
+- Remove uwsgi from driver template [\#116](https://github.com/IBM/ignition/issues/116)
+
+
 ## [3.1.0](https://github.com/IBM/ignition/tree/3.1.0) (2021-08-13)
 [Full Changelog](https://github.com/IBM/ignition/compare/3.0.1...3.1.0)
 

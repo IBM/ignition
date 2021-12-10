@@ -153,7 +153,6 @@ The Python package directory (`mydriver` in our example) contains the source cod
 - `__main__.py` - contains the entry point used to run the application in development mode
 - `__init__.py` - every Python package must have one of these files and they are usually empty. However, the root init file contains the code to return an application to be used in production mode.  This file also includes code to make the version of your driver from `pkg_info.json` available on the Python standard `__version__` variable.
 - `config` - directory containing the default properties for the driver
-- `bin` - directory containing the scripts used as entry points for the uWSGI production server
 - `service` - directory containing the source code for this driver's implementations of the driver APIs
 
 You are free to add additional modules to the Python package in order to structure the code in a way that suits your style. 
@@ -238,7 +237,7 @@ Finally we build the application and return it:
 return app_builder.configure()
 ```
 
-The last element of this file is the `init_app` method. This method creates the application and then runs it. You'll see in `__main__.py` and `__init__.py` that in development we want to start the app but in production we only need to create and return it, so it may be managed by a uWSGI container.
+The last element of this file is the `init_app` method. This method creates the application and then runs it. You'll see in `__main__.py` and `__init__.py` that in development we want to start the app but in production we only need to create and return it, so it may be managed by a Gunicorn container.
 
 ### resourcedriver.py
 
@@ -248,7 +247,7 @@ To add functionality to your driver, you must implement each method stub include
 
 ## Docker 
 
-This directory contains a recommended implementation of a Dockerfile to build an image for your driver. It contains a best practice solution for installing the driver from a pre-built `whl` (see [setup.py](#setup.py)), running the driver in production mode (inside a uwsgi container) and exposing the necessary port to allow access to it's APIs.
+This directory contains a recommended implementation of a Dockerfile to build an image for your driver. It contains a best practice solution for installing the driver from a pre-built `whl` (see [setup.py](#setup.py)), running the driver in production mode (inside a Gunicorn container) and exposing the necessary port to allow access to it's APIs.
 
 You are free to adjust this file to produce an image more suited to your deployment patterns. There is no requirement to keep this directory, your Python application is unaffected by it's presence.
 

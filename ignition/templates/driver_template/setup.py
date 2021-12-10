@@ -17,12 +17,10 @@ setup(
     include_package_data=True,
     install_requires=[
         'ignition-framework=={(ignition.version)}',
-        'uwsgi>=2.0.18,<3.0',
         'gunicorn>=19.9.0,<20.0'
     ],
     entry_points='''
         [console_scripts]
         {(app.module_name)}-dev={(app.module_name)}.__main__:main
-    ''',
-    scripts=['{(app.module_name)}/bin/{(app.module_name)}-uwsgi', '{(app.module_name)}/bin/{(app.module_name)}-gunicorn', '{(app.module_name)}/bin/{(app.module_name)}']
+    '''
 )

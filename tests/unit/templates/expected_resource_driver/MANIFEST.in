@@ -1,3 +1,2 @@
 include tdriver/pkg_info.json
 include tdriver/config/*.yml
-include tdriver/bin/*
