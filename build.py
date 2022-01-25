@@ -176,8 +176,6 @@ class Builder:
         self.pkg_docs()
 
     def release(self):
-        if self.vars.post_version is None:
-            raise ValueError('Must set --post-version when releasing')
         self.build()
         self.push_whl()
         self.push_release_git_changes()
