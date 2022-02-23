@@ -35,7 +35,7 @@ Reference the values file on install to apply configuration:
 helm install --name tdhelm tdhelm-0.5.0.tgz -f custom_values.yaml-
 ```
 
-"Once the pod for the driver has started you should be able to view the status of the application at: `http://:{(helm.node_port)}/management/health`"
+Once the pod for the driver has started you should be able to view the status of the application at: `http://:{(helm.node_port)}/management/health`
 
 ## Helm Configuration
 
