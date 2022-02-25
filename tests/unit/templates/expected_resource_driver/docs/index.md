@@ -35,7 +35,7 @@ Reference the values file on install to apply configuration:
 helm install --name tdhelm tdhelm-0.5.0.tgz -f custom_values.yaml-
 ```
 
-Once the pod for the driver has started you will be able to access the Swagger UI at: `http://<kubernetes-node-ip>:30777/api/driver/ui`
+Once the pod for the driver has started you should be able to view the status of the application at: `http://<kubernetes-node-ip>:30777/management/health`
 
 ## Helm Configuration
 
