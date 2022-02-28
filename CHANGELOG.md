@@ -3,10 +3,6 @@
 ## [3.3.0](https://github.com/IBM/ignition/tree/3.3.0) (2022-02-28)
 [Full Changelog](https://github.com/IBM/ignition/compare/3.2.0...3.3.0)
 
-**Implemented enhancements:**
-
-- None
-
 **Removed Features:**
 
 - Remove Swagger UI due to vulnerabilities [\#125](https://github.com/IBM/ignition/issues/125)
