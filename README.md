@@ -2,7 +2,7 @@
 [![Build Status](https://app.travis-ci.com/IBM/ignition.svg?branch=master)](https://app.travis-ci.com/IBM/ignition)
 [![PyPI version](https://badge.fury.io/py/ignition-framework.svg)](https://badge.fury.io/py/ignition-framework)
 
-# Ignition
+# Ignition TEST
 
 ## What is it?
 
