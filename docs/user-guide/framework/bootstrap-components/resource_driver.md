@@ -10,9 +10,9 @@ Ignition will bootstrap the following API for the driver:
 | ------------- | ---------------------- | ------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
 | Resource Driver API | ResourceDriverApiCapability | bootstrap.resource_driver.api_enabled | Adds the Resource Driver API to the Connexion app, registering the service offering the ResourceDriverApiCapability as the handler |
 
-When enabled this API will be accessible at `/api/driver` (view the Swagger for it at `/api/driver/ui` on a running driver).
+When enabled this API will be accessible at `/api/driver`.
 
-The specification for this API is built into the Ignition Python package so must be viewed through the Swagger UI or at the Ignition Github page (`ignition/openapi/resource-driver.yaml`).
+The specification for this API is built into the Ignition Python package so must be viewed at the Ignition Github page (`ignition/openapi/resource-driver.yaml`).
 
 ## Services
 
