@@ -1,5 +1,14 @@
 # Change Log
 
+## [3.3.1](https://github.com/IBM/ignition/tree/3.3.1) (2022-04-27)
+[Full Changelog](https://github.com/IBM/ignition/compare/3.3.0...3.3.1)
+
+
+**Fixed bugs:**
+
+- Need to update Werkzeug 'BaseResponse' to 'Response' [\#130](https://github.com/IBM/ignition/issues/130)
+
+
 ## [3.3.0](https://github.com/IBM/ignition/tree/3.3.0) (2022-02-28)
 [Full Changelog](https://github.com/IBM/ignition/compare/3.2.0...3.3.0)
 
