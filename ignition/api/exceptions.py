@@ -2,7 +2,7 @@ import json
 import inspect
 import logging
 from werkzeug.exceptions import HTTPException
-from werkzeug.wrappers import BaseResponse as Response
+from werkzeug.wrappers import Response
 
 logger = logging.getLogger(__name__)
 
