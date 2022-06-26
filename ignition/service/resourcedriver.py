@@ -249,6 +249,10 @@ class ResourceDriverService(Service, ResourceDriverServiceCapability):
             if 'lifecycle_monitor_service' not in kwargs:
                 raise ValueError('lifecycle_monitor_service argument not provided (required when async_messaging_enabled is True)')
             self.lifecycle_monitor_service = kwargs.get('lifecycle_monitor_service')
+        else:
+            if 'lifecycle_messaging_service' not in kwargs:
+                raise ValueError('lifecycle_messaging_service argument not provided')
+            self.lifecycle_messaging_service = kwargs.get('lifecycle_messaging_service')
         self.async_requests_enabled = resource_driver_config.lifecycle_request_queue.enabled
         if self.async_requests_enabled:
             if 'lifecycle_request_queue' not in kwargs:
@@ -277,6 +281,10 @@ class ResourceDriverService(Service, ResourceDriverServiceCapability):
             execute_response = self.handler.execute_lifecycle(lifecycle_name, driver_files_tree, PropValueMap(system_properties), PropValueMap(resource_properties), PropValueMap(request_properties), associated_topology, deployment_location)
             if self.async_enabled is True:
                 self.__async_lifecycle_execution_completion(execute_response.request_id, deployment_location)
+            else:
+                if(isinstance(execute_response, LifecycleExecution)):
+                    logger.info("Sending status to Kafka Topic immediately for non async task")
+                    self.lifecycle_messaging_service.send_lifecycle_execution(execute_response)
         return execute_response
 
     def find_reference(self, instance_name, driver_files, deployment_location):
