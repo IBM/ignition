@@ -14,6 +14,7 @@ import tempfile
 import shutil
 import base64
 from ignition.utils.propvaluemap import PropValueMap
+from flask import Flask
 
 class TestResourceDriverApiService(unittest.TestCase):
 
@@ -39,89 +40,124 @@ class TestResourceDriverApiService(unittest.TestCase):
         mock_service = MagicMock()
         mock_service.execute_lifecycle.return_value = LifecycleExecuteResponse('123')
         controller = ResourceDriverApiService(service=mock_service)
-        response, code = controller.execute_lifecycle(**{
-            'body': {
-                'lifecycleName': 'Start',
-                'systemProperties': self.__props_with_types({'resourceId': '1', 'b': 1}),
-                'resourceProperties': self.__props_with_types({'a': '2', 'b': 2}),
-                'requestProperties': self.__props_with_types({'reqA': '3', 'reqB': True}),
-                'associatedTopology': [{'id': 'abc', 'name': 'Test', 'type': 'Testing'}],
-                'driverFiles': b'123',
-                'deploymentLocation': {'name': 'test'},
-                'version': '1.0.0'
-            }
-        })
+        app = Flask(__name__)
+        with app.test_request_context():
+            response, code = controller.execute_lifecycle(**{
+                'body': {
+                    'lifecycleName': 'Start',
+                    'systemProperties': self.__props_with_types({'resourceId': '1', 'b': 1}),
+                    'resourceProperties': self.__props_with_types({'a': '2', 'b': 2}),
+                    'requestProperties': self.__props_with_types({'reqA': '3', 'reqB': True}),
+                    'associatedTopology': [{'id': 'abc', 'name': 'Test', 'type': 'Testing'}],
+                    'driverFiles': b'123',
+                    'deploymentLocation': {'name': 'test'},
+                    'version': '1.0.0'
+                }
+            })
         mock_service.execute_lifecycle.assert_called_once_with('Start', b'123', {'resourceId': { 'type': 'string', 'value': '1'}, 'b': { 'type': 'integer', 'value': 1} }, {'a': { 'type': 'string', 'value': '2'}, 'b': { 'type': 'integer', 'value': 2}}, {'reqA': {'type': 'string', 'value': '3'}, 'reqB': {'type': 'boolean', 'value': True}}, [{'id': 'abc', 'name': 'Test', 'type': 'Testing'}], {'name': 'test'})
         self.assertEqual(response, {'requestId': '123', 'associatedTopology': {}, "version": "1.0.0"})
         self.assertEqual(code, 202)
         logging_context.set_from_headers.assert_called_once()
 
     @patch('ignition.service.resourcedriver.logging_context')
+    def test_execute_with_tenant_id(self, logging_context):
+        mock_service = MagicMock()
+        mock_service.execute_lifecycle.return_value = LifecycleExecuteResponse('123')
+        controller = ResourceDriverApiService(service=mock_service)
+        app = Flask(__name__)
+        with app.test_request_context(headers={'TenantId': '5d1cd9ca-f6d9-11ec-8084-00000a0b651c'}):
+            response, code, response_headers = controller.execute_lifecycle(**{
+                'body': {
+                    'lifecycleName': 'Start',
+                    'systemProperties': self.__props_with_types({'resourceId': '1', 'b': 1}),
+                    'resourceProperties': self.__props_with_types({'a': '2', 'b': 2}),
+                    'requestProperties': self.__props_with_types({'reqA': '3', 'reqB': True}),
+                    'associatedTopology': [{'id': 'abc', 'name': 'Test', 'type': 'Testing'}],
+                    'driverFiles': b'123',
+                    'deploymentLocation': {'name': 'test'},
+                    'version': '1.0.0'
+                }
+            })
+        mock_service.execute_lifecycle.assert_called_once_with('Start', b'123', {'resourceId': { 'type': 'string', 'value': '1'}, 'b': { 'type': 'integer', 'value': 1} }, {'a': { 'type': 'string', 'value': '2'}, 'b': { 'type': 'integer', 'value': 2}}, {'reqA': {'type': 'string', 'value': '3'}, 'reqB': {'type': 'boolean', 'value': True}}, [{'id': 'abc', 'name': 'Test', 'type': 'Testing'}], {'name': 'test'})
+        self.assertEqual(response, {'requestId': '123', 'associatedTopology': {}, "version": "1.0.0"})
+        self.assertEqual(code, 202)
+        self.assertEqual(response_headers, {'TenantId': '5d1cd9ca-f6d9-11ec-8084-00000a0b651c'})
+        logging_context.set_from_headers.assert_called_once()
+
+    @patch('ignition.service.resourcedriver.logging_context')
     def test_execute_missing_lifecycle_name(self, logging_context):
         mock_service = MagicMock()
         controller = ResourceDriverApiService(service=mock_service)
-        with self.assertRaises(BadRequest) as context:
-            controller.execute_lifecycle(**{
-                'body': {
-                    'systemProperties': self.__props_with_types({'resourceId': '1'}),
-                    'resourceProperties': self.__props_with_types({'a': '2'}),
-                    'requestProperties': self.__props_with_types({'reqA': '3'}),
-                    'associatedTopology': [{'id': 'abc', 'name': 'Test', 'type': 'Testing'}],
-                    'driverFiles': b'123',
-                    'deploymentLocation': {'name': 'test'}
-                }
-            })
+        app = Flask(__name__)
+        with app.test_request_context():
+            with self.assertRaises(BadRequest) as context:
+                controller.execute_lifecycle(**{
+                    'body': {
+                        'systemProperties': self.__props_with_types({'resourceId': '1'}),
+                        'resourceProperties': self.__props_with_types({'a': '2'}),
+                        'requestProperties': self.__props_with_types({'reqA': '3'}),
+                        'associatedTopology': [{'id': 'abc', 'name': 'Test', 'type': 'Testing'}],
+                        'driverFiles': b'123',
+                        'deploymentLocation': {'name': 'test'}
+                    }
+                })
         self.assertEqual(str(context.exception), '\'lifecycleName\' is a required field but was not found in the request data body')
 
     @patch('ignition.service.resourcedriver.logging_context')
     def test_execute_missing_driver_files(self, logging_context):
         mock_service = MagicMock()
         controller = ResourceDriverApiService(service=mock_service)
-        with self.assertRaises(BadRequest) as context:
-            controller.execute_lifecycle(**{
-                'body': {
-                    'lifecycleName': 'Start',
-                    'systemProperties': self.__props_with_types({'resourceId': '1'}),
-                    'resourceProperties': self.__props_with_types({'a': '2'}),
-                    'requestProperties': self.__props_with_types({'reqA': '3'}),
-                    'associatedTopology': [{'id': 'abc', 'name': 'Test', 'type': 'Testing'}],
-                    'deploymentLocation': {'name': 'test'}
-                }
-            })
+        app = Flask(__name__)
+        with app.test_request_context():
+            with self.assertRaises(BadRequest) as context:
+                controller.execute_lifecycle(**{
+                    'body': {
+                        'lifecycleName': 'Start',
+                        'systemProperties': self.__props_with_types({'resourceId': '1'}),
+                        'resourceProperties': self.__props_with_types({'a': '2'}),
+                        'requestProperties': self.__props_with_types({'reqA': '3'}),
+                        'associatedTopology': [{'id': 'abc', 'name': 'Test', 'type': 'Testing'}],
+                        'deploymentLocation': {'name': 'test'}
+                    }
+                })
         self.assertEqual(str(context.exception), '\'driverFiles\' is a required field but was not found in the request data body')
 
     @patch('ignition.service.resourcedriver.logging_context')
     def test_execute_missing_deployment_location(self, logging_context):
         mock_service = MagicMock()
         controller = ResourceDriverApiService(service=mock_service)
-        with self.assertRaises(BadRequest) as context:
-            controller.execute_lifecycle(**{
-                'body': {
-                    'lifecycleName': 'Start',
-                    'systemProperties': self.__props_with_types({'resourceId': '1'}),
-                    'resourceProperties': self.__props_with_types({'a': '2'}),
-                    'requestProperties': self.__props_with_types({'reqA': '3'}),
-                    'associatedTopology': [{'id': 'abc', 'name': 'Test', 'type': 'Testing'}],
-                    'driverFiles': b'123'
-                }
-            })
+        app = Flask(__name__)
+        with app.test_request_context():
+            with self.assertRaises(BadRequest) as context:
+                controller.execute_lifecycle(**{
+                    'body': {
+                        'lifecycleName': 'Start',
+                        'systemProperties': self.__props_with_types({'resourceId': '1'}),
+                        'resourceProperties': self.__props_with_types({'a': '2'}),
+                        'requestProperties': self.__props_with_types({'reqA': '3'}),
+                        'associatedTopology': [{'id': 'abc', 'name': 'Test', 'type': 'Testing'}],
+                        'driverFiles': b'123'
+                    }
+                })
         self.assertEqual(str(context.exception), '\'deploymentLocation\' is a required field but was not found in the request data body')
 
     @patch('ignition.service.resourcedriver.logging_context')
     def test_execute_missing_system_properties(self, logging_context):
         mock_service = MagicMock()
         controller = ResourceDriverApiService(service=mock_service)
-        with self.assertRaises(BadRequest) as context:
-            controller.execute_lifecycle(**{
-                'body': {
-                    'lifecycleName': 'Start',
-                    'resourceProperties': self.__props_with_types({'a': '2'}),
-                    'requestProperties': self.__props_with_types({'reqA': '3'}),
-                    'associatedTopology': [{'id': 'abc', 'name': 'Test', 'type': 'Testing'}],
-                    'driverFiles': b'123',
-                    'deploymentLocation': {'name': 'test'}
-                }
-            })
+        app = Flask(__name__)
+        with app.test_request_context():
+            with self.assertRaises(BadRequest) as context:
+                controller.execute_lifecycle(**{
+                    'body': {
+                        'lifecycleName': 'Start',
+                        'resourceProperties': self.__props_with_types({'a': '2'}),
+                        'requestProperties': self.__props_with_types({'reqA': '3'}),
+                        'associatedTopology': [{'id': 'abc', 'name': 'Test', 'type': 'Testing'}],
+                        'driverFiles': b'123',
+                        'deploymentLocation': {'name': 'test'}
+                    }
+                })
         self.assertEqual(str(context.exception), '\'systemProperties\' is a required field but was not found in the request data body')
 
     @patch('ignition.service.resourcedriver.logging_context')
@@ -129,17 +165,19 @@ class TestResourceDriverApiService(unittest.TestCase):
         mock_service = MagicMock()
         mock_service.execute_lifecycle.return_value = LifecycleExecuteResponse('123')
         controller = ResourceDriverApiService(service=mock_service)
-        response, code = controller.execute_lifecycle(**{
-            'body': {
-                'lifecycleName': 'Start',
-                'systemProperties': self.__props_with_types({'resourceId': '1'}),
-                'requestProperties': self.__props_with_types({'reqA': '3'}),
-                'associatedTopology': [{'id': 'abc', 'name': 'Test', 'type': 'Testing'}],
-                'driverFiles': b'123',
-                'deploymentLocation': {'name': 'test'},
-                'version': '1.0.0'
-            }
-        })
+        app = Flask(__name__)
+        with app.test_request_context():
+            response, code = controller.execute_lifecycle(**{
+                'body': {
+                    'lifecycleName': 'Start',
+                    'systemProperties': self.__props_with_types({'resourceId': '1'}),
+                    'requestProperties': self.__props_with_types({'reqA': '3'}),
+                    'associatedTopology': [{'id': 'abc', 'name': 'Test', 'type': 'Testing'}],
+                    'driverFiles': b'123',
+                    'deploymentLocation': {'name': 'test'},
+                    'version': '1.0.0'
+                }
+            })
         mock_service.execute_lifecycle.assert_called_once_with('Start', b'123', {'resourceId': { 'type': 'string', 'value': '1'}}, {}, {'reqA': {'type': 'string', 'value': '3'}}, [{'id': 'abc', 'name': 'Test', 'type': 'Testing'}], {'name': 'test'})
         self.assertEqual(response, {'requestId': '123', 'associatedTopology': {}, "version": "1.0.0"})
         self.assertEqual(code, 202)
@@ -149,17 +187,19 @@ class TestResourceDriverApiService(unittest.TestCase):
         mock_service = MagicMock()
         mock_service.execute_lifecycle.return_value = LifecycleExecuteResponse('123')
         controller = ResourceDriverApiService(service=mock_service)
-        response, code = controller.execute_lifecycle(**{
-            'body': {
-                'lifecycleName': 'Start',
-                'systemProperties': self.__props_with_types({'resourceId': '1'}),
-                'resourceProperties': self.__props_with_types({'a': '2'}),
-                'associatedTopology': [{'id': 'abc', 'name': 'Test', 'type': 'Testing'}],
-                'driverFiles': b'123',
-                'deploymentLocation': {'name': 'test'},
-                'version': '1.0.0'
-            }
-        })
+        app = Flask(__name__)
+        with app.test_request_context():
+            response, code = controller.execute_lifecycle(**{
+                'body': {
+                    'lifecycleName': 'Start',
+                    'systemProperties': self.__props_with_types({'resourceId': '1'}),
+                    'resourceProperties': self.__props_with_types({'a': '2'}),
+                    'associatedTopology': [{'id': 'abc', 'name': 'Test', 'type': 'Testing'}],
+                    'driverFiles': b'123',
+                    'deploymentLocation': {'name': 'test'},
+                    'version': '1.0.0'
+                }
+            })
         mock_service.execute_lifecycle.assert_called_once_with('Start', b'123', {'resourceId': { 'type': 'string', 'value': '1'}}, {'a': { 'type': 'string', 'value': '2'}}, {}, [{'id': 'abc', 'name': 'Test', 'type': 'Testing'}], {'name': 'test'})
         self.assertEqual(response, {'requestId': '123', 'associatedTopology': {}, "version": "1.0.0"})
         self.assertEqual(code, 202)
@@ -169,17 +209,19 @@ class TestResourceDriverApiService(unittest.TestCase):
         mock_service = MagicMock()
         mock_service.execute_lifecycle.return_value = LifecycleExecuteResponse('123')
         controller = ResourceDriverApiService(service=mock_service)
-        response, code = controller.execute_lifecycle(**{
-            'body': {
-                'lifecycleName': 'Start',
-                'systemProperties': self.__props_with_types({'resourceId': '1'}),
-                'resourceProperties': self.__props_with_types({'a': '2'}),
-                'requestProperties': self.__props_with_types({'reqA': '3'}),
-                'driverFiles': b'123',
-                'deploymentLocation': {'name': 'test'},
-                'version': '1.0.0'
-            }
-        })
+        app = Flask(__name__)
+        with app.test_request_context():
+            response, code = controller.execute_lifecycle(**{
+                'body': {
+                    'lifecycleName': 'Start',
+                    'systemProperties': self.__props_with_types({'resourceId': '1'}),
+                    'resourceProperties': self.__props_with_types({'a': '2'}),
+                    'requestProperties': self.__props_with_types({'reqA': '3'}),
+                    'driverFiles': b'123',
+                    'deploymentLocation': {'name': 'test'},
+                    'version': '1.0.0'
+                }
+            })
         mock_service.execute_lifecycle.assert_called_once_with('Start', b'123', {'resourceId': { 'type': 'string', 'value': '1'}}, {'a': { 'type': 'string', 'value': '2'}}, {'reqA': {'type': 'string', 'value': '3'}}, {}, {'name': 'test'})
         self.assertEqual(response, {'requestId': '123', 'associatedTopology': {}, "version": "1.0.0"})
         self.assertEqual(code, 202)

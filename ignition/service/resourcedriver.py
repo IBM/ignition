@@ -20,6 +20,7 @@ import shutil
 import base64
 import pathlib
 import ignition.openapi as openapi
+import connexion
 
 logger = logging.getLogger(__name__)
 # Grabs the __init__.py from the openapi package then takes it's parent, the openapi directory itself
@@ -198,6 +199,11 @@ class ResourceDriverApiService(Service, ResourceDriverApiCapability, BaseControl
         try:
             logging_context.set_from_headers()
 
+            tenant_id=None
+            if('TenantId' in connexion.request.headers):
+                tenant_id = connexion.request.headers['TenantId']
+                logger.info("TenantId received in headers : %s", tenant_id)
+
             body = self.get_body(kwarg)
             logger.debug('Handling lifecycle execution request with body %s', body)
             lifecycle_name = self.get_body_required_field(body, 'lifecycleName')
@@ -209,7 +215,10 @@ class ResourceDriverApiService(Service, ResourceDriverApiCapability, BaseControl
             deployment_location = self.get_body_required_field(body, 'deploymentLocation')
             execute_response = self.service.execute_lifecycle(lifecycle_name, driver_files, system_properties, resource_properties, request_properties, associated_topology, deployment_location)
             response = lifecycle_execute_response_dict(execute_response)
-            return (response, 202)
+            if(tenant_id is not None):
+                return (response, 202, {'TenantId': tenant_id})
+            else:
+                return (response, 202)
         finally:
             logging_context.clear()
 
