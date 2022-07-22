@@ -137,9 +137,11 @@ class InboxCapability(Capability):
 
 class Envelope():
 
-    def __init__(self, address, message):
+    def __init__(self, address, message, **kwargs):
         self.address = address
         self.message = message
+        if (('tenant_id' in kwargs) and (kwargs['tenant_id'] is not None)):
+            self.tenant_id = kwargs['tenant_id']
 
     def __str__(self):
         return 'Envelope[address: {0.address} message: {0.message}]'.format(self)
@@ -234,10 +236,18 @@ class KafkaDeliveryService(Service, DeliveryCapability):
         self.__lazy_init_producer()
         content = envelope.message.content
         logger.debug('Delivering envelope to {0} with message content: {1}'.format(envelope.address, content))
-        if key is None:
-            self.producer.send(envelope.address, content).add_callback(self.__on_send_success).add_errback(self.__on_send_error)
+        if(hasattr(envelope, 'tenant_id')):
+            tenant_id = envelope.tenant_id
+            headers = [('tenant_id', envelope.tenant_id.encode('utf-8'))]
+            if key is None:
+                self.producer.send(envelope.address, content, headers=headers).add_callback(self.__on_send_success).add_errback(self.__on_send_error)
+            else:
+                self.producer.send(envelope.address, key=str.encode(key), value=content, headers=headers).add_callback(self.__on_send_success).add_errback(self.__on_send_error)
         else:
-            self.producer.send(envelope.address, key=str.encode(key), value=content).add_callback(self.__on_send_success).add_errback(self.__on_send_error)
+            if key is None:
+                self.producer.send(envelope.address, content).add_callback(self.__on_send_success).add_errback(self.__on_send_error)
+            else:
+                self.producer.send(envelope.address, key=str.encode(key), value=content).add_callback(self.__on_send_success).add_errback(self.__on_send_error)
 
 class KafkaInboxService(Service, InboxCapability):
 

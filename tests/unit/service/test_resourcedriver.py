@@ -41,8 +41,8 @@ class TestResourceDriverApiService(unittest.TestCase):
         mock_service.execute_lifecycle.return_value = LifecycleExecuteResponse('123')
         controller = ResourceDriverApiService(service=mock_service)
         app = Flask(__name__)
-        with app.test_request_context():
-            response, code = controller.execute_lifecycle(**{
+        with app.test_request_context(headers={'TenantId': '5d1cd9ca-f6d9-11ec-8084-00000a0b651c'}):
+            response, code, response_headers = controller.execute_lifecycle(**{
                 'body': {
                     'lifecycleName': 'Start',
                     'systemProperties': self.__props_with_types({'resourceId': '1', 'b': 1}),
@@ -54,9 +54,10 @@ class TestResourceDriverApiService(unittest.TestCase):
                     'version': '1.0.0'
                 }
             })
-        mock_service.execute_lifecycle.assert_called_once_with('Start', b'123', {'resourceId': { 'type': 'string', 'value': '1'}, 'b': { 'type': 'integer', 'value': 1} }, {'a': { 'type': 'string', 'value': '2'}, 'b': { 'type': 'integer', 'value': 2}}, {'reqA': {'type': 'string', 'value': '3'}, 'reqB': {'type': 'boolean', 'value': True}}, [{'id': 'abc', 'name': 'Test', 'type': 'Testing'}], {'name': 'test'})
+        mock_service.execute_lifecycle.assert_called_once_with('Start', b'123', {'resourceId': { 'type': 'string', 'value': '1'}, 'b': { 'type': 'integer', 'value': 1} }, {'a': { 'type': 'string', 'value': '2'}, 'b': { 'type': 'integer', 'value': 2}}, {'reqA': {'type': 'string', 'value': '3'}, 'reqB': {'type': 'boolean', 'value': True}}, [{'id': 'abc', 'name': 'Test', 'type': 'Testing'}], {'name': 'test'}, '5d1cd9ca-f6d9-11ec-8084-00000a0b651c')
         self.assertEqual(response, {'requestId': '123', 'associatedTopology': {}, "version": "1.0.0"})
         self.assertEqual(code, 202)
+        self.assertEqual(response_headers, {'TenantId': '5d1cd9ca-f6d9-11ec-8084-00000a0b651c'})
         logging_context.set_from_headers.assert_called_once()
 
     @patch('ignition.service.resourcedriver.logging_context')
@@ -64,7 +65,7 @@ class TestResourceDriverApiService(unittest.TestCase):
         mock_service = MagicMock()
         controller = ResourceDriverApiService(service=mock_service)
         app = Flask(__name__)
-        with app.test_request_context():
+        with app.test_request_context(headers={'TenantId': '5d1cd9ca-f6d9-11ec-8084-00000a0b651c'}):
             with self.assertRaises(BadRequest) as context:
                 controller.execute_lifecycle(**{
                     'body': {
@@ -83,7 +84,7 @@ class TestResourceDriverApiService(unittest.TestCase):
         mock_service = MagicMock()
         controller = ResourceDriverApiService(service=mock_service)
         app = Flask(__name__)
-        with app.test_request_context():
+        with app.test_request_context(headers={'TenantId': '5d1cd9ca-f6d9-11ec-8084-00000a0b651c'}):
             with self.assertRaises(BadRequest) as context:
                 controller.execute_lifecycle(**{
                     'body': {
@@ -102,7 +103,7 @@ class TestResourceDriverApiService(unittest.TestCase):
         mock_service = MagicMock()
         controller = ResourceDriverApiService(service=mock_service)
         app = Flask(__name__)
-        with app.test_request_context():
+        with app.test_request_context(headers={'TenantId': '5d1cd9ca-f6d9-11ec-8084-00000a0b651c'}):
             with self.assertRaises(BadRequest) as context:
                 controller.execute_lifecycle(**{
                     'body': {
@@ -121,7 +122,7 @@ class TestResourceDriverApiService(unittest.TestCase):
         mock_service = MagicMock()
         controller = ResourceDriverApiService(service=mock_service)
         app = Flask(__name__)
-        with app.test_request_context():
+        with app.test_request_context(headers={'TenantId': '5d1cd9ca-f6d9-11ec-8084-00000a0b651c'}):
             with self.assertRaises(BadRequest) as context:
                 controller.execute_lifecycle(**{
                     'body': {
@@ -141,8 +142,8 @@ class TestResourceDriverApiService(unittest.TestCase):
         mock_service.execute_lifecycle.return_value = LifecycleExecuteResponse('123')
         controller = ResourceDriverApiService(service=mock_service)
         app = Flask(__name__)
-        with app.test_request_context():
-            response, code = controller.execute_lifecycle(**{
+        with app.test_request_context(headers={'TenantId': '5d1cd9ca-f6d9-11ec-8084-00000a0b651c'}):
+            response, code, response_headers = controller.execute_lifecycle(**{
                 'body': {
                     'lifecycleName': 'Start',
                     'systemProperties': self.__props_with_types({'resourceId': '1'}),
@@ -153,9 +154,10 @@ class TestResourceDriverApiService(unittest.TestCase):
                     'version': '1.0.0'
                 }
             })
-        mock_service.execute_lifecycle.assert_called_once_with('Start', b'123', {'resourceId': { 'type': 'string', 'value': '1'}}, {}, {'reqA': {'type': 'string', 'value': '3'}}, [{'id': 'abc', 'name': 'Test', 'type': 'Testing'}], {'name': 'test'})
+        mock_service.execute_lifecycle.assert_called_once_with('Start', b'123', {'resourceId': { 'type': 'string', 'value': '1'}}, {}, {'reqA': {'type': 'string', 'value': '3'}}, [{'id': 'abc', 'name': 'Test', 'type': 'Testing'}], {'name': 'test'}, '5d1cd9ca-f6d9-11ec-8084-00000a0b651c')
         self.assertEqual(response, {'requestId': '123', 'associatedTopology': {}, "version": "1.0.0"})
         self.assertEqual(code, 202)
+        self.assertEqual(response_headers, {'TenantId': '5d1cd9ca-f6d9-11ec-8084-00000a0b651c'})
 
     @patch('ignition.service.resourcedriver.logging_context')
     def test_execute_missing_request_properties(self, logging_context):
@@ -163,8 +165,8 @@ class TestResourceDriverApiService(unittest.TestCase):
         mock_service.execute_lifecycle.return_value = LifecycleExecuteResponse('123')
         controller = ResourceDriverApiService(service=mock_service)
         app = Flask(__name__)
-        with app.test_request_context():
-            response, code = controller.execute_lifecycle(**{
+        with app.test_request_context(headers={'TenantId': '5d1cd9ca-f6d9-11ec-8084-00000a0b651c'}):
+            response, code, response_headers = controller.execute_lifecycle(**{
                 'body': {
                     'lifecycleName': 'Start',
                     'systemProperties': self.__props_with_types({'resourceId': '1'}),
@@ -175,9 +177,10 @@ class TestResourceDriverApiService(unittest.TestCase):
                     'version': '1.0.0'
                 }
             })
-        mock_service.execute_lifecycle.assert_called_once_with('Start', b'123', {'resourceId': { 'type': 'string', 'value': '1'}}, {'a': { 'type': 'string', 'value': '2'}}, {}, [{'id': 'abc', 'name': 'Test', 'type': 'Testing'}], {'name': 'test'})
+        mock_service.execute_lifecycle.assert_called_once_with('Start', b'123', {'resourceId': { 'type': 'string', 'value': '1'}}, {'a': { 'type': 'string', 'value': '2'}}, {}, [{'id': 'abc', 'name': 'Test', 'type': 'Testing'}], {'name': 'test'}, '5d1cd9ca-f6d9-11ec-8084-00000a0b651c')
         self.assertEqual(response, {'requestId': '123', 'associatedTopology': {}, "version": "1.0.0"})
         self.assertEqual(code, 202)
+        self.assertEqual(response_headers, {'TenantId': '5d1cd9ca-f6d9-11ec-8084-00000a0b651c'})
 
     @patch('ignition.service.resourcedriver.logging_context')
     def test_execute_missing_associated_topology(self, logging_context):
@@ -185,8 +188,8 @@ class TestResourceDriverApiService(unittest.TestCase):
         mock_service.execute_lifecycle.return_value = LifecycleExecuteResponse('123')
         controller = ResourceDriverApiService(service=mock_service)
         app = Flask(__name__)
-        with app.test_request_context():
-            response, code = controller.execute_lifecycle(**{
+        with app.test_request_context(headers={'TenantId': '5d1cd9ca-f6d9-11ec-8084-00000a0b651c'}):
+            response, code, response_headers = controller.execute_lifecycle(**{
                 'body': {
                     'lifecycleName': 'Start',
                     'systemProperties': self.__props_with_types({'resourceId': '1'}),
@@ -197,9 +200,10 @@ class TestResourceDriverApiService(unittest.TestCase):
                     'version': '1.0.0'
                 }
             })
-        mock_service.execute_lifecycle.assert_called_once_with('Start', b'123', {'resourceId': { 'type': 'string', 'value': '1'}}, {'a': { 'type': 'string', 'value': '2'}}, {'reqA': {'type': 'string', 'value': '3'}}, {}, {'name': 'test'})
+        mock_service.execute_lifecycle.assert_called_once_with('Start', b'123', {'resourceId': { 'type': 'string', 'value': '1'}}, {'a': { 'type': 'string', 'value': '2'}}, {'reqA': {'type': 'string', 'value': '3'}}, {}, {'name': 'test'}, '5d1cd9ca-f6d9-11ec-8084-00000a0b651c')
         self.assertEqual(response, {'requestId': '123', 'associatedTopology': {}, "version": "1.0.0"})
         self.assertEqual(code, 202)
+        self.assertEqual(response_headers, {'TenantId': '5d1cd9ca-f6d9-11ec-8084-00000a0b651c'})
 
     @patch('ignition.service.resourcedriver.logging_context')
     def test_execute_with_tenant_id(self, logging_context):
@@ -220,7 +224,7 @@ class TestResourceDriverApiService(unittest.TestCase):
                     'version': '1.0.0'
                 }
             })
-        mock_service.execute_lifecycle.assert_called_once_with('Start', b'123', {'resourceId': { 'type': 'string', 'value': '1'}, 'b': { 'type': 'integer', 'value': 1} }, {'a': { 'type': 'string', 'value': '2'}, 'b': { 'type': 'integer', 'value': 2}}, {'reqA': {'type': 'string', 'value': '3'}, 'reqB': {'type': 'boolean', 'value': True}}, [{'id': 'abc', 'name': 'Test', 'type': 'Testing'}], {'name': 'test'})
+        mock_service.execute_lifecycle.assert_called_once_with('Start', b'123', {'resourceId': { 'type': 'string', 'value': '1'}, 'b': { 'type': 'integer', 'value': 1} }, {'a': { 'type': 'string', 'value': '2'}, 'b': { 'type': 'integer', 'value': 2}}, {'reqA': {'type': 'string', 'value': '3'}, 'reqB': {'type': 'boolean', 'value': True}}, [{'id': 'abc', 'name': 'Test', 'type': 'Testing'}], {'name': 'test'}, '5d1cd9ca-f6d9-11ec-8084-00000a0b651c')
         self.assertEqual(response, {'requestId': '123', 'associatedTopology': {}, "version": "1.0.0"})
         self.assertEqual(code, 202)
         self.assertEqual(response_headers, {'TenantId': '5d1cd9ca-f6d9-11ec-8084-00000a0b651c'})
@@ -331,7 +335,8 @@ class TestResourceDriverService(unittest.TestCase):
         request_properties = {'reqPropA': 'reqValueA', 'reqPropB': True}
         associated_topology = {'Test': {'id': '123', 'type': 'TestType'}}
         deployment_location = {'name': 'TestDl'}
-        result = service.execute_lifecycle(lifecycle_name, driver_files, system_properties, resource_properties, request_properties, associated_topology, deployment_location)
+        tenant_id = "123456"
+        result = service.execute_lifecycle(lifecycle_name, driver_files, system_properties, resource_properties, request_properties, associated_topology, deployment_location, tenant_id)
         self.assertIsNotNone(result.request_id)
         mock_service_driver.execute_lifecycle.assert_not_called()
         mock_request_queue.queue_lifecycle_request.assert_called_once()
@@ -365,7 +370,8 @@ class TestResourceDriverService(unittest.TestCase):
         request_properties = self.__propvaluemap({'reqPropA': 'reqValueA', 'reqPropB': True})
         associated_topology = {'Test': {'id': '123', 'type': 'TestType'}}
         deployment_location = {'name': 'TestDl'}
-        result = service.execute_lifecycle(lifecycle_name, driver_files, system_properties, resource_properties, request_properties, associated_topology, deployment_location)
+        tenant_id = "123456"
+        result = service.execute_lifecycle(lifecycle_name, driver_files, system_properties, resource_properties, request_properties, associated_topology, deployment_location, tenant_id)
         mock_service_driver.execute_lifecycle.assert_called_once_with(lifecycle_name, mock_script_tree, self.__propvaluemap(system_properties), self.__propvaluemap(resource_properties), self.__propvaluemap(request_properties), AssociatedTopology.from_dict(associated_topology), deployment_location)
         self.assertEqual(result, execute_response)
 
@@ -386,7 +392,8 @@ class TestResourceDriverService(unittest.TestCase):
         request_properties = {'reqPropA': 'reqValueA', 'reqPropB': True}
         associated_topology = {'Test': {'id': '123', 'type': 'TestType'}}
         deployment_location = {'name': 'TestDl'}
-        result = service.execute_lifecycle(lifecycle_name, driver_files, system_properties, resource_properties, request_properties, associated_topology, deployment_location)
+        tenant_id = "123456"
+        result = service.execute_lifecycle(lifecycle_name, driver_files, system_properties, resource_properties, request_properties, associated_topology, deployment_location, tenant_id)
         mock_driver_files_manager.build_tree.assert_called_once_with(ANY, driver_files)
         mock_service_driver.execute_lifecycle.assert_called_once_with(lifecycle_name, mock_script_tree, self.__propvaluemap(system_properties), self.__propvaluemap(resource_properties), self.__propvaluemap(request_properties), AssociatedTopology.from_dict(associated_topology), deployment_location)
         self.assertEqual(result, execute_response)
@@ -410,8 +417,9 @@ class TestResourceDriverService(unittest.TestCase):
         request_properties = {'reqPropA': 'reqValueA', 'reqPropB': True}
         associated_topology = {'Test': {'id': '123', 'type': 'TestType'}}
         deployment_location = {'name': 'TestDl'}
-        result = service.execute_lifecycle(lifecycle_name, driver_files, system_properties, resource_properties, request_properties, associated_topology, deployment_location)
-        mock_lifecycle_monitor_service.monitor_execution.assert_called_once_with('123', deployment_location)
+        tenant_id = "123456"
+        result = service.execute_lifecycle(lifecycle_name, driver_files, system_properties, resource_properties, request_properties, associated_topology, deployment_location, tenant_id)
+        mock_lifecycle_monitor_service.monitor_execution.assert_called_once_with('123', deployment_location, '123456')
 
     def test_find_uses_driver_handler(self):
         mock_service_driver = MagicMock()
@@ -475,23 +483,27 @@ class TestLifecycleExecutionMonitoringService(unittest.TestCase):
 
     def test_monitor_execution_schedules_job(self):
         monitoring_service = LifecycleExecutionMonitoringService(job_queue_service=self.mock_job_queue, lifecycle_messaging_service=self.mock_lifecycle_messaging_service, handler=self.mock_driver)
-        monitoring_service.monitor_execution('req123', {'name': 'TestDl'})
+        tenant_id = '123456'
+        monitoring_service.monitor_execution('req123', {'name': 'TestDl'}, tenant_id)
         self.mock_job_queue.queue_job.assert_called_once_with({
             'job_type': 'LifecycleExecutionMonitoring',
             'request_id': 'req123',
-            'deployment_location': {'name': 'TestDl'}
+            'deployment_location': {'name': 'TestDl'},
+            'tenant_id': '123456'
         })
 
     def test_monitor_execution_throws_error_when_request_id_is_none(self):
         monitoring_service = LifecycleExecutionMonitoringService(job_queue_service=self.mock_job_queue, lifecycle_messaging_service=self.mock_lifecycle_messaging_service, handler=self.mock_driver)
         with self.assertRaises(ValueError) as context:
-            monitoring_service.monitor_execution(None, {'name': 'TestDl'})
+            tenant_id = '123456'
+            monitoring_service.monitor_execution(None, {'name': 'TestDl'}, tenant_id)
         self.assertEqual(str(context.exception), 'Cannot monitor task when request_id is not given')
 
     def test_monitor_execution_throws_error_when_deployment_location_is_none(self):
         monitoring_service = LifecycleExecutionMonitoringService(job_queue_service=self.mock_job_queue, lifecycle_messaging_service=self.mock_lifecycle_messaging_service, handler=self.mock_driver)
         with self.assertRaises(ValueError) as context:
-            monitoring_service.monitor_execution('req123', None)
+            tenant_id = '123456'
+            monitoring_service.monitor_execution('req123', None, tenant_id)
         self.assertEqual(str(context.exception), 'Cannot monitor task when deployment_location is not given')
 
     def test_job_handler_does_not_mark_job_as_finished_if_in_progress(self):
@@ -500,7 +512,8 @@ class TestLifecycleExecutionMonitoringService(unittest.TestCase):
         job_finished = monitoring_service.job_handler({
             'job_type': 'LifecycleExecutionMonitoring',
             'request_id': 'req123',
-            'deployment_location': {'name': 'TestDl'}
+            'deployment_location': {'name': 'TestDl'},
+            'tenant_id': '123456'
         })
         self.assertEqual(job_finished, False)
         self.mock_driver.get_lifecycle_execution.assert_called_once_with('req123', {'name': 'TestDl'})
@@ -511,7 +524,8 @@ class TestLifecycleExecutionMonitoringService(unittest.TestCase):
         job_finished = monitoring_service.job_handler({
             'job_type': 'LifecycleExecutionMonitoring',
             'request_id': 'req123',
-            'deployment_location': {'name': 'TestDl'}
+            'deployment_location': {'name': 'TestDl'},
+            'tenant_id': '123456'
         })
         self.assertEqual(job_finished, False)
         self.mock_driver.get_lifecycle_execution.assert_called_once_with('req123', {'name': 'TestDl'})
@@ -522,7 +536,8 @@ class TestLifecycleExecutionMonitoringService(unittest.TestCase):
         job_finished = monitoring_service.job_handler({
             'job_type': 'LifecycleExecutionMonitoring',
             'request_id': 'req123',
-            'deployment_location': {'name': 'TestDl'}
+            'deployment_location': {'name': 'TestDl'},
+            'tenant_id': '123456'
         })
         self.assertEqual(job_finished, True)
         self.mock_driver.get_lifecycle_execution.assert_called_once_with('req123', {'name': 'TestDl'})
@@ -534,11 +549,12 @@ class TestLifecycleExecutionMonitoringService(unittest.TestCase):
         job_finished = monitoring_service.job_handler({
             'job_type': 'LifecycleExecutionMonitoring',
             'request_id': 'req123',
-            'deployment_location': {'name': 'TestDl'}
+            'deployment_location': {'name': 'TestDl'},
+            'tenant_id': '123456'
         })
         self.assertEqual(job_finished, True)
         self.mock_driver.get_lifecycle_execution.assert_called_once_with('req123', {'name': 'TestDl'})
-        self.mock_lifecycle_messaging_service.send_lifecycle_execution.assert_called_once_with(self.mock_driver.get_lifecycle_execution.return_value)
+        self.mock_lifecycle_messaging_service.send_lifecycle_execution.assert_called_once_with(self.mock_driver.get_lifecycle_execution.return_value, tenant_id='123456')
 
     def test_job_handler_sends_message_when_task_failed(self):
         self.mock_driver.get_lifecycle_execution.return_value = LifecycleExecution('req123', 'FAILED', None)
@@ -546,11 +562,12 @@ class TestLifecycleExecutionMonitoringService(unittest.TestCase):
         job_finished = monitoring_service.job_handler({
             'job_type': 'LifecycleExecutionMonitoring',
             'request_id': 'req123',
-            'deployment_location': {'name': 'TestDl'}
+            'deployment_location': {'name': 'TestDl'},
+            'tenant_id': '123456'
         })
         self.assertEqual(job_finished, True)
         self.mock_driver.get_lifecycle_execution.assert_called_once_with('req123', {'name': 'TestDl'})
-        self.mock_lifecycle_messaging_service.send_lifecycle_execution.assert_called_once_with(self.mock_driver.get_lifecycle_execution.return_value)
+        self.mock_lifecycle_messaging_service.send_lifecycle_execution.assert_called_once_with(self.mock_driver.get_lifecycle_execution.return_value, tenant_id='123456')
 
     def test_job_handler_ignores_job_without_request_id(self):
         monitoring_service = LifecycleExecutionMonitoringService(job_queue_service=self.mock_job_queue, lifecycle_messaging_service=self.mock_lifecycle_messaging_service, handler=self.mock_driver)
