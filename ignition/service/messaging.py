@@ -238,7 +238,7 @@ class KafkaDeliveryService(Service, DeliveryCapability):
         logger.debug('Delivering envelope to {0} with message content: {1}'.format(envelope.address, content))
         if(hasattr(envelope, 'tenant_id')):
             tenant_id = envelope.tenant_id
-            headers = [('tenant_id', envelope.tenant_id.encode('utf-8'))]
+            headers = [('TenantId', envelope.tenant_id.encode('utf-8'))]
             if key is None:
                 self.producer.send(envelope.address, content, headers=headers).add_callback(self.__on_send_success).add_errback(self.__on_send_error)
             else:
