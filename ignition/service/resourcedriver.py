@@ -199,7 +199,6 @@ class ResourceDriverApiService(Service, ResourceDriverApiCapability, BaseControl
         try:
             logging_context.set_from_headers()
 
-            logger.debug("Fetching tenant_id ... ")
             tenant_id=None
             if('TenantId' in connexion.request.headers):
                 tenant_id = connexion.request.headers['TenantId']
