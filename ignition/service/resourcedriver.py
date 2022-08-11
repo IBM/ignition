@@ -202,9 +202,9 @@ class ResourceDriverApiService(Service, ResourceDriverApiCapability, BaseControl
             tenant_id=None
             if('TenantId' in connexion.request.headers):
                 tenant_id = connexion.request.headers['TenantId']
-                logger.info("TenantId received in headers : %s", tenant_id)
+                logger.debug("TenantId received in headers : %s", tenant_id)
 
-            logger.info("Value of tenant_id is %s", tenant_id)
+            logger.debug("Value of tenant_id is %s", tenant_id)
             body = self.get_body(kwarg)
             logger.debug('Handling lifecycle execution request with body %s', body)
             lifecycle_name = self.get_body_required_field(body, 'lifecycleName')
