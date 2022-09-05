@@ -4,7 +4,7 @@
 [Full Changelog](https://github.com/IBM/ignition/compare/3.3.1...3.4.0)
 
 
-**Fixed bugs:**
+**Implemented enhancements:**
 
 - Support Multi Tenancy for Lifecycle Drivers [\#137](https://github.com/IBM/ignition/issues/137)
 
