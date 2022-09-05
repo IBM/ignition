@@ -1,14 +1,5 @@
 # Change Log
 
-## [3.4.0](https://github.com/IBM/ignition/tree/3.4.0) (2022-09-05)
-[Full Changelog](https://github.com/IBM/ignition/compare/3.3.1...3.4.0)
-
-
-**Fixed bugs:**
-
-- Support Multi Tenancy for Lifecycle Drivers [\#137](https://github.com/IBM/ignition/issues/137)
-
-
 ## [3.3.1](https://github.com/IBM/ignition/tree/3.3.1) (2022-04-27)
 [Full Changelog](https://github.com/IBM/ignition/compare/3.3.0...3.3.1)
 
