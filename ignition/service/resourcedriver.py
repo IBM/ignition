@@ -200,11 +200,11 @@ class ResourceDriverApiService(Service, ResourceDriverApiCapability, BaseControl
             logging_context.set_from_headers()
 
             tenant_id=None
-            if('TenantId' in connexion.request.headers):
-                tenant_id = connexion.request.headers['TenantId']
-                logger.debug("TenantId received in headers : %s", tenant_id)
+            if('tenantId' in connexion.request.headers):
+                tenant_id = connexion.request.headers['tenantId']
+                logger.debug("tenantId received in headers : %s", tenant_id)
 
-            logger.debug("Value of tenant_id is %s", tenant_id)
+            logger.debug("Value of tenantId is %s", tenant_id)
             body = self.get_body(kwarg)
             logger.debug('Handling lifecycle execution request with body %s', body)
             lifecycle_name = self.get_body_required_field(body, 'lifecycleName')
@@ -217,7 +217,7 @@ class ResourceDriverApiService(Service, ResourceDriverApiCapability, BaseControl
             execute_response = self.service.execute_lifecycle(lifecycle_name, driver_files, system_properties, resource_properties, request_properties, associated_topology, deployment_location, tenant_id)
             response = lifecycle_execute_response_dict(execute_response)
             if(tenant_id is not None):
-                return (response, 202, {'TenantId': tenant_id})
+                return (response, 202, {'tenantId': tenant_id})
             else:
                 return (response, 202)
         finally:
