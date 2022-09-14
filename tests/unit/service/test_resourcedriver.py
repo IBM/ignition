@@ -207,7 +207,7 @@ class TestResourceDriverApiService(unittest.TestCase):
         mock_service.execute_lifecycle.return_value = LifecycleExecuteResponse('123')
         controller = ResourceDriverApiService(service=mock_service)
         app = Flask(__name__)
-        with app.test_request_context(headers={'TenantId': '5d1cd9ca-f6d9-11ec-8084-00000a0b651c'}):
+        with app.test_request_context(headers={'tenantId': '5d1cd9ca-f6d9-11ec-8084-00000a0b651c'}):
             response, code, response_headers = controller.execute_lifecycle(**{
                 'body': {
                     'lifecycleName': 'Start',
@@ -223,7 +223,7 @@ class TestResourceDriverApiService(unittest.TestCase):
         mock_service.execute_lifecycle.assert_called_once_with('Start', b'123', {'resourceId': { 'type': 'string', 'value': '1'}, 'b': { 'type': 'integer', 'value': 1} }, {'a': { 'type': 'string', 'value': '2'}, 'b': { 'type': 'integer', 'value': 2}}, {'reqA': {'type': 'string', 'value': '3'}, 'reqB': {'type': 'boolean', 'value': True}}, [{'id': 'abc', 'name': 'Test', 'type': 'Testing'}], {'name': 'test'}, '5d1cd9ca-f6d9-11ec-8084-00000a0b651c')
         self.assertEqual(response, {'requestId': '123', 'associatedTopology': {}, "version": "1.0.0"})
         self.assertEqual(code, 202)
-        self.assertEqual(response_headers, {'TenantId': '5d1cd9ca-f6d9-11ec-8084-00000a0b651c'})
+        self.assertEqual(response_headers, {'tenantId': '5d1cd9ca-f6d9-11ec-8084-00000a0b651c'})
         logging_context.set_from_headers.assert_called_once()
 
 class TestResourceDriverService(unittest.TestCase):
