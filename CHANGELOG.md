@@ -1,6 +1,15 @@
 # Change Log
 
 
+## [3.4.1](https://github.com/IBM/ignition/tree/3.4.1) (2022-09-28)
+[Full Changelog](https://github.com/IBM/ignition/compare/3.4.0...3.4.1)
+
+
+**Implemented enhancements:**
+
+- tenantId must be in camel case as per CP4NA standards for Python drivers [\#148](https://github.com/IBM/ignition/issues/148)
+
+
 ## [3.4.0](https://github.com/IBM/ignition/tree/3.4.0) (2022-09-05)
 [Full Changelog](https://github.com/IBM/ignition/compare/3.3.1...3.4.0)
 
