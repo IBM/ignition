@@ -20,6 +20,7 @@ import shutil
 import base64
 import pathlib
 import ignition.openapi as openapi
+import connexion
 
 logger = logging.getLogger(__name__)
 # Grabs the __init__.py from the openapi package then takes it's parent, the openapi directory itself
@@ -198,6 +199,12 @@ class ResourceDriverApiService(Service, ResourceDriverApiCapability, BaseControl
         try:
             logging_context.set_from_headers()
 
+            tenant_id=None
+            if('TenantId' in connexion.request.headers):
+                tenant_id = connexion.request.headers['TenantId']
+                logger.debug("TenantId received in headers : %s", tenant_id)
+
+            logger.debug("Value of tenant_id is %s", tenant_id)
             body = self.get_body(kwarg)
             logger.debug('Handling lifecycle execution request with body %s', body)
             lifecycle_name = self.get_body_required_field(body, 'lifecycleName')
@@ -207,9 +214,12 @@ class ResourceDriverApiService(Service, ResourceDriverApiCapability, BaseControl
             request_properties = self.get_body_field(body, 'requestProperties', {})
             associated_topology = self.get_body_field(body, 'associatedTopology', {})
             deployment_location = self.get_body_required_field(body, 'deploymentLocation')
-            execute_response = self.service.execute_lifecycle(lifecycle_name, driver_files, system_properties, resource_properties, request_properties, associated_topology, deployment_location)
+            execute_response = self.service.execute_lifecycle(lifecycle_name, driver_files, system_properties, resource_properties, request_properties, associated_topology, deployment_location, tenant_id)
             response = lifecycle_execute_response_dict(execute_response)
-            return (response, 202)
+            if(tenant_id is not None):
+                return (response, 202, {'TenantId': tenant_id})
+            else:
+                return (response, 202)
         finally:
             logging_context.clear()
 
@@ -259,7 +269,7 @@ class ResourceDriverService(Service, ResourceDriverServiceCapability):
                 raise ValueError('lifecycle_request_queue argument not provided (required when lifecycle_request_queue.enabled is True)')
             self.lifecycle_request_queue = kwargs.get('lifecycle_request_queue')
 
-    def execute_lifecycle(self, lifecycle_name, driver_files, system_properties, resource_properties, request_properties, associated_topology, deployment_location):
+    def execute_lifecycle(self, lifecycle_name, driver_files, system_properties, resource_properties, request_properties, associated_topology, deployment_location, tenant_id):
         if self.async_requests_enabled:
             request_id = str(uuid.uuid4())
             self.lifecycle_request_queue.queue_lifecycle_request({
@@ -271,6 +281,7 @@ class ResourceDriverService(Service, ResourceDriverServiceCapability):
                 'request_properties': request_properties,
                 'associated_topology': associated_topology,
                 'deployment_location': deployment_location,
+                'tenant_id': tenant_id,
                 'logging_context': dict(logging_context.get_all())
             })
             execute_response = LifecycleExecuteResponse(request_id)
@@ -293,8 +304,8 @@ class ResourceDriverService(Service, ResourceDriverServiceCapability):
         find_response = self.handler.find_reference(instance_name, driver_files_tree, deployment_location)
         return find_response
 
-    def __async_lifecycle_execution_completion(self, request_id, deployment_location):
-        self.lifecycle_monitor_service.monitor_execution(request_id, deployment_location)
+    def __async_lifecycle_execution_completion(self, request_id, deployment_location, tenant_id):
+        self.lifecycle_monitor_service.monitor_execution(request_id, deployment_location, tenant_id)
 
 
 LIFECYCLE_EXECUTION_MONITOR_JOB_TYPE = 'LifecycleExecutionMonitoring'
@@ -323,6 +334,7 @@ class LifecycleExecutionMonitoringService(Service, LifecycleExecutionMonitoringC
             return True
         request_id = job_definition['request_id']
         deployment_location = job_definition['deployment_location']
+        tenant_id = job_definition['tenant_id']
         try:
             lifecycle_execution_task = self.handler.get_lifecycle_execution(request_id, deployment_location)
         except RequestNotFoundError as e:
@@ -334,11 +346,11 @@ class LifecycleExecutionMonitoringService(Service, LifecycleExecutionMonitoringC
         except Exception as e:
             logger.exception('Unexpected error occurred checking status of request with ID {0}. A failure response will be posted and the job will NOT be re-queued: {1}'.format(request_id, str(e)))
             lifecycle_execution_task = LifecycleExecution(request_id, STATUS_FAILED, FailureDetails(FAILURE_CODE_INTERNAL_ERROR, str(e)))
-            self.lifecycle_messaging_service.send_lifecycle_execution(lifecycle_execution_task)
+            self.lifecycle_messaging_service.send_lifecycle_execution(lifecycle_execution_task, tenant_id=tenant_id)
             return True
         status = lifecycle_execution_task.status
         if status in [STATUS_COMPLETE, STATUS_FAILED]:
-            self.lifecycle_messaging_service.send_lifecycle_execution(lifecycle_execution_task)
+            self.lifecycle_messaging_service.send_lifecycle_execution(lifecycle_execution_task, tenant_id=tenant_id)
             if hasattr(self.handler, 'post_lifecycle_response'):
                 try:
                     logger.debug(f'Calling post_lifecycle_response for request with ID: {0}'.format(request_id))
@@ -348,19 +360,20 @@ class LifecycleExecutionMonitoringService(Service, LifecycleExecutionMonitoringC
             return True
         return False
 
-    def __create_job_definition(self, request_id, deployment_location):
+    def __create_job_definition(self, request_id, deployment_location, tenant_id):
         return {
             'job_type': LIFECYCLE_EXECUTION_MONITOR_JOB_TYPE,
             'request_id': request_id,
-            'deployment_location': deployment_location
+            'deployment_location': deployment_location,
+            'tenant_id': tenant_id
         }
 
-    def monitor_execution(self, request_id, deployment_location):
+    def monitor_execution(self, request_id, deployment_location, tenant_id):
         if request_id is None:
             raise ValueError('Cannot monitor task when request_id is not given')
         if deployment_location is None:
             raise ValueError('Cannot monitor task when deployment_location is not given')
-        self.job_queue_service.queue_job(self.__create_job_definition(request_id, deployment_location))
+        self.job_queue_service.queue_job(self.__create_job_definition(request_id, deployment_location, tenant_id))
 
 
 class LifecycleMessagingService(Service, LifecycleMessagingCapability):
@@ -378,12 +391,15 @@ class LifecycleMessagingService(Service, LifecycleMessagingCapability):
         if self.lifecycle_execution_events_topic is None:
             raise ValueError('lifecycle_execution_events topic name must be set')
 
-    def send_lifecycle_execution(self, lifecycle_execution):
+    def send_lifecycle_execution(self, lifecycle_execution, **kwargs):
+        tenant_id=None
+        if 'tenant_id' in kwargs:
+            tenant_id = kwargs['tenant_id'] 
         if lifecycle_execution is None:
             raise ValueError('lifecycle_execution must be set to send an lifecycle execution event')
         lifecycle_execution_message_content = lifecycle_execution_dict(lifecycle_execution)
         message_str = JsonContent(lifecycle_execution_message_content).get()
-        self.postal_service.post(Envelope(self.lifecycle_execution_events_topic, Message(message_str)))
+        self.postal_service.post(Envelope(self.lifecycle_execution_events_topic, Message(message_str), tenant_id=tenant_id))
 
 class DriverFilesManagerService(Service, DriverFilesManagerCapability):
 
