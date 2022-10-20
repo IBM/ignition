@@ -291,7 +291,7 @@ class ResourceDriverService(Service, ResourceDriverServiceCapability):
             associated_topology = AssociatedTopology.from_dict(associated_topology)
             execute_response = self.handler.execute_lifecycle(lifecycle_name, driver_files_tree, PropValueMap(system_properties), PropValueMap(resource_properties), PropValueMap(request_properties), associated_topology, deployment_location)
             if self.async_enabled is True:
-                self.__async_lifecycle_execution_completion(execute_response.request_id, deployment_location)
+                self.__async_lifecycle_execution_completion(execute_response.request_id, deployment_location, tenant_id)
             else:
                 if(isinstance(execute_response, LifecycleExecution)):
                     logger.info("Sending status to Kafka Topic immediately for non async task")
