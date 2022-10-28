@@ -295,7 +295,7 @@ class ResourceDriverService(Service, ResourceDriverServiceCapability):
             else:
                 if(isinstance(execute_response, LifecycleExecution)):
                     logger.info("Sending status to Kafka Topic immediately for non async task")
-                    self.lifecycle_messaging_service.send_lifecycle_execution(execute_response)
+                    self.lifecycle_messaging_service.send_lifecycle_execution(execute_response, tenant_id=tenant_id)
         return execute_response
 
     def find_reference(self, instance_name, driver_files, deployment_location):
