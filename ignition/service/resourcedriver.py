@@ -200,9 +200,9 @@ class ResourceDriverApiService(Service, ResourceDriverApiCapability, BaseControl
             logging_context.set_from_headers()
 
             tenant_id=None
-            if('TenantId' in connexion.request.headers):
+            if('tenantId' in connexion.request.headers):
                 tenant_id = connexion.request.headers['TenantId']
-                logger.debug("TenantId received in headers : %s", tenant_id)
+                logger.debug("tenantId received in headers : %s", tenant_id)
 
             logger.debug("Value of tenant_id is %s", tenant_id)
             body = self.get_body(kwarg)
