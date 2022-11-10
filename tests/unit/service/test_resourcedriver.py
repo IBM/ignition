@@ -312,8 +312,10 @@ class TestResourceDriverService(unittest.TestCase):
         mock_resource_driver_config = MagicMock()
         mock_resource_driver_config.async_messaging_enabled = False
         mock_resource_driver_config.lifecycle_request_queue.enabled = True
+        mock_lifecycle_messaging_service = MagicMock()
         with self.assertRaises(ValueError) as context:
-            ResourceDriverService(handler=mock_service_driver, resource_driver_config=mock_resource_driver_config, driver_files_manager=mock_driver_files_manager)
+            ResourceDriverService(handler=mock_service_driver, resource_driver_config=mock_resource_driver_config, driver_files_manager=mock_driver_files_manager,
+                                  lifecycle_messaging_service=mock_lifecycle_messaging_service)
         self.assertEqual(str(context.exception), 'lifecycle_request_queue argument not provided (required when lifecycle_request_queue.enabled is True)')
 
     def test_execute_with_request_queue(self):
@@ -323,7 +325,9 @@ class TestResourceDriverService(unittest.TestCase):
         mock_resource_driver_config = MagicMock()
         mock_resource_driver_config.async_messaging_enabled = False
         mock_resource_driver_config.lifecycle_request_queue.enabled = True
-        service = ResourceDriverService(handler=mock_service_driver, resource_driver_config=mock_resource_driver_config, driver_files_manager=mock_driver_files_manager, lifecycle_request_queue=mock_request_queue)
+        mock_lifecycle_messaging_service = MagicMock()
+        service = ResourceDriverService(handler=mock_service_driver, resource_driver_config=mock_resource_driver_config, driver_files_manager=mock_driver_files_manager, lifecycle_request_queue=mock_request_queue,
+                                        lifecycle_messaging_service=mock_lifecycle_messaging_service)
         lifecycle_name = 'Install'
         driver_files = '123'
         system_properties = {'resourceId': '1', 'otherProp': 1}
@@ -358,7 +362,9 @@ class TestResourceDriverService(unittest.TestCase):
         mock_driver_files_manager.build_tree.return_value = mock_script_tree
         mock_resource_driver_config = MagicMock()
         mock_resource_driver_config.lifecycle_request_queue.enabled = False
-        service = ResourceDriverService(handler=mock_service_driver, resource_driver_config=mock_resource_driver_config, driver_files_manager=mock_driver_files_manager)
+        mock_lifecycle_messaging_service = MagicMock()
+        service = ResourceDriverService(handler=mock_service_driver, resource_driver_config=mock_resource_driver_config, driver_files_manager=mock_driver_files_manager,
+                                        lifecycle_messaging_service=mock_lifecycle_messaging_service)
         lifecycle_name = 'start'
         driver_files = b'123'
         system_properties = self.__propvaluemap({'resourceId': '999', 'otherProp': 1})
@@ -380,7 +386,9 @@ class TestResourceDriverService(unittest.TestCase):
         mock_driver_files_manager.build_tree.return_value = mock_script_tree
         mock_resource_driver_config = MagicMock()
         mock_resource_driver_config.lifecycle_request_queue.enabled = False
-        service = ResourceDriverService(handler=mock_service_driver, resource_driver_config=mock_resource_driver_config, driver_files_manager=mock_driver_files_manager)
+        mock_lifecycle_messaging_service = MagicMock()
+        service = ResourceDriverService(handler=mock_service_driver, resource_driver_config=mock_resource_driver_config, driver_files_manager=mock_driver_files_manager,
+                                        lifecycle_messaging_service=mock_lifecycle_messaging_service)
         lifecycle_name = 'start'
         driver_files = b'123'
         system_properties = {'resourceId': '999', 'otherProp': 1}
@@ -426,7 +434,9 @@ class TestResourceDriverService(unittest.TestCase):
         mock_driver_files_manager.build_tree.return_value = mock_script_tree
         mock_resource_driver_config = MagicMock()
         mock_resource_driver_config.lifecycle_request_queue.enabled = False
-        service = ResourceDriverService(handler=mock_service_driver, resource_driver_config=mock_resource_driver_config, driver_files_manager=mock_driver_files_manager)
+        mock_lifecycle_messaging_service = MagicMock()
+        service = ResourceDriverService(handler=mock_service_driver, resource_driver_config=mock_resource_driver_config, driver_files_manager=mock_driver_files_manager,
+                                        lifecycle_messaging_service=mock_lifecycle_messaging_service)
         lifecycle_name = 'start'
         driver_files = b'123'
         deployment_location = {'name': 'TestDl'}
@@ -443,13 +453,39 @@ class TestResourceDriverService(unittest.TestCase):
         mock_driver_files_manager.build_tree.return_value = mock_script_tree
         mock_resource_driver_config = MagicMock()
         mock_resource_driver_config.lifecycle_request_queue.enabled = False
-        service = ResourceDriverService(handler=mock_service_driver, resource_driver_config=mock_resource_driver_config, driver_files_manager=mock_driver_files_manager)
+        mock_lifecycle_messaging_service = MagicMock()
+        service = ResourceDriverService(handler=mock_service_driver, resource_driver_config=mock_resource_driver_config, driver_files_manager=mock_driver_files_manager,
+                                        lifecycle_messaging_service=mock_lifecycle_messaging_service)
         lifecycle_name = 'start'
         driver_files = b'123'
         deployment_location = {'name': 'TestDl'}
         result = service.find_reference('Test', driver_files, deployment_location)
         mock_driver_files_manager.build_tree.assert_called_once_with(ANY, driver_files)
         mock_service_driver.find_reference.assert_called_once_with('Test', mock_script_tree, deployment_location)
+    
+    def test_execute_lifecycle_failed_scenario_when_async_not_enabled(self):
+        mock_service_driver = MagicMock()
+        execute_response = LifecycleExecution('req_id_123', 'FAILED', FailureDetails(FAILURE_CODE_INTERNAL_ERROR, 'because it was meant to fail'))
+        mock_service_driver.execute_lifecycle.return_value = execute_response
+        mock_driver_files_manager = MagicMock()
+        mock_pointer = MagicMock()
+        mock_driver_files_manager.build_pointer.return_value = mock_pointer
+        mock_resource_driver_config = MagicMock()
+        mock_resource_driver_config.async_messaging_enabled = False
+        mock_resource_driver_config.lifecycle_request_queue.enabled = False
+        mock_lifecycle_messaging_service = MagicMock()
+        service = ResourceDriverService(handler=mock_service_driver, resource_driver_config=mock_resource_driver_config, driver_files_manager=mock_driver_files_manager, lifecycle_messaging_service=mock_lifecycle_messaging_service)
+        lifecycle_name = 'start'
+        driver_files = b'123'
+        system_properties = {'resourceId': '999', 'otherProp': 1}
+        resource_properties = {'a': 1, 'b': '2'}
+        request_properties = {'reqPropA': 'reqValueA', 'reqPropB': True}
+        associated_topology = {'Test': {'id': '123', 'type': 'TestType'}}
+        deployment_location = {'name': 'TestDl'}
+        tenant_id = "123456"
+        result = service.execute_lifecycle(lifecycle_name, driver_files, system_properties, resource_properties, request_properties, associated_topology, deployment_location, tenant_id)
+        self.assertEqual(result, execute_response)
+        mock_lifecycle_messaging_service.send_lifecycle_execution.assert_called_once_with(execute_response, tenant_id='123456')
 
 class TestLifecycleExecutionMonitoringService(unittest.TestCase):
 

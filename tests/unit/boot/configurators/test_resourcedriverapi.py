@@ -138,7 +138,8 @@ class TestResourceDriverServicesConfigurator(ConfiguratorTestCase):
         ResourceDriverServicesConfigurator().configure(configuration, self.mock_service_register)
         service_registrations = self.assert_services_registered(1)
         self.assert_service_registration_equal(service_registrations[0], ServiceRegistration(ResourceDriverService, handler=ResourceDriverHandlerCapability,
-                                                                                             resource_driver_config=ResourceDriverProperties, driver_files_manager=DriverFilesManagerCapability))
+                                                                                             resource_driver_config=ResourceDriverProperties, driver_files_manager=DriverFilesManagerCapability,
+                                                                                             lifecycle_messaging_service=LifecycleMessagingCapability))
 
     def test_configure_service_fails_when_already_registered(self):
         configuration = self.__bootstrap_config()
