@@ -1,6 +1,16 @@
 # Change Log
 
 
+## [3.4.2](https://github.com/IBM/ignition/tree/3.4.2) (2022-11-21)
+[Full Changelog](https://github.com/IBM/ignition/compare/3.4.1...3.4.2)
+
+
+**Implemented enhancements:**
+
+- add error handling in netconf driver  [\#152](https://github.com/IBM/ignition/issues/152)
+- Send lifecycle execution status immediately when async_enabled is false  [\#136](https://github.com/IBM/ignition/issues/136)
+
+
 ## [3.4.1](https://github.com/IBM/ignition/tree/3.4.1) (2022-09-28)
 [Full Changelog](https://github.com/IBM/ignition/compare/3.4.0...3.4.1)
 
