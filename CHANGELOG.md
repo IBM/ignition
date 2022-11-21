@@ -7,8 +7,7 @@
 
 **Implemented enhancements:**
 
-- add error handling in netconf driver  [\#152](https://github.com/IBM/ignition/issues/152)
-- Send lifecycle execution status immediately when async_enabled is false  [\#136](https://github.com/IBM/ignition/issues/136)
+- add error handling for sync calls   [\#152](https://github.com/IBM/ignition/issues/152)
 
 
 ## [3.4.1](https://github.com/IBM/ignition/tree/3.4.1) (2022-09-28)
