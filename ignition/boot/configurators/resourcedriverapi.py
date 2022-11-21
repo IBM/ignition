@@ -84,6 +84,8 @@ class ResourceDriverServicesConfigurator():
             required_capabilities = {}
             if resource_driver_config.async_messaging_enabled is True:
                 required_capabilities['lifecycle_monitor_service'] = LifecycleExecutionMonitoringCapability
+            else:
+                required_capabilities['lifecycle_messaging_service'] = LifecycleMessagingCapability
             required_capabilities['handler'] = ResourceDriverHandlerCapability
             required_capabilities['resource_driver_config'] = ResourceDriverProperties
             required_capabilities['driver_files_manager'] = DriverFilesManagerCapability
