@@ -18,7 +18,27 @@ import threading
 PRIVATE_KEY_PREFIX = '-----BEGIN RSA PRIVATE KEY-----'
 PRIVATE_KEY_SUFFIX = '-----END RSA PRIVATE KEY-----'
 PRIVATE_KEY_REGEX = re.compile('{0}(.*?){1}'.format(PRIVATE_KEY_PREFIX, PRIVATE_KEY_SUFFIX), flags=re.DOTALL)
-OBFUSCATED_PRIVATE_KEY = '***obfuscated private key***'
+OBFUSCATED_PRIVATE_KEY = '!!!!!!***obfuscated private key***'
+
+TOKEN_PREFIX = 'token:'
+TOKEN_SUFFIX = '\\\\n'
+TOKEN_REGEX = re.compile('{0}(.*?){1}'.format(TOKEN_PREFIX, TOKEN_SUFFIX), flags=re.DOTALL | re.IGNORECASE)
+OBFUSCATED_TOKEN = 'token: ***obfuscated token***'
+
+CA_CERT_PREFIX = 'certificate-authority-data:'
+CA_CERT_SUFFIX = '\\\\n'
+CA_CERT_REGEX = re.compile('{0}(.*?){1}'.format(CA_CERT_PREFIX, CA_CERT_SUFFIX), flags=re.DOTALL | re.IGNORECASE)
+OBFUSCATED_CA_CERT = 'certificate-authority-data: ***obfuscated certificate-authority-data***'
+
+CLIENT_CERT_PREFIX = 'client-certificate-data:'
+CLIENT_CERT_SUFFIX = '\\\\n'
+CLIENT_CERT_REGEX = re.compile('{0}(.*?){1}'.format(CLIENT_CERT_PREFIX, CLIENT_CERT_SUFFIX), flags=re.DOTALL | re.IGNORECASE)
+OBFUSCATED_CLIENT_CERT = 'client-certificate-data: ***obfuscated client-certificate-data***'
+
+PWD_PREFIX = 'password'
+PWD_SUFFIX = '\\\\n'
+PWD_REGEX = re.compile('{0}(.*?){1}'.format(PWD_PREFIX, PWD_SUFFIX), flags=re.DOTALL | re.IGNORECASE)
+OBFUSCATED_PWD = 'password: ***obfuscated password***'
 
 LM_HTTP_HEADER_PREFIX = "x-tracectx-"
 LOGGING_CONTEXT_KEY_PREFIX = "tracectx."
@@ -61,7 +81,14 @@ class SensitiveDataFormatter(logging.Formatter):
     def _obfuscate_sensitive_data(self, record_message):
         if record_message is None:
             return record_message
-        return re.sub(PRIVATE_KEY_REGEX, OBFUSCATED_PRIVATE_KEY, record_message)
+
+        replacements=[(PRIVATE_KEY_REGEX, OBFUSCATED_PRIVATE_KEY), (TOKEN_REGEX, OBFUSCATED_TOKEN),
+				        (CA_CERT_REGEX, OBFUSCATED_CA_CERT), (CLIENT_CERT_REGEX, OBFUSCATED_CLIENT_CERT),
+				        (PWD_REGEX, OBFUSCATED_PWD)]
+        for pat,repl in replacements:
+            record_message = re.sub(pat, repl, record_message)
+
+        return record_message
 
 class LogstashFormatter(logging.Formatter):
 
