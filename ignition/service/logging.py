@@ -17,28 +17,18 @@ import threading
 
 PRIVATE_KEY_PREFIX = '-----BEGIN RSA PRIVATE KEY-----'
 PRIVATE_KEY_SUFFIX = '-----END RSA PRIVATE KEY-----'
-PRIVATE_KEY_REGEX = re.compile('{0}(.*?){1}'.format(PRIVATE_KEY_PREFIX, PRIVATE_KEY_SUFFIX), flags=re.DOTALL)
-OBFUSCATED_PRIVATE_KEY = '!!!!!!***obfuscated private key***'
+
+BEGIN_CERT_PREFIX = '-----BEGIN CERTIFICATE-----'
+END_CERT_SUFFIX = '-----END CERTIFICATE-----'
 
 TOKEN_PREFIX = 'token:'
-TOKEN_SUFFIX = '\\\\n'
-TOKEN_REGEX = re.compile('{0}(.*?){1}'.format(TOKEN_PREFIX, TOKEN_SUFFIX), flags=re.DOTALL | re.IGNORECASE)
-OBFUSCATED_TOKEN = 'token: ***obfuscated token***'
+TOKEN_SUFFIX = "'"
 
-CA_CERT_PREFIX = 'certificate-authority-data:'
-CA_CERT_SUFFIX = '\\\\n'
-CA_CERT_REGEX = re.compile('{0}(.*?){1}'.format(CA_CERT_PREFIX, CA_CERT_SUFFIX), flags=re.DOTALL | re.IGNORECASE)
-OBFUSCATED_CA_CERT = 'certificate-authority-data: ***obfuscated certificate-authority-data***'
+PWD_PREFIX = "Password"
+PWD_SUFFIX = ","
+PWD_SUFFIX_WITH_NEXTLINE = '\\\\n '
 
-CLIENT_CERT_PREFIX = 'client-certificate-data:'
-CLIENT_CERT_SUFFIX = '\\\\n'
-CLIENT_CERT_REGEX = re.compile('{0}(.*?){1}'.format(CLIENT_CERT_PREFIX, CLIENT_CERT_SUFFIX), flags=re.DOTALL | re.IGNORECASE)
-OBFUSCATED_CLIENT_CERT = 'client-certificate-data: ***obfuscated client-certificate-data***'
-
-PWD_PREFIX = 'password'
-PWD_SUFFIX = '\\\\n'
-PWD_REGEX = re.compile('{0}(.*?){1}'.format(PWD_PREFIX, PWD_SUFFIX), flags=re.DOTALL | re.IGNORECASE)
-OBFUSCATED_PWD = 'password: ***obfuscated password***'
+USERNAME_PREFIX = 'username'
 
 LM_HTTP_HEADER_PREFIX = "x-tracectx-"
 LOGGING_CONTEXT_KEY_PREFIX = "tracectx."
@@ -64,7 +54,7 @@ class LoggingContext(threading.local):
     def get_all(self):
         # protect the dictionary from changes - use the setters to do this
         return frozendict(self.data)
-    
+
     def clear(self):
         self.data = {}
 
@@ -78,17 +68,33 @@ class SensitiveDataFormatter(logging.Formatter):
         result = self._obfuscate_sensitive_data(result)
         return result
 
+    def _mask_sensitive_data(self, suffix, prefix, message):
+        regex = re.compile('{0}(.*?){1}'.format(prefix, suffix), flags=re.DOTALL | re.IGNORECASE)
+        abc = re.findall(regex, message)
+        if len(abc) > 0:
+            asterik_value = '*' * len(abc[0])
+            masked_value = prefix + asterik_value + "'"
+            message = re.sub(regex, masked_value, message)
+        return message
+
     def _obfuscate_sensitive_data(self, record_message):
         if record_message is None:
             return record_message
+        
+        pwd_message = self._mask_sensitive_data(PWD_SUFFIX_WITH_NEXTLINE, PWD_PREFIX, record_message)
+        if pwd_message == record_message:
+            pwd_message = self._mask_sensitive_data(PWD_SUFFIX, PWD_PREFIX, record_message)
 
-        replacements=[(PRIVATE_KEY_REGEX, OBFUSCATED_PRIVATE_KEY), (TOKEN_REGEX, OBFUSCATED_TOKEN),
-				        (CA_CERT_REGEX, OBFUSCATED_CA_CERT), (CLIENT_CERT_REGEX, OBFUSCATED_CLIENT_CERT),
-				        (PWD_REGEX, OBFUSCATED_PWD)]
-        for pat,repl in replacements:
-            record_message = re.sub(pat, repl, record_message)
+        username_message = self._mask_sensitive_data(PWD_SUFFIX_WITH_NEXTLINE, USERNAME_PREFIX, pwd_message)
+        if username_message == pwd_message:
+            username_message = self._mask_sensitive_data(PWD_SUFFIX, USERNAME_PREFIX, pwd_message)
 
-        return record_message
+        replacements=[(PRIVATE_KEY_PREFIX, PRIVATE_KEY_SUFFIX), (TOKEN_PREFIX, TOKEN_SUFFIX),
+                      (BEGIN_CERT_PREFIX, END_CERT_SUFFIX)]
+        for pre,suf in replacements:
+            username_message = self._mask_sensitive_data(suf, pre, username_message)
+
+        return username_message
 
 class LogstashFormatter(logging.Formatter):
 

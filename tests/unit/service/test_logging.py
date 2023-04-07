@@ -23,7 +23,7 @@ class TestSensitiveDataFormatter(unittest.TestCase):
             'msg': 'some logging of a key {0} to be obfuscated'.format(key)
         })
         result = formatter.format(record)
-        self.assertEqual(result, 'some logging of a key \n***obfuscated private key***\n to be obfuscated')
+        self.assertEqual(result, 'some logging of a key \n-----BEGIN RSA PRIVATE KEY-----*************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************\'\n to be obfuscated')
 
     def test_obfuscate_sensitive_data(self):
         formatter = SensitiveDataFormatter(logging.Formatter())
@@ -31,7 +31,7 @@ class TestSensitiveDataFormatter(unittest.TestCase):
             'msg': 'some logging of a key {0} to be obfuscated, and then the key is mentioned again {0} to check we match both'.format(key)
         })
         result = formatter.format(record)
-        self.assertEqual(result, 'some logging of a key \n***obfuscated private key***\n to be obfuscated, and then the key is mentioned again \n***obfuscated private key***\n to check we match both')
+        self.assertEqual(result, 'some logging of a key \n-----BEGIN RSA PRIVATE KEY-----*************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************\'\n to be obfuscated, and then the key is mentioned again \n-----BEGIN RSA PRIVATE KEY-----*************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************\'\n to check we match both')
 
     def test_obfuscate_sensitive_data_logstash(self):
         formatter = SensitiveDataFormatter(LogstashFormatter())
@@ -40,4 +40,4 @@ class TestSensitiveDataFormatter(unittest.TestCase):
         })
         result = formatter.format(record)
         result_dict = json.loads(result)
-        self.assertEqual(result_dict.get('message', None), 'some logging of a key \n***obfuscated private key***\n to be obfuscated')
+        self.assertEqual(result_dict.get('message', None), 'some logging of a key \n-----BEGIN RSA PRIVATE KEY-----*********************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************\'\n to be obfuscated')
