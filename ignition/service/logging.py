@@ -17,11 +17,13 @@ import threading
 
 PRIVATE_KEY_PREFIX = '-----BEGIN RSA PRIVATE KEY-----'
 PRIVATE_KEY_SUFFIX = '-----END RSA PRIVATE KEY-----'
+OBFUSCATED_PRIVATE_KEY = '***obfuscated private key***'
 
 BEGIN_CERT_PREFIX = '-----BEGIN CERTIFICATE-----'
 END_CERT_SUFFIX = '-----END CERTIFICATE-----'
+OBFUSCATED_CERTIFICATE = '***obfuscated certificate***'
 
-TOKEN_PREFIX = 'token:'
+TOKEN_PREFIX = 'token'
 TOKEN_SUFFIX = "'"
 
 PWD_PREFIX = "Password"
@@ -68,12 +70,21 @@ class SensitiveDataFormatter(logging.Formatter):
         result = self._obfuscate_sensitive_data(result)
         return result
 
-    def _mask_sensitive_data(self, suffix, prefix, message):
+    def _mask_sensitive_data(self, suffix, prefix, message, rep=None):
         regex = re.compile('{0}(.*?){1}'.format(prefix, suffix), flags=re.DOTALL | re.IGNORECASE)
         abc = re.findall(regex, message)
         if len(abc) > 0:
-            asterik_value = '*' * len(abc[0])
-            masked_value = prefix + asterik_value + "'"
+            if rep is None:
+                rep = '*' * len(abc[0])
+                if abc[0][0] != "'" and abc[0][len(abc[0])-1] == "'":
+                    rep = ":" + rep + "'"
+                elif abc[0].find("'") != -1:
+                    rep = "':'" + rep + "'"
+                elif abc[0].find('"') != -1:
+                    rep = '":"' + rep + '"'
+                else:
+                    rep = ":" + rep
+            masked_value = prefix + rep + suffix
             message = re.sub(regex, masked_value, message)
         return message
 
@@ -89,10 +100,10 @@ class SensitiveDataFormatter(logging.Formatter):
         if username_message == pwd_message:
             username_message = self._mask_sensitive_data(PWD_SUFFIX, USERNAME_PREFIX, pwd_message)
 
-        replacements=[(PRIVATE_KEY_PREFIX, PRIVATE_KEY_SUFFIX), (TOKEN_PREFIX, TOKEN_SUFFIX),
-                      (BEGIN_CERT_PREFIX, END_CERT_SUFFIX)]
-        for pre,suf in replacements:
-            username_message = self._mask_sensitive_data(suf, pre, username_message)
+        replacements=[(PRIVATE_KEY_PREFIX, PRIVATE_KEY_SUFFIX, OBFUSCATED_PRIVATE_KEY), (TOKEN_PREFIX, TOKEN_SUFFIX, None),
+                      (BEGIN_CERT_PREFIX, END_CERT_SUFFIX, OBFUSCATED_CERTIFICATE)]
+        for pre,suf,rep in replacements:
+            username_message = self._mask_sensitive_data(suf, pre, username_message, rep)
 
         return username_message
 
