@@ -24,9 +24,9 @@ END_CERT_SUFFIX = '-----END CERTIFICATE-----'
 OBFUSCATED_CERTIFICATE = '***obfuscated certificate***'
 
 TOKEN_PREFIX = 'token'
-TOKEN_SUFFIX = "'"
+TOKEN_SUFFIX = '\\\\n'
 
-PWD_PREFIX = "Password"
+PWD_PREFIX = "password"
 PWD_SUFFIX = ","
 PWD_SUFFIX_WITH_NEXTLINE = '\\\\n '
 
@@ -72,40 +72,41 @@ class SensitiveDataFormatter(logging.Formatter):
 
     def _mask_sensitive_data(self, suffix, prefix, message, rep=None):
         regex = re.compile('{0}(.*?){1}'.format(prefix, suffix), flags=re.DOTALL | re.IGNORECASE)
-        abc = re.findall(regex, message)
-        if len(abc) > 0:
-            if rep is None:
-                rep = '*' * len(abc[0])
-                if abc[0][0] != "'" and abc[0][len(abc[0])-1] == "'":
-                    rep = ":" + rep + "'"
-                elif abc[0].find("'") != -1:
-                    rep = "':'" + rep + "'"
-                elif abc[0].find('"') != -1:
-                    rep = '":"' + rep + '"'
-                else:
-                    rep = ":" + rep
-            masked_value = prefix + rep + suffix
-            message = re.sub(regex, masked_value, message)
+        data_list = re.findall(regex, message)
+        if len(data_list) > 0:
+            for data in data_list:
+                if rep is None:
+                    rep = '*' * len(data)
+                    if data[0] != "'" and data[len(data)-1] == "'":
+                        rep = ":" + rep + "'"
+                    elif data.find("'") != -1:
+                        rep = "':'" + rep + "'"
+                    elif data.find('"') != -1:
+                        rep = '":"' + rep + '"'
+                    else:
+                        rep = ":" + rep
+                masked_value = prefix + rep + suffix
+                message = re.sub(regex, masked_value, message)
         return message
 
     def _obfuscate_sensitive_data(self, record_message):
         if record_message is None:
             return record_message
         
-        pwd_message = self._mask_sensitive_data(PWD_SUFFIX_WITH_NEXTLINE, PWD_PREFIX, record_message)
-        if pwd_message == record_message:
-            pwd_message = self._mask_sensitive_data(PWD_SUFFIX, PWD_PREFIX, record_message)
+        pwd_masked_message = self._mask_sensitive_data(PWD_SUFFIX_WITH_NEXTLINE, PWD_PREFIX, record_message)
+        if pwd_masked_message == record_message:
+            pwd_masked_message = self._mask_sensitive_data(PWD_SUFFIX, PWD_PREFIX, record_message)
 
-        username_message = self._mask_sensitive_data(PWD_SUFFIX_WITH_NEXTLINE, USERNAME_PREFIX, pwd_message)
-        if username_message == pwd_message:
-            username_message = self._mask_sensitive_data(PWD_SUFFIX, USERNAME_PREFIX, pwd_message)
+        masked_message = self._mask_sensitive_data(PWD_SUFFIX_WITH_NEXTLINE, USERNAME_PREFIX, pwd_masked_message)
+        if masked_message == pwd_masked_message:
+            masked_message = self._mask_sensitive_data(PWD_SUFFIX, USERNAME_PREFIX, pwd_masked_message)
 
         replacements=[(PRIVATE_KEY_PREFIX, PRIVATE_KEY_SUFFIX, OBFUSCATED_PRIVATE_KEY), (TOKEN_PREFIX, TOKEN_SUFFIX, None),
                       (BEGIN_CERT_PREFIX, END_CERT_SUFFIX, OBFUSCATED_CERTIFICATE)]
         for pre,suf,rep in replacements:
-            username_message = self._mask_sensitive_data(suf, pre, username_message, rep)
+            masked_message = self._mask_sensitive_data(suf, pre, masked_message, rep)
 
-        return username_message
+        return masked_message
 
 class LogstashFormatter(logging.Formatter):
 
