@@ -2,7 +2,6 @@ from ignition.service.framework import Capability, Service, interface
 from ignition.service.messaging import Message, Envelope, JsonContent, TopicCreator
 from ignition.service.config import ConfigurationPropertiesGroup
 import logging
-from ignition.utils.propvaluemap import PropValueMap
 
 logger = logging.getLogger(__name__)
 
