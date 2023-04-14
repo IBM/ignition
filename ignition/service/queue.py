@@ -2,6 +2,7 @@ from ignition.service.framework import Capability, Service, interface
 from ignition.service.messaging import Message, Envelope, JsonContent, TopicCreator
 from ignition.service.config import ConfigurationPropertiesGroup
 import logging
+from ignition.utils.propvaluemap import PropValueMap
 
 logger = logging.getLogger(__name__)
 
@@ -94,11 +95,10 @@ class MessagingJobQueueService(Service, JobQueueCapability):
         return job_definition
 
     def __received_next_job_handler(self, job_definition_str):
-        logger.debug('Processing incoming job: {0}'.format(job_definition_str))
         try:
             job_definition = self.__read_incoming_job(job_definition_str)
         except JsonContent.ERROR_TYPE as e:
-            logger.exception('Ignoring job as an error occurred whilst attempting to read it: {0}'.format(job_definition_str))
+            logger.exception('Ignoring job as an error occurred whilst attempting to read it: {0}'.format(str(e)))
             return None
         return self.__handle_job(job_definition)
 
@@ -106,7 +106,7 @@ class MessagingJobQueueService(Service, JobQueueCapability):
         requeue = False
         job_type = job_definition.get(self.JOB_TYPE_KEY, None)
         if job_type is None:
-            logger.warning('Ignoring job received from queue without job_type: {0}'.format(job_definition))
+            logger.warning('Ignoring job received from queue without job_type for request id %s', job_definition.get('request_id'))
             return None
         else:
             job_handler = self.job_handlers.get(job_type, None)
@@ -114,24 +114,25 @@ class MessagingJobQueueService(Service, JobQueueCapability):
                 logger.warning('No handler for job received from queue with job_type {0} (will re-queue)'.format(job_type))
                 requeue = True
             else:
-                logger.debug('Passing job to handler ({0}): {1}'.format(job_handler, job_definition))
+                logger.debug('Passing job to handler ({0}): for job type {1}'.format(job_handler, job_type))
                 try:
                     finished = job_handler(job_definition)
                 except Exception as e:
-                    logger.exception('Handling of job {0} returned an Exception, this task will not be re-queued. The error was: {1}'.format(job_definition, str(e)))
+                    logger.exception('Handling of job type {0} returned an Exception, this task will not be re-queued. The error was: {1}'.format(job_type, str(e)))
                     return None
                 if not finished:
-                    logger.debug('Handler marked job as incomplete, will re-queue: {0}'.format(job_definition))
+                    logger.debug('Handler marked job as incomplete, will re-queue job of job type: {0}'.format(job_type))
                     requeue = True
         if requeue:
             self.queue_job(job_definition)
 
     def queue_job(self, job_definition):
-        logger.debug('Adding job to queue: {0}'.format(job_definition))
         if self.JOB_TYPE_KEY not in job_definition:
             raise ValueError('job_definition must have a job_type key')
         if job_definition[self.JOB_TYPE_KEY] is None:
             raise ValueError('job_definition must have a job_type value (not None)')
+        job_type = job_definition.get(self.JOB_TYPE_KEY, None)
+        logger.debug('Adding job to queue of job type: {0}'.format(job_type))
         job_definition['version'] = self.version
         msg_content = JsonContent(job_definition).get()
         msg = Message(msg_content)
