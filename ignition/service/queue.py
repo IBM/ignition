@@ -108,7 +108,7 @@ class MessagingJobQueueService(Service, JobQueueCapability):
         job_type = job_definition.get(self.JOB_TYPE_KEY, None)
         job_id = job_definition.get(self.JOB_IDENTIFIER_KEY, None)
         if job_type is None:
-            logger.warning('Ignoring job received from queue without job_type for request id {0} and job id {1}'.format(job_definition.get('request_id'), job_id))
+            logger.warning('Ignoring job received from queue without job_type with job id {0}'.format(job_id))
             return None
         else:
             job_handler = self.job_handlers.get(job_type, None)
@@ -123,7 +123,7 @@ class MessagingJobQueueService(Service, JobQueueCapability):
                     logger.exception('Handling of job type {0} with job id {1} returned an Exception, this task will not be re-queued. The error was: {2}'.format(job_type, job_id, str(e)))
                     return None
                 if not finished:
-                    logger.debug('Handler marked job as incomplete, will re-queue job of job type: {0} with job id: {1}'.format(job_type, job_id))
+                    logger.debug('Handler marked job as incomplete, will re-queue job of job type {0} with job id {1}'.format(job_type, job_id))
                     requeue = True
         if requeue:
             self.queue_job(job_definition)
@@ -136,7 +136,7 @@ class MessagingJobQueueService(Service, JobQueueCapability):
         job_type = job_definition.get(self.JOB_TYPE_KEY, None)
         if self.JOB_IDENTIFIER_KEY not in job_definition:
             job_definition[self.JOB_IDENTIFIER_KEY] = str(uuid4())
-        logger.debug('Adding job to queue of job type: {0} with job id: {1}'.format(job_type, job_definition.get(self.JOB_IDENTIFIER_KEY, None)))
+        logger.debug('Adding job to queue with type {0} and id {1}'.format(job_type, job_definition.get(self.JOB_IDENTIFIER_KEY, None)))
         job_definition['version'] = self.version
         msg_content = JsonContent(job_definition).get()
         msg = Message(msg_content)

@@ -235,7 +235,7 @@ class KafkaDeliveryService(Service, DeliveryCapability):
             raise ValueError('An envelope must be passed to deliver a message')
         self.__lazy_init_producer()
         content = envelope.message.content
-        logger.debug('Delivering envelope to {0} with message content: {1}'.format(envelope.address, content))
+        logger.debug('Delivering envelope to {0} with message content'.format(envelope.address))
         if(hasattr(envelope, 'tenant_id')):
             tenant_id = envelope.tenant_id
             headers = [('tenantId', envelope.tenant_id.encode('utf-8'))]
