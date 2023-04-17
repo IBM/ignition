@@ -1,5 +1,5 @@
 import unittest
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 from ignition.service.queue import MessagingJobQueueService, JobQueueProperties
 from ignition.service.messaging import Envelope, TopicsProperties, MessagingProperties, TopicConfigProperties
 
@@ -70,7 +70,9 @@ class TestMessagingJobQueueService(unittest.TestCase):
             job_queue_service.register_job_handler('test_job_type', MagicMock())
         self.assertEqual(str(context.exception), 'Handler for job_type \'test_job_type\' has already been registered')
 
-    def test_queue_job_posts_message(self):
+    @patch('ignition.service.queue.uuid4')
+    def test_queue_job_posts_message(self, mock_uuid4):
+        mock_uuid4.return_value = 'abcd1234'
         job_queue_service = MessagingJobQueueService(job_queue_config=self.job_queue_config, postal_service=self.mock_postal_service, inbox_service=self.mock_inbox_service, topics_config=self.mock_topics_config, messaging_config=MessagingProperties)
         job_queue_service.queue_job({'job_type': 'test_job'})
         self.mock_postal_service.post.assert_called_once()
@@ -79,7 +81,7 @@ class TestMessagingJobQueueService(unittest.TestCase):
         envelope_arg = args[0]
         self.assertIsInstance(envelope_arg, Envelope)
         self.assertEqual(envelope_arg.address, 'job_queue')
-        self.assertEqual(envelope_arg.message.content, b'{"job_type": "test_job", "version": "1.0.0"}')
+        self.assertEqual(envelope_arg.message.content, b'{"job_type": "test_job", "job_id": "abcd1234", "version": "1.0.0"}')
 
     def test_queue_job_without_type_throws_error(self):
         job_queue_service = MessagingJobQueueService(job_queue_config=self.job_queue_config, postal_service=self.mock_postal_service, inbox_service=self.mock_inbox_service, topics_config=self.mock_topics_config, messaging_config=MessagingProperties)
@@ -97,20 +99,22 @@ class TestMessagingJobQueueService(unittest.TestCase):
         job_queue_service._MessagingJobQueueService__received_next_job_handler('{"job_type": "test_job", "version": "1.0.0"}')
         mock_handler_func.assert_called_once_with({'job_type': 'test_job', "version": "1.0.0"})
 
-    def test_next_job_handler_requeues_job_if_handler_func_returns_not_finished(self):
+    @patch('ignition.service.queue.uuid4')
+    def test_next_job_handler_requeues_job_if_handler_func_returns_not_finished(self, mock_uuid4):
+        mock_uuid4.return_value = 'abcd1234'
         job_queue_service = MessagingJobQueueService(job_queue_config=self.job_queue_config, postal_service=self.mock_postal_service, inbox_service=self.mock_inbox_service, topics_config=self.mock_topics_config, messaging_config=MessagingProperties)
         mock_handler_func = MagicMock()
         mock_handler_func.return_value = False
         job_queue_service.register_job_handler('test_job', mock_handler_func)
         job_queue_service._MessagingJobQueueService__received_next_job_handler('{"job_type": "test_job", "version": "1.0.0"}')
-        mock_handler_func.assert_called_once_with({'job_type': 'test_job', "version": "1.0.0"})
+        mock_handler_func.assert_called_once_with({'job_type': 'test_job', 'version': '1.0.0', 'job_id': 'abcd1234'})
         self.mock_postal_service.post.assert_called_once()
         args, kwargs = self.mock_postal_service.post.call_args
         self.assertEqual(len(args), 1)
         envelope_arg = args[0]
         self.assertIsInstance(envelope_arg, Envelope)
         self.assertEqual(envelope_arg.address, 'job_queue')
-        self.assertEqual(envelope_arg.message.content, b'{"job_type": "test_job", "version": "1.0.0"}')
+        self.assertEqual(envelope_arg.message.content, b'{"job_type": "test_job", "version": "1.0.0", "job_id": "abcd1234"}')
 
     def test_next_job_handler_does_not_requeue_job_when_finished(self):
         job_queue_service = MessagingJobQueueService(job_queue_config=self.job_queue_config, postal_service=self.mock_postal_service, inbox_service=self.mock_inbox_service, topics_config=self.mock_topics_config, messaging_config=MessagingProperties)
@@ -139,7 +143,9 @@ class TestMessagingJobQueueService(unittest.TestCase):
         self.mock_postal_service.post.assert_not_called()
         self.assertIsNone(result)
 
-    def test_next_job_handler_requeues_job_when_no_handler_registered(self):
+    @patch('ignition.service.queue.uuid4')
+    def test_next_job_handler_requeues_job_when_no_handler_registered(self, mock_uuid4):
+        mock_uuid4.return_value = 'abcd1234'
         job_queue_service = MessagingJobQueueService(job_queue_config=self.job_queue_config, postal_service=self.mock_postal_service, inbox_service=self.mock_inbox_service, topics_config=self.mock_topics_config, messaging_config=MessagingProperties)
         result = job_queue_service._MessagingJobQueueService__received_next_job_handler('{"job_type": "test_job", "version": "1.0.0"}')
         self.assertIsNone(result)
@@ -149,4 +155,4 @@ class TestMessagingJobQueueService(unittest.TestCase):
         envelope_arg = args[0]
         self.assertIsInstance(envelope_arg, Envelope)
         self.assertEqual(envelope_arg.address, 'job_queue')
-        self.assertEqual(envelope_arg.message.content, b'{"job_type": "test_job", "version": "1.0.0"}')
+        self.assertEqual(envelope_arg.message.content, b'{"job_type": "test_job", "version": "1.0.0", "job_id": "abcd1234"}')

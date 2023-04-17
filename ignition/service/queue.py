@@ -1,3 +1,4 @@
+from uuid import uuid4
 from ignition.service.framework import Capability, Service, interface
 from ignition.service.messaging import Message, Envelope, JsonContent, TopicCreator
 from ignition.service.config import ConfigurationPropertiesGroup
@@ -60,6 +61,7 @@ class JobQueueCapability(Capability):
 class MessagingJobQueueService(Service, JobQueueCapability):
 
     JOB_TYPE_KEY = 'job_type'
+    JOB_IDENTIFIER_KEY = 'job_id'
 
     def __init__(self, version=QUEUE_MESSAGE_VERSION, **kwargs):
         if 'job_queue_config' not in kwargs:
@@ -104,23 +106,24 @@ class MessagingJobQueueService(Service, JobQueueCapability):
     def __handle_job(self, job_definition):
         requeue = False
         job_type = job_definition.get(self.JOB_TYPE_KEY, None)
+        job_id = job_definition.get(self.JOB_IDENTIFIER_KEY, None)
         if job_type is None:
-            logger.warning('Ignoring job received from queue without job_type for request id %s', job_definition.get('request_id'))
+            logger.warning('Ignoring job received from queue without job_type for request id %s and job id %s', job_definition.get('request_id'), job_id)
             return None
         else:
             job_handler = self.job_handlers.get(job_type, None)
             if job_handler is None:
-                logger.warning('No handler for job received from queue with job_type {0} (will re-queue)'.format(job_type))
+                logger.warning('No handler for job received from queue with job_type {0} and job id {1} (will re-queue)'.format(job_type, job_id))
                 requeue = True
             else:
-                logger.debug('Passing job to handler ({0}): for job type {1}'.format(job_handler, job_type))
+                logger.debug('Passing job to handler ({0}): for job type {1} and job id {2}'.format(job_handler, job_type, job_id))
                 try:
                     finished = job_handler(job_definition)
                 except Exception as e:
-                    logger.exception('Handling of job type {0} returned an Exception, this task will not be re-queued. The error was: {1}'.format(job_type, str(e)))
+                    logger.exception('Handling of job type {0} with job id {1} returned an Exception, this task will not be re-queued. The error was: {2}'.format(job_type, job_id, str(e)))
                     return None
                 if not finished:
-                    logger.debug('Handler marked job as incomplete, will re-queue job of job type: {0}'.format(job_type))
+                    logger.debug('Handler marked job as incomplete, will re-queue job of job type: {0} with job id: {1}'.format(job_type, job_id))
                     requeue = True
         if requeue:
             self.queue_job(job_definition)
@@ -131,7 +134,9 @@ class MessagingJobQueueService(Service, JobQueueCapability):
         if job_definition[self.JOB_TYPE_KEY] is None:
             raise ValueError('job_definition must have a job_type value (not None)')
         job_type = job_definition.get(self.JOB_TYPE_KEY, None)
-        logger.debug('Adding job to queue of job type: {0}'.format(job_type))
+        if self.JOB_IDENTIFIER_KEY not in job_definition:
+            job_definition[self.JOB_IDENTIFIER_KEY] = str(uuid4())
+        logger.debug('Adding job to queue of job type: {0} with job id: {1}'.format(job_type, job_definition.get(self.JOB_IDENTIFIER_KEY, None)))
         job_definition['version'] = self.version
         msg_content = JsonContent(job_definition).get()
         msg = Message(msg_content)
