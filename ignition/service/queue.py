@@ -108,7 +108,7 @@ class MessagingJobQueueService(Service, JobQueueCapability):
         job_type = job_definition.get(self.JOB_TYPE_KEY, None)
         job_id = job_definition.get(self.JOB_IDENTIFIER_KEY, None)
         if job_type is None:
-            logger.warning('Ignoring job received from queue without job_type for request id %s and job id %s', job_definition.get('request_id'), job_id)
+            logger.warning('Ignoring job received from queue without job_type for request id {0} and job id {1}'.format(job_definition.get('request_id'), job_id))
             return None
         else:
             job_handler = self.job_handlers.get(job_type, None)

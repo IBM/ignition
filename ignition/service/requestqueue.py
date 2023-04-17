@@ -301,12 +301,12 @@ class KafkaLifecycleRequestQueueService(Service, LifecycleRequestQueueCapability
         self.lifecycle_consumer_factory = kwargs.get('lifecycle_consumer_factory')
 
     def queue_lifecycle_request(self, request):
-        logger.debug('queue_lifecycle_request {0} on topic {1}'.format(request, self.lifecycle_request_queue_config.topic))
-
         if request is None:
             raise ValueError('Request must not be null')
         if 'request_id' not in request or request['request_id'] is None:
             raise ValueError('Request must have a request_id')
+
+        logger.debug('queue_lifecycle_request {0} on topic {1}'.format(request['request_id'], self.lifecycle_request_queue_config.topic))
 
         # note: key the messages by request_id to ensure correct partitioning
         self.postal_service.post(Envelope(self.lifecycle_request_queue_config.topic.name, Message(JsonContent(request).get())), key=request['request_id'])
