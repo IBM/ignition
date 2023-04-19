@@ -309,9 +309,8 @@ class KafkaInboxThread(threading.Thread):
 
         try:
             for record in consumer:
-                logger.debug('Inbox ({0}) has received a new message: {1}'.format(self.topic, record))
+                logger.debug('Inbox ({0}) has received a new message: Offset={1}, Partition={2}, Key={3}'.format(self.topic, record.offset, record.partition, record.key))
                 record_content = record.value.decode('utf-8')
-                logger.debug('Inbox ({0}) message has content: {1}'.format(self.topic, record_content))
                 self.consumer_func(record_content)
                 # If consumer func returns without error we are ok to move on
                 consumer.commit()
