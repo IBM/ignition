@@ -101,17 +101,17 @@ class KafkaRequestQueueHandler():
                 if len(messages) > 0:
                     request = Request.from_kafka_message(messages[0], topic_partition.topic, topic_partition.partition)
                     try:
-                        logger.debug("Read request {0}".format(request))
                         if request.request_id is None:
-                            logger.warning('Request {0} is missing request_id. This request has been discarded.'.format(request))
+                            logger.warning('Lifecycle request for partition {0} offset {1} is missing request id. This request has been discarded.'.format(request.partition, request.offset))
                             self.handle_failed_request(request)
                         else:
+                            logger.debug("Read request with request id: {0}".format(request.request_id))
                             self.handle_request(request)
                     except Exception as e:
                         # subclasses should handle any exceptions in their own way, this is just to catch any exceptions
                         # not handled by subclasses.
                         try:
-                            logger.warning('Caught exception handling driver request {0} : {1}'.format(request, str(e)))
+                            logger.warning('Caught exception handling driver request with request id {0} : {1}'.format(request.request_id, str(e)))
                             request.set_failed(sys.exc_info())
                             self.handle_failed_request(request)
                         except Exception as e:
@@ -131,7 +131,7 @@ class KafkaRequestQueueHandler():
         Commit the curent request by committing the Kafka offsets on the Kafka consumer's partition
         """
         if request is not None:
-            logger.debug("Committing request {0}".format(request))
+            logger.debug("Committing request with request id {0}".format(request.request_id))
         self.requests_consumer.commit()
 
     def close(self):
@@ -301,12 +301,12 @@ class KafkaLifecycleRequestQueueService(Service, LifecycleRequestQueueCapability
         self.lifecycle_consumer_factory = kwargs.get('lifecycle_consumer_factory')
 
     def queue_lifecycle_request(self, request):
-        logger.debug('queue_lifecycle_request {0} on topic {1}'.format(request, self.lifecycle_request_queue_config.topic))
-
         if request is None:
             raise ValueError('Request must not be null')
         if 'request_id' not in request or request['request_id'] is None:
             raise ValueError('Request must have a request_id')
+
+        logger.debug('queue_lifecycle_request {0} on topic {1}'.format(request['request_id'], self.lifecycle_request_queue_config.topic))
 
         # note: key the messages by request_id to ensure correct partitioning
         self.postal_service.post(Envelope(self.lifecycle_request_queue_config.topic.name, Message(JsonContent(request).get())), key=request['request_id'])

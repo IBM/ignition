@@ -235,7 +235,7 @@ class KafkaDeliveryService(Service, DeliveryCapability):
             raise ValueError('An envelope must be passed to deliver a message')
         self.__lazy_init_producer()
         content = envelope.message.content
-        logger.debug('Delivering envelope to {0} with message content: {1}'.format(envelope.address, content))
+        logger.debug('Delivering envelope to {0} with message content'.format(envelope.address))
         if(hasattr(envelope, 'tenant_id')):
             tenant_id = envelope.tenant_id
             headers = [('tenantId', envelope.tenant_id.encode('utf-8'))]
@@ -309,9 +309,8 @@ class KafkaInboxThread(threading.Thread):
 
         try:
             for record in consumer:
-                logger.debug('Inbox ({0}) has received a new message: {1}'.format(self.topic, record))
+                logger.debug('Inbox ({0}) has received a new message: Offset={1}, Partition={2}, Key={3}'.format(self.topic, record.offset, record.partition, record.key))
                 record_content = record.value.decode('utf-8')
-                logger.debug('Inbox ({0}) message has content: {1}'.format(self.topic, record_content))
                 self.consumer_func(record_content)
                 # If consumer func returns without error we are ok to move on
                 consumer.commit()
