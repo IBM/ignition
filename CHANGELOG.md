@@ -1,7 +1,7 @@
 # Change Log
 
-## [3.5.0](https://github.com/IBM/ignition/tree/3.5.0) (2023-04-20)
-[Full Changelog](https://github.com/IBM/ignition/compare/3.4.2...3.5.0)
+## [3.5.1](https://github.com/IBM/ignition/tree/3.5.1) (2023-04-20)
+[Full Changelog](https://github.com/IBM/ignition/compare/3.4.2...3.5.1)
 
 
 **Implemented enhancements:**
