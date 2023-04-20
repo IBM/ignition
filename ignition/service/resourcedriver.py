@@ -206,7 +206,6 @@ class ResourceDriverApiService(Service, ResourceDriverApiCapability, BaseControl
 
             logger.debug("Value of tenantId is %s", tenant_id)
             body = self.get_body(kwarg)
-            logger.debug('Handling lifecycle execution request with body %s', body)
             lifecycle_name = self.get_body_required_field(body, 'lifecycleName')
             driver_files = self.get_body_required_field(body, 'driverFiles')
             system_properties = self.get_body_required_field(body, 'systemProperties')
@@ -214,6 +213,8 @@ class ResourceDriverApiService(Service, ResourceDriverApiCapability, BaseControl
             request_properties = self.get_body_field(body, 'requestProperties', {})
             associated_topology = self.get_body_field(body, 'associatedTopology', {})
             deployment_location = self.get_body_required_field(body, 'deploymentLocation')
+            sys_props = PropValueMap(system_properties)
+            logger.debug('Handling lifecycle execution request for transition %s on resource named %s (id: %s) at deployment location named %s', lifecycle_name, sys_props.get('resourceName'), sys_props.get('resourceId'), deployment_location.get("name"))
             execute_response = self.service.execute_lifecycle(lifecycle_name, driver_files, system_properties, resource_properties, request_properties, associated_topology, deployment_location, tenant_id)
             response = lifecycle_execute_response_dict(execute_response)
             if(tenant_id is not None):
@@ -228,10 +229,10 @@ class ResourceDriverApiService(Service, ResourceDriverApiCapability, BaseControl
             logging_context.set_from_headers()
 
             body = self.get_body(kwarg)
-            logger.debug('Handling find reference request with body %s', body)
             instance_name = self.get_body_required_field(body, 'instanceName')
             driver_files = self.get_body_required_field(body, 'driverFiles')
             deployment_location = self.get_body_required_field(body, 'deploymentLocation')
+            logger.debug('Handling find reference request with instance name %s and deployment location named %s', instance_name, deployment_location.get("name"))
             service_find_response = self.service.find_reference(instance_name, driver_files, deployment_location)
             response = find_reference_response_dict(service_find_response)
             return (response, 200)

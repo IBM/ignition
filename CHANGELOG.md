@@ -1,5 +1,15 @@
 # Change Log
 
+## [3.5.0](https://github.com/IBM/ignition/tree/3.5.0) (2023-04-20)
+[Full Changelog](https://github.com/IBM/ignition/compare/3.4.2...3.5.0)
+
+
+**Implemented enhancements:**
+
+- Change host to HOSTNAME in Driver logs[\#158](https://github.com/IBM/ignition/issues/158)
+- Filter sensitive information on request/response body [\#161](https://github.com/IBM/ignition/issues/161)
+
+
 
 ## [3.4.2](https://github.com/IBM/ignition/tree/3.4.2) (2022-11-21)
 [Full Changelog](https://github.com/IBM/ignition/compare/3.4.1...3.4.2)
