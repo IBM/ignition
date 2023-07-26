@@ -1,5 +1,13 @@
 # Change Log
 
+## [3.5.2](https://github.com/IBM/ignition/tree/3.5.2) (2023-07-26)
+[Full Changelog](https://github.com/IBM/ignition/compare/3.5.1...3.5.2)
+
+
+**Implemented enhancements:**
+
+- python driver builds fails at docker step [\#172](https://github.com/IBM/ignition/issues/172)
+
 ## [3.5.1](https://github.com/IBM/ignition/tree/3.5.1) (2023-04-20)
 [Full Changelog](https://github.com/IBM/ignition/compare/3.4.2...3.5.1)
 
