@@ -23,7 +23,7 @@ setup(
     packages=find_namespace_packages(include=['ignition*']),
     include_package_data=True,
     install_requires=[
-        'connexion==2.10.0',
+        'connexion==2.14.2',
         'kafka-python==2.0.2',
         'networkx==2.5.1',
         'frozendict==2.0.2',
