@@ -21,6 +21,7 @@ import base64
 import pathlib
 import ignition.openapi as openapi
 import connexion
+from flask import request
 
 logger = logging.getLogger(__name__)
 # Grabs the __init__.py from the openapi package then takes it's parent, the openapi directory itself
@@ -200,8 +201,8 @@ class ResourceDriverApiService(Service, ResourceDriverApiCapability, BaseControl
             logging_context.set_from_headers()
 
             tenant_id=None
-            if('tenantId' in connexion.request.headers):
-                tenant_id = connexion.request.headers['tenantId']
+            if('tenantId' in request.headers):
+                tenant_id = request.headers['tenantId']
                 logger.debug("tenantId received in headers : %s", tenant_id)
 
             logger.debug("Value of tenantId is %s", tenant_id)
