@@ -23,13 +23,14 @@ setup(
     packages=find_namespace_packages(include=['ignition*']),
     include_package_data=True,
     install_requires=[
-        'connexion==3.0.0',
+        'connexion==3.0.5',
         'kafka-python==2.0.2',
         'networkx==2.5.1',
         'frozendict==2.0.2',
         'Jinja2==3.0.1',
         'requests==2.31.0',
-        'click==8.0.1'
+        'click==8.0.1',
+        
     ],
     entry_points='''
         [console_scripts]
