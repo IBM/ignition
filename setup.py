@@ -30,6 +30,7 @@ setup(
         'Jinja2==3.0.1',
         'requests==2.31.0',
         'click==8.0.1',
+        'connexion[flask]'
         
     ],
     entry_points='''
