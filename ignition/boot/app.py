@@ -7,6 +7,7 @@ from ignition.boot.connexionutils import RequestBodyValidator
 from ignition.service.config import ConfigParserService, ConfigurationProperties
 from ignition.service.framework import ServiceRegister, ServiceInstances, ServiceInitialiser, ServiceRegistration, Service
 from ignition.utils.file import safe_filename
+from connexion.datastructures import MediaTypeDict
 
 logger = logging.getLogger(__name__)
 
@@ -145,7 +146,11 @@ class BootstrapRunner():
         self.__configure_connexion_api_specs()
         self.__add_error_handler(connexion_app)
         for connexion_api in self.api_register.connexion_apis:
-            connexion_api['kwargs']['validator_map'] = {'body': RequestBodyValidator}
+            connexion_api['kwargs']['validator_map'] = {'body': MediaTypeDict(
+        {
+            "*/*json": RequestBodyValidator,
+            
+        } ) }
             connexion_app.add_api(connexion_api['api_spec'], **connexion_api['kwargs'])
 
         # Build final BootstrapApplication

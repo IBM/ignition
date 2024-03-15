@@ -10,6 +10,8 @@ from ignition.boot.app import BootstrapRunner
 from ignition.boot.connexionutils import RequestBodyValidator
 import ignition.openapi as openapi
 import pathlib
+from connexion.datastructures import MediaTypeDict
+
 
 # Grabs the __init__.py from the openapi package then takes it's parent, the openapi directory itself
 openapi_path = str(pathlib.Path(openapi.__file__).parent.resolve())
@@ -94,7 +96,11 @@ class TestBootstrapRunner(unittest.TestCase):
         bootstrap_runner = BootstrapRunner(app_builder.build())
         app = bootstrap_runner.init_app()
         mock_connexion_app.assert_called_once_with('MyTest', **{'specification_dir': '{0}/MyTest_boot/api_specs'.format(os.getcwd())})
-        mock_connexion_App_inst.add_api.assert_called_once_with('resource-driver.yaml', **{'resolver': mock_resolver, 'validator_map': {'body': RequestBodyValidator}})
+        mock_connexion_App_inst.add_api.assert_called_once_with('resource-driver.yaml', **{'resolver': mock_resolver, 'validator_map': {'body': MediaTypeDict(
+        {
+            "*/*json": RequestBodyValidator,
+            
+        } ) }})
         self.assertEqual(app.connexion_app, mock_connexion_App_inst)
 
     @patch('ignition.boot.app.connexion.App')
