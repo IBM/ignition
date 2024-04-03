@@ -31,8 +31,7 @@ setup(
         'requests==2.31.0',
         'click==8.0.1',
         'connexion[flask]==3.0.5'
-        
-    ],
+        ],
     entry_points='''
         [console_scripts]
         ignition=ignition.cli.entry:init_cli
