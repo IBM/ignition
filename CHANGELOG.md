@@ -1,5 +1,14 @@
 # Change Log
 
+## [3.6.0](https://github.com/IBM/ignition/tree/3.6.0) (2024-04-15)
+[Full Changelog](https://github.com/IBM/ignition/compare/3.5.2...3.6.0)
+
+
+**Implemented enhancements:**
+
+- Uplift connexion from 2.x to 3.x [\#184](https://github.com/IBM/ignition/issues/184)
+- Security Vulnerability (Jinja2)  [\#182](https://github.com/IBM/ignition/issues/182) 
+
 ## [3.5.2](https://github.com/IBM/ignition/tree/3.5.2) (2023-07-26)
 [Full Changelog](https://github.com/IBM/ignition/compare/3.5.1...3.5.2)
 
