@@ -27,7 +27,7 @@ setup(
         'kafka-python==2.0.2',
         'networkx==2.5.1',
         'frozendict==2.0.2',
-        'Jinja2==3.0.1',
+        'Jinja2==3.1.3',
         'requests==2.31.0',
         'click==8.0.1'
     ],
