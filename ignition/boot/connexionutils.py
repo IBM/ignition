@@ -31,7 +31,7 @@ def build_resolver_to_instance(instance):
 
 # Custom validator that allows the validator errors to be caught later in the stack. 
 # The out-of-the-box impl by connexion catches the errors and configures the Rest response, we want our own response format to be determined by the error_converter on the application configuration
-class RequestBodyValidator(connexion.decorators.validation.RequestBodyValidator):
+class RequestBodyValidator(connexion.validators.AbstractRequestBodyValidator):
     def validate_schema(self, data, url):
         if self.is_null_value_valid and connexion.utils.is_null(data):
             return None
