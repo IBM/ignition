@@ -46,9 +46,21 @@ Navigate to the job for the `main` branch. The merge to `main` should have alrea
 
 Once ready, click `Build with Parameters` for on the `main` branch job. Enable the `release` option and click `BUILD`.
 
-Wait for the build to complete successfully. 
+Wait for the build to complete successfully.
 
-## 6. Verify Release
+The build will generate the release candidate artifacts and publish them to an internal registry (as above, maintainers should be aware and have access to this. Speak to another maintainer if not).
+
+## 6. Artifact promotion
+
+When the release artifacts are ready to be published, access the `Promote-Drivers` build job on the internal CI/CD tool
+
+Click `Build with Parameters` and enter the version numbers of the drivers that you wish to promote and click `BUILD`.
+
+Wait for the build to complete successfully.
+
+The job will publish the artifacts and create a [release on Github](https://github.com/IBM/ignition/releases).
+
+## 7. Verify Release
 
 Verify the CI/CD job has created a [release on Github](https://github.com/IBM/ignition/releases).
 
@@ -56,7 +68,7 @@ Ensure the tag, title and changelog are all correct. Also ensure the documentati
 
 Verify the release has been published to [pypi](https://pypi.org/manage/project/ignition/releases/).
 
-## 7. Cleanup
+## 8. Cleanup
 
 Complete the following steps to ensure development can continue as normal:
 
@@ -111,4 +123,4 @@ Complete the following:
 
 ## 7. Cleanup
 
-Complete step 7 from the main release instructions (found above).
+Complete step 8 from the main release instructions (found above).
