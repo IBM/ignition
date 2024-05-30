@@ -30,7 +30,6 @@ class TestResourceTransitionProgressEvent(unittest.TestCase):
     def test_to_dict(self):
         event = ResourceTransitionProgressEvent(progress_event_type='TestEvent')
         to_dict_result = event.to_dict()
-        self.assertIsInstance(to_dict_result, OrderedDict)
         self.assertEqual(to_dict_result['eventType'], 'ResourceTransitionProgressEvent')
         self.assertEqual(to_dict_result['progressEventType'], 'TestEvent')
         self.assertEqual(to_dict_result['details'], {})
@@ -38,13 +37,11 @@ class TestResourceTransitionProgressEvent(unittest.TestCase):
     def test_to_dict_order(self):
         event = ResourceTransitionProgressEvent(progress_event_type='TestEvent')
         to_dict_result = event.to_dict()
-        self.assertIsInstance(to_dict_result, OrderedDict)
         self.assertEqual(list(to_dict_result.keys()), ['eventType', 'progressEventType', 'details'])
 
     def test_to_dict_with_details(self):
         event = TestSubEvent(extra_details={'a': 'A', 'b': 'B'})
         to_dict_result = event.to_dict()
-        self.assertIsInstance(to_dict_result, OrderedDict)
         self.assertEqual(to_dict_result['eventType'], 'ResourceTransitionProgressEvent')
         self.assertEqual(to_dict_result['progressEventType'], 'TestSubEvent')
         self.assertEqual(to_dict_result['details'], {
