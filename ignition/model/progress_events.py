@@ -18,8 +18,8 @@ class ResourceTransitionProgressEvent:
         return {}
 
     def to_dict(self):
-        return OrderedDict({
+        return {
             'eventType': BASE_EVENT_TYPE,
             'progressEventType': self.progress_event_type,
             'details': self._details()
-        })
+        }
