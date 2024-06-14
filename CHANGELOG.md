@@ -1,5 +1,14 @@
 # Change Log
 
+## [3.6.2](https://github.com/IBM/ignition/tree/3.6.1) (2024-06-14)
+[Full Changelog](https://github.com/IBM/ignition/compare/3.6.1...3.6.2)
+
+
+**Implemented enhancements:**
+
+- Change OrderedDict to dict in progress events
+
+
 ## [3.6.1](https://github.com/IBM/ignition/tree/3.6.1) (2024-05-14)
 [Full Changelog](https://github.com/IBM/ignition/compare/3.6.0...3.6.1)
 
