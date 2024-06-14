@@ -23,10 +23,10 @@ class TestProgressEventLogWriterService(unittest.TestCase):
         event = TestEvent(extra_details={'A': 123})
         self.service.add(event)
         expected_str = '---[{0}]---'.format(BASE_EVENT_TYPE)
-        expected_str += '\neventType: {0}'.format(BASE_EVENT_TYPE)
-        expected_str += '\nprogressEventType: TestEvent'
         expected_str += '\ndetails:'
-        expected_str += '\n  A: 123\n'
+        expected_str += '\n  A: 123'
+        expected_str += '\neventType: {0}'.format(BASE_EVENT_TYPE)
+        expected_str += '\nprogressEventType: TestEvent\n'
         mock_logger.info.assert_called_once_with(expected_str)
 
     @patch('ignition.service.progress_events.logger')
@@ -35,10 +35,10 @@ class TestProgressEventLogWriterService(unittest.TestCase):
         mock_log_type.lower.return_value = 'logstash'
         event = TestEvent(extra_details={'A': 123})
         self.service.add(event)
-        expected_str = 'eventType: {0}'.format(BASE_EVENT_TYPE)
-        expected_str += '\nprogressEventType: TestEvent'
-        expected_str += '\ndetails:'
-        expected_str += '\n  A: 123\n'
+        expected_str = 'details:\n'
+        expected_str += '  A: 123\n'
+        expected_str += 'eventType: {0}'.format(BASE_EVENT_TYPE)
+        expected_str += '\nprogressEventType: TestEvent\n'
         mock_logger.info.assert_called_once_with(expected_str)
 
     def test_add_invalid_event(self):
