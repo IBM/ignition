@@ -28,7 +28,7 @@ setup(
         'networkx==2.5.1',
         'frozendict==2.0.2',
         'Jinja2==3.1.4',
-        'requests==2.32.2',
+        'requests==2.32.3',
         'click==8.0.1'
        ],
     entry_points='''
