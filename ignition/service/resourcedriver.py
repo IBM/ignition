@@ -21,7 +21,7 @@ import base64
 import pathlib
 import ignition.openapi as openapi
 import connexion
-from flask import request, jsonify
+from flask import request
 import json
 
 
