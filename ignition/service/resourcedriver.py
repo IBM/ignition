@@ -224,7 +224,6 @@ class ResourceDriverApiService(Service, ResourceDriverApiCapability, BaseControl
                 body = b''.join(self.read_chunked_request())
                 body_str = body.decode('utf-8')  # Decode bytes to string
                 body = json.loads(body_str)
-                logger.debug("value of ... body_stream ...  %s",body )
             else:
                 body = self.get_body(kwarg)
                     
