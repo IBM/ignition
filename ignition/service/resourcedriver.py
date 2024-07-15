@@ -196,7 +196,7 @@ class ResourceDriverApiService(Service, ResourceDriverApiCapability, BaseControl
     def read_chunked_request(self):
         environ = request.environ
         input_stream = environ['wsgi.input']
-        chunk_size = 4096  #  the chunk size is adjustable
+        chunk_size = 4096
 
         while True:
             chunk = input_stream.read(chunk_size)
