@@ -1,6 +1,15 @@
 # Change Log
 
-## [3.6.2](https://github.com/IBM/ignition/tree/3.6.1) (2024-06-14)
+## [3.6.3](https://github.com/IBM/ignition/tree/3.6.3) (2024-07-16)
+[Full Changelog](https://github.com/IBM/ignition/compare/3.6.2...3.6.3)
+
+
+**Implemented enhancements:**
+
+- handle requests with transfer-encoding chunked
+
+
+## [3.6.2](https://github.com/IBM/ignition/tree/3.6.2) (2024-06-14)
 [Full Changelog](https://github.com/IBM/ignition/compare/3.6.1...3.6.2)
 
 
