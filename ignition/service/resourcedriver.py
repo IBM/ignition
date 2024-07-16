@@ -22,7 +22,9 @@ import pathlib
 import ignition.openapi as openapi
 import connexion
 from flask import request
-# from starlette.requests import request
+import json
+
+
 
 logger = logging.getLogger(__name__)
 # Grabs the __init__.py from the openapi package then takes it's parent, the openapi directory itself
@@ -191,6 +193,16 @@ class ResourceDriverApiService(Service, ResourceDriverApiCapability, BaseControl
     """
     Out-of-the-box controller for the Lifecycle API
     """
+    def read_chunked_request(self):
+        environ = request.environ
+        input_stream = environ['wsgi.input']
+        chunk_size = 4096
+
+        while True:
+            chunk = input_stream.read(chunk_size)
+            if not chunk:
+                break
+            yield chunk
 
     def __init__(self, **kwargs):
         if 'service' not in kwargs:
@@ -200,14 +212,22 @@ class ResourceDriverApiService(Service, ResourceDriverApiCapability, BaseControl
     def execute_lifecycle(self, **kwarg):
         try:
             logging_context.set_from_headers()
-
             tenant_id=None
+            
             if('tenantId' in request.headers):
-                tenant_id = request.headers['tenantId']
+                tenant_id = request.headers.get('tenantId')
+                logger.debug(request.headers)
                 logger.debug("tenantId received in headers : %s", tenant_id)
-
-            logger.debug("Value of tenantId is %s", tenant_id)
-            body = self.get_body(kwarg)
+            
+            logger.debug("kwargs: %s", kwarg)
+            if 'chunked' in request.headers.get('Transfer-Encoding', '').lower():
+                body = b''.join(self.read_chunked_request())
+                body_str = body.decode('utf-8')  # Decode bytes to string
+                body = json.loads(body_str)
+            else:
+                body = self.get_body(kwarg)
+                    
+            logger.debug("value of Body %s", body)
             lifecycle_name = self.get_body_required_field(body, 'lifecycleName')
             driver_files = self.get_body_required_field(body, 'driverFiles')
             system_properties = self.get_body_required_field(body, 'systemProperties')
@@ -230,7 +250,16 @@ class ResourceDriverApiService(Service, ResourceDriverApiCapability, BaseControl
         try:
             logging_context.set_from_headers()
 
-            body = self.get_body(kwarg)
+            logger.debug("kwargs: %s", kwarg)
+            if 'chunked' in request.headers.get('Transfer-Encoding', '').lower():
+                body = b''.join(self.read_chunked_request())
+                body_str = body.decode('utf-8')  # Decode bytes to string
+                body = json.loads(body_str)
+                logger.debug("value of ... body_stream...  %s",body )
+            else:
+                body = self.get_body(kwarg)
+            
+            logger.debug("value of Body %s", body)
             instance_name = self.get_body_required_field(body, 'instanceName')
             driver_files = self.get_body_required_field(body, 'driverFiles')
             deployment_location = self.get_body_required_field(body, 'deploymentLocation')
