@@ -6,7 +6,7 @@
 
 **Implemented enhancements:**
 
-- handle requests with transfer-encoding chunked
+- Handle requests with transfer-encoding chunked
 
 
 ## [3.6.2](https://github.com/IBM/ignition/tree/3.6.2) (2024-06-14)
