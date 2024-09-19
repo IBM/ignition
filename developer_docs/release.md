@@ -72,7 +72,6 @@ Verify the release has been published to [pypi](https://pypi.org/manage/project/
 
 Complete the following steps to ensure development can continue as normal:
 
-- Merge `main` to `develop` so any release updates and the post-version are copied over from main(doesn't require a PR)
 - Close the Milestone for this release on [Github](https://github.com/IBM/ignition/milestones)
 - Create a new Milestone for next release (if one does not exist). Use the value of the `--post-version` option from earlier
 
